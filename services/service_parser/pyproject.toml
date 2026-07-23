@@ -1,0 +1,43 @@
+[project]
+name = "service-parser"
+version = "0.1.0"
+description = "Microservice \"Parser Service\""
+authors = [
+    { name = "Nikita Bondarev", email = "nikitabondarevvitebsk@gmail.com" }
+]
+license = "No license"
+requires-python = ">=3.12,<3.15"
+
+[tool.poetry.dependencies]
+beautifulsoup4 = "^4.15.0"
+lxml = "^6.1.1"
+numpy = "2.3.5"
+asyncpg = "^0.31.0"
+sqlalchemy = "^2.0.51"
+pydantic = "^2.13.4"
+pydantic-settings = "^2.14.2"
+httpx = "^0.28.1"
+schedule-db-models = { path = "../../libs/schedule_db_models" }
+dishka = "^1.10.1"
+logging-json = "^0.6.0"
+structlog = "^26.1.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^9.1.1"
+pytest-asyncio = "^1.4.0"
+pytest-httpx = "^0.36.2"
+ruff = "^0.15.22"
+alembic = "^1.18.5"
+pytest-cov = "^7.1.0"
+testcontainers = "^4.14.2"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+addopts = "--asyncio-mode=auto"
+
+[tool.coverage.run]
+source = ["src/service_parser"]
