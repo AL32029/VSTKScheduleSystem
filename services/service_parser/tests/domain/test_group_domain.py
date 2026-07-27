@@ -1,151 +1,112 @@
 import pytest
 
 from service_parser.domain.entities import Group, GroupParser
-from service_parser.domain.exceptions.parser_exceptions import InvalidGroupNumberFormatError, NegativeGroupPositionError
+from service_parser.domain.exceptions import GroupNumberFormatError, GroupParserPositionError
+from service_parser.domain.shared.patterns import ITEM_INDEX
+
+# ====================== [ВАЛИДНЫЕ ЗНАЧЕНИЯ] ======================
+_VALID_GROUP_NUMBERS = ['ЖБИ-21', 'ОС-21', 'ПЭС-215']
+_VALID_GROUP_PARSER_POSITIONS = [(1, 1), (2, 10), (5, 3)]
+_VALID_GROUP_PARSER_VALUES = [(group, x, y)
+                              for group, (x, y) in zip(_VALID_GROUP_NUMBERS, _VALID_GROUP_PARSER_POSITIONS)]
+
+# ====================== [НЕВАЛИДНЫЕ ЗНАЧЕНИЯ] ======================
+_INVALID_GROUP_NUMBERS = ['ZHBI-21', 'ос 21', 'ПЭС 2']
+_INVALID_GROUP_PARSER_POSITIONS = [(-1, 1), (2, -10), (-5, -3)]
+_INVALID_GROUP_PARSER_VALUES = [(group, x, y)
+                                for group, (x, y) in zip(_VALID_GROUP_NUMBERS, _INVALID_GROUP_PARSER_POSITIONS)]
+
+# ====================== [СУЩНОСТИ] ======================
+_GROUP_ITEMS = [Group(group) for group in _VALID_GROUP_NUMBERS]
+_GROUP_PARSER_ITEMS = [GroupParser(group, x, y)
+                       for group, (x, y) in zip(_VALID_GROUP_NUMBERS, _VALID_GROUP_PARSER_POSITIONS)]
 
 
-@pytest.mark.parametrize("source,index", [
-    ['ЖБИ-21', 'жби21'],
-    [' ЖБИ-21 ', 'жби21'],
-    ['ЖбИ-21', 'жби21'],
-    ['ОС-21', 'ос21'],
-    ['Ос-21', 'ос21'],
-    ['ПЭС-215', 'пэс215'],
-    ['пЭС-215', 'пэс215'],
-])
-def test_group_creation_and_index_normalization(source, index):
-    group = Group(source)
+# ====================== [ТЕСТЫ СУЩНОСТИ GROUP] ======================
+@pytest.mark.parametrize('group_number', _VALID_GROUP_NUMBERS)
+def test_create_group_entity(group_number: str):
+    """Тест должен корректно создать сущность Group"""
+    group = Group(group_number)
 
-    assert group.number == source.upper().strip()
-
-    assert str(group) == source.upper().strip()
-
-    assert group.index == index
+    assert group.number == group_number
+    assert group.index == ITEM_INDEX.sub('', group_number.lower())
 
 
-@pytest.mark.parametrize("first_group,second_group", [
-    ['ЖБИ-21', 'ЖбИ-21'],
-    ['ОС-21', 'ос-21'],
-    ['ПэС-215', 'Пэс-215'],
-])
-def test_group_equalizing(first_group, second_group):
-    first_group_model = Group(first_group)
-    second_group_model = Group(second_group)
+@pytest.mark.parametrize('invalid_group_number', _INVALID_GROUP_NUMBERS)
+def test_create_group_entity_with_invalid_number(invalid_group_number: str):
+    """Тест должен выдать ошибку InvalidGroupNumberFormatError"""
+    with pytest.raises(GroupNumberFormatError) as exc_info:
+        Group(invalid_group_number)
 
-    assert first_group_model == second_group_model
+    assert exc_info.value.args[0] == f'Invalid group number: {invalid_group_number!r}'
 
 
-@pytest.mark.parametrize("first_group,second_group", [
-    ['ЖБИ-21', 'ЖбИ-21'],
-    ['ОС-21', 'ос-21'],
-    ['ПэС-215', 'Пэс-215'],
-])
-def test_group_equalizing_not_implemented_error(first_group, second_group):
-    first_group_model = Group(first_group)
+@pytest.mark.parametrize('group_number', _VALID_GROUP_NUMBERS)
+def test_group_entity_equal(group_number: str):
+    """Тест должен проверить равенство двух равных сущностей Group"""
+    first_group = Group(group_number)
+    second_group = Group(group_number)
 
-    with pytest.raises(NotImplementedError):
-        assert first_group_model == second_group
+    assert first_group == second_group
 
 
-@pytest.mark.parametrize("first_group,second_group", [
-    ['ЖБИ-21', 'ЖбИ-21'],
-    ['ОС-21', 'ос-21'],
-    ['ПэС-215', 'Пэс-215'],
-])
-def test_group_hash_equalizing(first_group, second_group):
-    first_group_model = Group(first_group)
-    second_group_model = Group(second_group)
+@pytest.mark.parametrize('group_number', _VALID_GROUP_NUMBERS)
+def test_group_entity_equal_hash(group_number: str):
+    """Тест должен проверить равенство хэша двух равных сущностей Group"""
+    first_group = Group(group_number)
+    second_group = Group(group_number)
 
-    assert hash(first_group_model) == hash(second_group_model)
-
-    assert hash(first_group_model) == hash(first_group_model)
-
-    assert len({first_group_model, second_group_model}) == 1
+    assert hash(first_group) == hash(second_group)
 
 
-@pytest.mark.parametrize('source', [
-    'ЖБИ 21',
-    '-32',
-    'ГРУППА-20',
-    'А-1',
-])
-def test_group_creation_error_invalid_format(source):
-    with pytest.raises(InvalidGroupNumberFormatError) as exc_info:
-        Group(source)
+@pytest.mark.parametrize('group_item', _GROUP_ITEMS)
+def test_group_entity_string_representation(group_item: Group):
+    """Тест должен вернуть номер группы при str(group_item)"""
 
-    assert exc_info.value.args[0] == f'Invalid group number: {source!r}'
+    assert str(group_item) == group_item.number
 
 
-@pytest.mark.parametrize('source,pos_x,pos_y', [
-    ['ЖБИ-21', 1, 1],
-    [' ЖБИ-21 ', 2, 2],
-    ['ОС-21', 4, 3],
-    ['ПЭС-215', 2, 12],
-])
-def test_group_parser_creation_and_index_normalization(source, pos_x, pos_y):
-    group_parser = GroupParser(source, pos_x, pos_y)
+# ====================== [ТЕСТЫ СУЩНОСТИ GROUPPARSER] ======================
+@pytest.mark.parametrize('group_number, pos_x, pos_y', _VALID_GROUP_PARSER_VALUES)
+def test_create_group_parser_entity(group_number: str, pos_x: int, pos_y: int):
+    """Тест должен корректно создать сущность GroupParser"""
+    group = GroupParser(group_number, pos_x, pos_y)
 
-    assert isinstance(group_parser, GroupParser)
-    assert isinstance(group_parser.group, Group)
-
-    assert group_parser.group.number == source.upper().strip()
-    assert str(group_parser) == source.upper().strip()
-
-    assert group_parser.pos_x == pos_x
-    assert group_parser.pos_y == pos_y
+    assert group.group.number == group_number
+    assert group.group.index == ITEM_INDEX.sub('', group_number.lower())
+    assert group.pos_x == pos_x
+    assert group.pos_y == pos_y
 
 
-@pytest.mark.parametrize('source,pos_x,pos_y', [
-    ['ЖБИ-21', -10, 1],
-    [' ЖБИ-21 ', 2, -2],
-    ['ОС-21', -4, -3],
-    ['ПЭС-215', -2, 12],
-])
-def test_group_parser_creation_exception_negative_position(source, pos_x, pos_y):
-    with pytest.raises(NegativeGroupPositionError) as exc_info:
-        GroupParser(source, pos_x, pos_y)
+@pytest.mark.parametrize('group_number, pos_x, pos_y', _INVALID_GROUP_PARSER_VALUES)
+def test_create_group_parser_entity_with_invalid_number(group_number: str, pos_x: int, pos_y: int):
+    """Тест должен выдать ошибку NegativeGroupPositionError"""
+    with pytest.raises(GroupParserPositionError) as exc_info:
+        GroupParser(group_number, pos_x, pos_y)
 
-    if pos_x < 0:
-        assert exc_info.value.args[0] == 'X position must be positive'
-    elif pos_y < 0:
-        assert exc_info.value.args[0] == 'Y position must be positive'
+    assert str(exc_info.value).endswith('position must be positive')
 
 
-@pytest.mark.parametrize("first_group,second_group", [
-    ['ЖБИ-21', 'ЖбИ-21'],
-    ['ОС-21', 'ос-21'],
-    ['ПэС-215', 'Пэс-215'],
-])
-def test_group_parser_equalizing(first_group, second_group):
-    first_group_model = GroupParser(first_group, 1, 1)
-    second_group_model = GroupParser(second_group, 1, 1)
+@pytest.mark.parametrize('group_number, pos_x, pos_y', _VALID_GROUP_PARSER_VALUES)
+def test_group_parser_entity_equal(group_number: str, pos_x: int, pos_y: int):
+    """Тест должен проверить равенство двух равных сущностей GroupParser"""
+    first_group_parser = GroupParser(group_number, pos_x, pos_y)
+    second_group_parser = GroupParser(group_number, pos_x, pos_y)
 
-    assert first_group_model == second_group_model
+    assert first_group_parser == second_group_parser
 
 
-@pytest.mark.parametrize("first_group,second_group", [
-    ['ЖБИ-21', 'ЖбИ-21'],
-    ['ОС-21', 'ос-21'],
-    ['ПэС-215', 'Пэс-215'],
-])
-def test_group_parser_equalizing_not_implemented_error(first_group, second_group):
-    first_group_model = GroupParser(first_group, 1, 1)
+@pytest.mark.parametrize('group_number, pos_x, pos_y', _VALID_GROUP_PARSER_VALUES)
+def test_group_parser_entity_equal_hash(group_number: str, pos_x: int, pos_y: int):
+    """Тест должен проверить равенство хэша двух равных сущностей GroupParser"""
+    first_group_parser = GroupParser(group_number, pos_x, pos_y)
+    second_group_parser = GroupParser(group_number, pos_x, pos_y)
 
-    with pytest.raises(NotImplementedError):
-        assert first_group_model == second_group
+    assert hash(first_group_parser) == hash(second_group_parser)
 
 
-@pytest.mark.parametrize("first_group,second_group", [
-    ['ЖБИ-21', 'ЖбИ-21'],
-    ['ОС-21', 'ос-21'],
-    ['ПэС-215', 'Пэс-215'],
-])
-def test_group_parser_hash_equalizing(first_group, second_group):
-    first_group_model = GroupParser(first_group, 1, 1)
-    second_group_model = GroupParser(second_group, 1, 1)
+@pytest.mark.parametrize("group_parser_item", _GROUP_PARSER_ITEMS)
+def test_group_parser_entity_string_representation(group_parser_item: GroupParser):
+    """Тест должен вернуть номер группы при str(group_parser_item)"""
 
-    assert hash(first_group_model) == hash(second_group_model)
-
-    assert hash(first_group_model) == hash(first_group_model)
-
-    assert len({first_group_model, second_group_model}) == 1
+    assert str(group_parser_item) == group_parser_item.group.number

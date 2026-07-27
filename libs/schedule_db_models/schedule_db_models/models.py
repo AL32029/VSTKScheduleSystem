@@ -4,7 +4,7 @@ from sqlalchemy import String, Integer, Date, Time, ForeignKey, BigInteger, Smal
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
-# [MISC][INPROGRESS] Доделать модели
+# [MISC][DONE] Доделать модели
 class Base(DeclarativeBase):
     pass
 

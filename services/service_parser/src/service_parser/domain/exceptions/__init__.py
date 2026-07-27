@@ -1,7 +1,7 @@
-from .parser_exceptions import InvalidGroupNumberFormatError, NegativeGroupPositionError, InvalidLessonEndTime, \
-    MissingLessonNameError, LessonNotFoundError, LessonOverlapError
+from .parser_exceptions import GroupNumberFormatError, GroupParserPositionError, LessonEndTimeError, \
+    LessonEmptyNameError, LessonNotFoundError, LessonOverlapError
 
 __all__ = [
-    'InvalidGroupNumberFormatError', 'NegativeGroupPositionError', 'InvalidLessonEndTime',
-    'MissingLessonNameError', 'LessonNotFoundError', 'LessonOverlapError'
+    'GroupNumberFormatError', 'GroupParserPositionError', 'LessonEndTimeError',
+    'LessonEmptyNameError', 'LessonNotFoundError', 'LessonOverlapError'
 ]

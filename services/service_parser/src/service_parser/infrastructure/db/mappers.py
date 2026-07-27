@@ -4,8 +4,8 @@ from typing import Iterable
 from schedule_db_models.models import GroupORM, CabinetORM, LessonORM, LessonCabinetORM
 
 from service_parser.domain.entities import Group, Cabinet, Lesson, DaySchedule
-from service_parser.domain.exceptions.parser_exceptions import SendingScheduleForSomeGroups, \
-    SendingScheduleForSomeDates, SendingScheduleGroupNotFound, SendingScheduleDateNotFound
+from service_parser.domain.exceptions.parser_exceptions import ScheduleForSomeGroupsError, \
+    ScheduleForSomeDatesError, SavingDayScheduleGroupNotFound, SavingDayScheduleDateNotFound
 
 
 def group_domain_to_orm(group: Group) -> GroupORM:
@@ -94,17 +94,17 @@ def lessons_orm_to_day_schedule_domain(schedule: Iterable[LessonORM], check_redi
         schedule_lessons.append(lesson_orm_to_domain(lesson, check_redirect))
 
     if schedule_group is None:
-        raise SendingScheduleGroupNotFound('There is no group in the lessons list')
+        raise SavingDayScheduleGroupNotFound('There is no group in the lessons list')
 
     if schedule_date is None:
-        raise SendingScheduleDateNotFound('There is no date in the lessons list')
+        raise SavingDayScheduleDateNotFound('There is no date in the lessons list')
 
     if len(groups_found) > 1:
-        raise SendingScheduleForSomeGroups(f'The lessons list contains pairs for different '
+        raise ScheduleForSomeGroupsError(f'The lessons list contains pairs for different '
                                            f'groups: {', '.join(str(group) for group in groups_found)}')
 
     if len(schedule_dates) > 1:
-        raise SendingScheduleForSomeDates(f'The lessons list contains pairs for different dates: '
+        raise ScheduleForSomeDatesError(f'The lessons list contains pairs for different dates: '
                                           f'{', '.join(str(schedule_date) for schedule_date in schedule_dates)}')
 
     return DaySchedule.from_existing(schedule_date, schedule_group, schedule_lessons)

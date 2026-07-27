@@ -6,13 +6,8 @@ from service_parser.domain.entities import Cabinet
 
 class CabinetRepository(ABC):
     @abstractmethod
-    async def save(self, cabinet: Cabinet) -> None:
-        """Сохранение кабинета в БД"""
-        raise NotImplementedError
-
-    @abstractmethod
-    async def save_all(self, cabinets: Iterable[Cabinet]) -> None:
-        """Массовое сохранение кабинетов в БД"""
+    async def save(self, cabinet: Iterable[Cabinet]) -> None:
+        """Сохранение кабинетов в БД"""
         raise NotImplementedError
 
     @abstractmethod

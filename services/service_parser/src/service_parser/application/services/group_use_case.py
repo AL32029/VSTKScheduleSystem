@@ -17,7 +17,7 @@ class CreateGroupUseCase(GroupUseCase):
     async def execute(self, group: str | Group) -> Group:
         group_model = _get_group_model(group)
 
-        await self.repo.save(group_model)
+        await self.repo.save([group_model])
 
         return group_model
 

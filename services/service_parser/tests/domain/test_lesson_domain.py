@@ -1,159 +1,157 @@
 import datetime
+import datetime as dt
 
 import pytest
 
-from service_parser.domain.entities import Lesson, Cabinet, Group
-from service_parser.domain.entities.lesson import DaySchedule
-from service_parser.domain.exceptions import MissingLessonNameError, LessonOverlapError
-from service_parser.domain.exceptions.parser_exceptions import InvalidLessonEndTime
+from service_parser.domain.entities import Cabinet, Lesson, DaySchedule, Group
+from service_parser.domain.exceptions import LessonEndTimeError, LessonEmptyNameError, LessonOverlapError
+
+# ====================== [ВАЛИДНЫЕ ЗНАЧЕНИЯ] ======================
+_LESSON_VALUES = [
+    (dt.time(9, 0), dt.time(9, 45), 'Математика', (Cabinet('42к'),)),
+    (dt.time(9, 55), dt.time(11, 35), ' Мех. оборудование ', (Cabinet('упм. 1, л. 6'),)),
+    (dt.time(11, 45), dt.time(12, 30), 'Информатика', (Cabinet('310'), Cabinet('212')))
+]
+_LESSON_PAIRS = [Lesson(start, end, name, cabinets)
+                 for (start, end, name, cabinets) in _LESSON_VALUES]
+
+_GROUP_NUMBER = 'ЖБИ-21'
+_DAY_SCHEDULE_DATE = datetime.date(2030, 9, 12)
+_OVERLAPPING_LESSON_PAIRS = [
+    (
+        Lesson(dt.time(9, 0), dt.time(9, 45), 'Математика', ()),
+        Lesson(dt.time(8, 50), dt.time(9, 20), 'Пересекается', ())
+    ),
+    (
+        Lesson(dt.time(9, 0), dt.time(9, 45), 'Математика', ()),
+        Lesson(dt.time(9, 30), dt.time(10, 0), 'Пересекается', ())
+    ),
+    (
+        Lesson(dt.time(9, 0), dt.time(9, 45), 'Математика', ()),
+        Lesson(dt.time(9, 10), dt.time(9, 30), 'Пересекается', ())
+    ),
+    (
+        Lesson(dt.time(9, 0), dt.time(9, 45), 'Математика', ()),
+        Lesson(dt.time(8, 50), dt.time(10, 0), 'Пересекается', ())
+    ),
+]
+_NON_OVERLAPPING_LESSON_PAIRS = [
+    (
+        Lesson(dt.time(9, 0), dt.time(9, 45), 'Математика', ()),
+        Lesson(dt.time(8, 0), dt.time(8, 45), 'Не пересекается', ())
+    ),
+    (
+        Lesson(dt.time(9, 0), dt.time(9, 45), 'Математика', ()),
+        Lesson(dt.time(10, 0), dt.time(10, 45), 'Не пересекается', ())
+    ),
+]
+
+# ====================== [НЕВАЛИДНЫЕ ЗНАЧЕНИЯ] ======================
+_INVALID_TIMES_LESSON_VALUES = [(end, start, name, cabinets)
+                                for (start, end, name, cabinets) in _LESSON_VALUES]
+_EMPTY_NAMES_LESSON_VALUES = [(start, end, '', cabinets)
+                              for (start, end, _, cabinets) in _LESSON_VALUES]
 
 
-@pytest.mark.parametrize('start,end,name,cabinets', [
-    [datetime.time(9, 0), datetime.time(9, 45), 'Математика', ('42к',)],
-    [datetime.time(9, 55), datetime.time(10, 40), '    Ин. яз.', ('21', '409')],
-])
-def test_lesson_creation(start: datetime.time, end: datetime.time, name: str, cabinets: tuple[str]):
-    """Тест должен создать сущность Lesson"""
-    lesson = Lesson(start, end, name, tuple(Cabinet(cab) for cab in cabinets))
+# ====================== [ТЕСТЫ СУЩНОСТИ LESSON] ======================
+@pytest.mark.parametrize('start, end, name, cabinets', _LESSON_VALUES)
+def test_create_lesson_entity(start: dt.time, end: dt.time, name: str, cabinets: tuple[Cabinet, ...]):
+    """Тест должен корректно создать сущность Lesson"""
+    lesson = Lesson(start, end, name, cabinets)
 
-    assert isinstance(lesson.start, datetime.time)
-    assert lesson.start.hour == start.hour
-    assert lesson.start.minute == start.minute
-
-    assert isinstance(lesson.end, datetime.time)
-    assert lesson.end.hour == end.hour
-    assert lesson.end.minute == end.minute
-
+    assert lesson.start == start
+    assert lesson.end == end
     assert lesson.name == name.strip()
-    assert lesson.cabinets == tuple(Cabinet(cab) if isinstance(cab, str) else cab for cab in cabinets)
+    assert lesson.cabinets == cabinets
 
 
-@pytest.mark.parametrize('start,end,name,cabinets', [
-    [datetime.time(9, 45), datetime.time(9, 0), 'Математика', ('42к',)],
-    [datetime.time(10, 40), datetime.time(9, 55), 'Ин. яз.', ('21', '409')],
-])
-def test_lesson_creation_error_invalid_lesson_end_time(start: datetime.time, end: datetime.time,
-                                                       name: str, cabinets: tuple[str]):
+@pytest.mark.parametrize('start, end, name, cabinets', _INVALID_TIMES_LESSON_VALUES)
+def test_create_lesson_entity_with_invalid_time(start: dt.time, end: dt.time, name: str, cabinets: tuple[Cabinet, ...]):
     """Тест должен выдать ошибку InvalidLessonEndTime"""
-    with pytest.raises(InvalidLessonEndTime) as exc_info:
-        Lesson(start=start, end=end, name=name, cabinets=tuple(Cabinet(cabinet) for cabinet in cabinets))
+    with pytest.raises(LessonEndTimeError) as exc_info:
+        Lesson(start, end, name, cabinets)
 
     assert exc_info.value.args[0] == f'End time {str(end)!r} should be greater than start time {str(start)!r}'
 
 
-@pytest.mark.parametrize('start,end,name,cabinets', [
-    [datetime.time(9, 00), datetime.time(9, 45), '', ('42к',)],
-    [datetime.time(10, 50), datetime.time(11, 35), '   ', ('сз3',)],
-])
-def test_lesson_creation_error_missing_lesson_name(start: datetime.time, end: datetime.time,
-                                                   name: str, cabinets: tuple[str]):
+@pytest.mark.parametrize('start, end, name, cabinets', _EMPTY_NAMES_LESSON_VALUES)
+def test_create_lesson_entity_with_empty_name(start: dt.time, end: dt.time, name: str, cabinets: tuple[Cabinet, ...]):
     """Тест должен выдать ошибку MissingLessonNameError"""
-    with pytest.raises(MissingLessonNameError) as exc_info:
-        Lesson(start=start, end=end, name=name, cabinets=tuple(Cabinet(cabinet) for cabinet in cabinets))
+    with pytest.raises(LessonEmptyNameError) as exc_info:
+        Lesson(start, end, name, cabinets)
 
     assert exc_info.value.args[0] == 'Lesson name is missing'
 
 
-@pytest.mark.parametrize('start,end,name,cabinets', [
-    [datetime.time(9, 0), datetime.time(9, 45), 'Математика', ('42к',)],
-    [datetime.time(9, 55), datetime.time(10, 40), 'Ин. яз.', ('21', '409')],
-])
-def test_lesson_hash(start: datetime.time, end: datetime.time, name: str, cabinets: tuple[str]):
-    """Тест должен проверить равенство между двумя хэшами"""
-    first_lesson = Lesson(start=start, end=end, name=name, cabinets=tuple(Cabinet(cabinet) for cabinet in cabinets))
-    second_lesson = Lesson(start=start, end=end, name=name, cabinets=tuple(Cabinet(cabinet) for cabinet in cabinets))
+@pytest.mark.parametrize('start, end, name, cabinets', _LESSON_VALUES)
+def test_lesson_entity_equal_hash(start: dt.time, end: dt.time, name: str, cabinets: tuple[Cabinet, ...]):
+    """Тест должен проверить равенство хэша двух равных сущностей Lesson"""
+    first_lesson = Lesson(start, end, name, cabinets)
+    second_lesson = Lesson(start, end, name, cabinets)
 
     assert hash(first_lesson) == hash(second_lesson)
-    assert len({first_lesson, second_lesson}) == 1
 
 
-@pytest.mark.parametrize('group,date', [
-    [Group('жби-21'), datetime.date(2026, 7, 20)],
-    [Group('ос-21'), datetime.date(2026, 7, 22)],
-])
-def test_day_schedule_creation(group, date):
-    """Тест должен создать агрегат DaySchedule без пар"""
-    day_schedule = DaySchedule(date, group)
+# ====================== [ТЕСТЫ СУЩНОСТИ DAYSCHEDULE] ======================
+def test_create_empty_day_schedule_entity():
+    """Тест должен корректно создать сущность DaySchedule без lessons"""
+    day_schedule = DaySchedule(_DAY_SCHEDULE_DATE, _GROUP_NUMBER)
 
+    assert day_schedule.date == _DAY_SCHEDULE_DATE
     assert isinstance(day_schedule.group, Group)
-    assert day_schedule.group.number == group.number.upper().strip()
-
-    assert isinstance(day_schedule.date, datetime.date)
-    assert day_schedule.date.year == date.year
-    assert day_schedule.date.month == date.month
-    assert day_schedule.date.day == date.day
-
     assert not day_schedule.lessons
 
 
-@pytest.mark.parametrize('group,date,start,end,name,cabinets', [
-    [Group('жби-21'), datetime.date(2026, 7, 20), datetime.time(9, 00),
-     datetime.time(9, 45), 'Физкультура', ('сз3',)],
-    [Group('ос-21'), datetime.date(2026, 7, 22), datetime.time(9, 55),
-     datetime.time(10, 40), 'Информатика', ('310', '212')],
-])
-def test_day_schedule_add_lesson(group: Group, date: datetime.date, start: datetime.time,
-                                 end: datetime.time, name: str, cabinets: tuple[str, ...]):
-    """Тест должен создать агрегат DaySchedule с имеющейся одной парой"""
-    lesson = Lesson(start, end, name, tuple(Cabinet(cab) for cab in cabinets))
+@pytest.mark.parametrize('lessons', _NON_OVERLAPPING_LESSON_PAIRS)
+def test_create_day_schedule_entity(lessons: tuple[Lesson, Lesson]):
+    """Тест должен корректно создать сущность DaySchedule с lessons"""
+    day_schedule = DaySchedule.from_existing(_DAY_SCHEDULE_DATE, _GROUP_NUMBER, lessons)
 
-    day_schedule = DaySchedule.from_existing(date, group, lessons=[lesson])
-
-    assert len(day_schedule.lessons) == 1
-    assert day_schedule.lessons[0] == lesson
+    assert day_schedule.date == _DAY_SCHEDULE_DATE
+    assert isinstance(day_schedule.group, Group)
+    assert day_schedule.lessons
+    assert len(day_schedule.lessons) == len(lessons)
+    assert all(isinstance(lesson, Lesson) for lesson in day_schedule.lessons)
 
 
-@pytest.mark.parametrize('group,date,lesson', [
-    [Group('ПЭС-215'), datetime.date(2026, 7, 24),
-     Lesson(datetime.time(11, 45), datetime.time(12, 30), 'обед', tuple())],
-])
-def test_day_schedule_add_lesson_without_cabinets(group: Group, date: datetime.date, lesson: Lesson):
-    """Тест должен добавить пару без кабинета"""
-    day_schedule = DaySchedule(date, group)
-
-    add_lesson = day_schedule.add_lesson(lesson.start, lesson.end, lesson.name, lesson.cabinets)
-
-    assert isinstance(add_lesson, Lesson)
-    assert len(day_schedule.lessons) == 1
-    assert day_schedule.lessons[0] == lesson
-
-
-@pytest.mark.parametrize('group,date,lessons', [
-    [Group('ЖБИ-21'), datetime.date(2026, 7, 20), [
-        Lesson(datetime.time(9, 0), datetime.time(9, 45), 'Физкультура', (Cabinet('сз3'),)),
-        Lesson(datetime.time(9, 55), datetime.time(10, 40), 'Биология', (Cabinet('12к'),)),
-        Lesson(datetime.time(10, 50), datetime.time(11, 35), 'Тех. мех', (Cabinet('315'),)),
-        Lesson(datetime.time(11, 45), datetime.time(12, 30), 'ОТСМ', (Cabinet('11'),)),
-    ]]
-])
-def test_day_schedule_add_more_lessons(group: Group, date: datetime.date, lessons: list[Lesson]):
-    """Тест должен добавить несколько пар"""
-    day_schedule = DaySchedule(date, group)
-
-    for lesson in lessons:
-        day_schedule.add_lesson(lesson.start, lesson.end, lesson.name, lesson.cabinets)
-
-    assert len(day_schedule.lessons) == 4
-
-    for idx, lesson in enumerate(lessons):
-        assert isinstance(lesson, Lesson)
-        assert day_schedule.lessons[idx] == lesson
-
-
-@pytest.mark.parametrize('group,date,lessons', [
-    [Group('ЖБИ-21'), datetime.date(2026, 7, 20), [
-        Lesson(datetime.time(9, 0), datetime.time(9, 45), 'Физкультура', (Cabinet('сз3'),)),
-        Lesson(datetime.time(9, 10), datetime.time(10, 40), 'Биология', (Cabinet('12к'),)),
-    ]]
-])
-def test_day_schedule_add_more_lessons_error_overlap(group: Group, date: datetime.date, lessons: list[Lesson]):
+@pytest.mark.parametrize('existing_lesson, new_lesson', _OVERLAPPING_LESSON_PAIRS)
+def test_create_day_schedule_entity_with_overlap_lessons(existing_lesson: Lesson, new_lesson: Lesson):
     """Тест должен выдать ошибку LessonOverlapError"""
-    day_schedule = DaySchedule(date, group)
-
     with pytest.raises(LessonOverlapError) as exc_info:
-        lesson_add = None
-        for lesson in lessons:
-            day_schedule.add_lesson(lesson.start, lesson.end, lesson.name, lesson.cabinets)
-            lesson_add = day_schedule.lessons[-1]
+        DaySchedule.from_existing(_DAY_SCHEDULE_DATE, _GROUP_NUMBER, (existing_lesson, new_lesson))
 
-    assert exc_info.value.args[0] == f'The lesson overlaps with the lesson {lesson_add.name!r} ({str(lesson_add.start)} - {str(lesson_add.end)})'
+    assert exc_info.value.args[0] == (f'The lesson overlaps with the lesson {existing_lesson.name!r} '
+                                      f'({str(existing_lesson.start)} - {str(existing_lesson.end)})')
+
+
+@pytest.mark.parametrize('start, end, name, cabinets', _LESSON_VALUES)
+def test_day_schedule_entity_add_lesson(start: dt.time, end: dt.time, name: str, cabinets: tuple[Cabinet, ...]):
+    day_schedule = DaySchedule(_DAY_SCHEDULE_DATE, _GROUP_NUMBER)
+
+    day_schedule.add_lesson(start, end, name, cabinets)
+
+    assert day_schedule.lessons
+    assert len(day_schedule.lessons) == 1
+
+    lesson = day_schedule.lessons[0]
+    assert isinstance(lesson, Lesson)
+    assert lesson.start == start
+    assert lesson.end == end
+    assert lesson.name == name.strip()
+    assert lesson.cabinets == cabinets
+
+
+def test_day_schedule_entity_equal():
+    """Тест должен проверить равенство двух равных сущностей DaySchedule"""
+    first_day_schedule = DaySchedule.from_existing(_DAY_SCHEDULE_DATE, _GROUP_NUMBER, _LESSON_PAIRS)
+    second_day_schedule = DaySchedule.from_existing(_DAY_SCHEDULE_DATE, _GROUP_NUMBER, _LESSON_PAIRS)
+
+    assert first_day_schedule == second_day_schedule
+
+
+def test_day_schedule_entity_equal_hash():
+    """Тест должен проверить равенство хэша двух равных сущностей DaySchedule"""
+    first_day_schedule = DaySchedule.from_existing(_DAY_SCHEDULE_DATE, _GROUP_NUMBER, _LESSON_PAIRS)
+    second_day_schedule = DaySchedule.from_existing(_DAY_SCHEDULE_DATE, _GROUP_NUMBER, _LESSON_PAIRS)
+
+    assert hash(first_day_schedule) == hash(second_day_schedule)

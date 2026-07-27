@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from service_parser.domain.exceptions.parser_exceptions import InvalidGroupNumberFormatError, NegativeGroupPositionError
+from service_parser.domain.exceptions.parser_exceptions import GroupNumberFormatError, GroupParserPositionError
 from service_parser.domain.shared.patterns import ITEM_INDEX, GROUP_NUMBER
 
 
@@ -13,7 +13,7 @@ class Group:
         _number = number.upper().strip()
 
         if not GROUP_NUMBER.match(_number):
-            raise InvalidGroupNumberFormatError(f'Invalid group number: {_number!r}')
+            raise GroupNumberFormatError(f'Invalid group number: {number!r}')
 
         object.__setattr__(self, 'index', ITEM_INDEX.sub('', _number.lower()))
         object.__setattr__(self, 'number', _number)
@@ -39,10 +39,10 @@ class GroupParser:
 
     def __init__(self, group: str, pos_x: int, pos_y: int):
         if pos_x < 0:
-            raise NegativeGroupPositionError('X position must be positive')
+            raise GroupParserPositionError('X position must be positive')
 
         if pos_y < 0:
-            raise NegativeGroupPositionError('Y position must be positive')
+            raise GroupParserPositionError('Y position must be positive')
 
         object.__setattr__(self, 'group', Group(group))
         object.__setattr__(self, 'pos_x', pos_x)
@@ -52,7 +52,7 @@ class GroupParser:
         if not isinstance(other, GroupParser):
             raise NotImplementedError
 
-        return self.group == other.group
+        return (self.group, self.pos_x, self.pos_y) == (other.group, self.pos_x, self.pos_y)
 
     def __hash__(self):
         return hash((self.group, self.pos_x, self.pos_y))

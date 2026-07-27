@@ -17,7 +17,7 @@ class CreateCabinetUseCase(CabinetUseCase):
     async def execute(self, cabinet: str | Cabinet) -> Cabinet:
         cabinet_model = _get_cabinet_model(cabinet)
 
-        await self.repo.save(cabinet_model)
+        await self.repo.save([cabinet_model])
 
         return cabinet_model
 

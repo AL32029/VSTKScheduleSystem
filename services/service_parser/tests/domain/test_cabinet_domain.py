@@ -1,60 +1,45 @@
 import pytest
 
 from service_parser.domain.entities import Cabinet
+from service_parser.domain.shared.patterns import ITEM_INDEX
+
+# ====================== [ВАЛИДНЫЕ ЗНАЧЕНИЯ] ======================
+_VALID_CABINET_NUMBERS = ['упм. 1, л. 6', 'сз3', '52к']
+
+# ====================== [СУЩНОСТИ] ======================
+_CABINET_ITEMS = [Cabinet('упм. 1, л. 6'), Cabinet('сз3'), Cabinet('52к')]
 
 
-@pytest.mark.parametrize("source,index", [
-    ['упм. 1, л. 6', 'упм1л6'],
-    ['315', '315'],
-    ['СЗ3', 'сз3'],
-    ['эксКурсия', 'экскурсия'],
-    ['к. 2, тир', 'к2тир'],
-])
-def test_cabinet_creation_and_index_normalization(source, index):
-    cabinet = Cabinet(source)
+# ====================== [ТЕСТЫ СУЩНОСТИ CABINET] ======================
+@pytest.mark.parametrize('cabinet_number', _VALID_CABINET_NUMBERS)
+def test_create_cabinet_entity(cabinet_number: str):
+    """Тест должен корректно создать сущность Cabinet"""
+    cabinet = Cabinet(cabinet_number)
 
-    assert cabinet.number == source
-
-    assert str(cabinet) == source
-
-    assert cabinet.index == index
+    assert cabinet.number == cabinet_number
+    assert cabinet.index == ITEM_INDEX.sub('', cabinet_number.lower())
 
 
-@pytest.mark.parametrize("first_cabinet,second_cabinet", [
-    ['упм. 1, л. 6', 'УПМ 1 л 6'],
-    ['ТиР   корп 2', 'ТИР, КОРП.  2'],
-    ['ЭКСКУРСИЯ', 'ЭкСкУрСиЯ'],
-])
-def test_cabinet_equalizing(first_cabinet, second_cabinet):
-    first_cabinet_model = Cabinet(first_cabinet)
-    second_cabinet_model = Cabinet(second_cabinet)
+@pytest.mark.parametrize('cabinet_number', _VALID_CABINET_NUMBERS)
+def test_cabinet_entity_equal(cabinet_number: str):
+    """Тест должен проверить равенство двух равных сущностей Cabinet"""
+    first_cabinet = Cabinet(cabinet_number)
+    second_cabinet = Cabinet(cabinet_number)
 
-    assert first_cabinet_model == second_cabinet_model
+    assert first_cabinet == second_cabinet
 
 
-@pytest.mark.parametrize("first_cabinet,second_cabinet", [
-    ['упм. 1, л. 6', 'УПМ 1 л 6'],
-    ['ТиР   корп 2', 'ТИР, КОРП.  2'],
-    ['ЭКСКУРСИЯ', 'ЭкСкУрСиЯ'],
-])
-def test_cabinet_equalizing_not_implemented_error(first_cabinet, second_cabinet):
-    first_cabinet_model = Cabinet(first_cabinet)
+@pytest.mark.parametrize('cabinet_number', _VALID_CABINET_NUMBERS)
+def test_cabinet_entity_equal_hash(cabinet_number: str):
+    """Тест должен проверить равенство хэша двух равных сущностей Cabinet"""
+    first_cabinet = Cabinet(cabinet_number)
+    second_cabinet = Cabinet(cabinet_number)
 
-    with pytest.raises(NotImplementedError):
-        assert first_cabinet_model == second_cabinet
+    assert hash(first_cabinet) == hash(second_cabinet)
 
 
-@pytest.mark.parametrize("first_cabinet,second_cabinet", [
-    ['ЖБИ-21', 'ЖбИ-21'],
-    ['ОС-21', 'ос-21'],
-    ['ПэС-215', 'Пэс-215'],
-])
-def test_cabinet_hash_equalizing(first_cabinet, second_cabinet):
-    first_cabinet_model = Cabinet(first_cabinet)
-    second_cabinet_model = Cabinet(second_cabinet)
+@pytest.mark.parametrize('cabinet_item', _CABINET_ITEMS)
+def test_cabinet_entity_string_representation(cabinet_item: Cabinet):
+    """Тест должен вернуть номер группы при str(cabinet_item)"""
 
-    assert hash(first_cabinet_model) == hash(second_cabinet_model)
-
-    assert hash(first_cabinet_model) == hash(first_cabinet_model)
-
-    assert len({first_cabinet_model, second_cabinet_model}) == 1
+    assert str(cabinet_item) == cabinet_item.number

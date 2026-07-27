@@ -1,30 +1,32 @@
+# ====================== [БАЗОВЫЕ ИСКЛЮЧЕНИЯ] ======================
 class ParserServiceException(BaseException):
     """Базовое исключение Parser Service"""
     pass
 
 
-class InvalidGroupNumberFormatError(ParserServiceException):
+# ====================== [ОШИБКИ ВАЛИДАЦИИ] ======================
+class ValidationError(ParserServiceException):
+    """Ошибка валидации"""
+    pass
+
+
+class GroupNumberFormatError(ValidationError):
     """Ошибка формата номера группы"""
     pass
 
 
-class NegativeGroupPositionError(ParserServiceException):
-    """Ошибка отрицательной координаты GroupParser"""
+class GroupParserPositionError(ValidationError):
+    """Ошибка координат GroupParser"""
     pass
 
 
-class InvalidLessonEndTime(ParserServiceException):
-    """Ошибка раннего времени окончания пары относительно времени начала пары"""
+class LessonEndTimeError(ValidationError):
+    """Ошибка времени окончания пары"""
     pass
 
 
-class MissingLessonNameError(ParserServiceException):
+class LessonEmptyNameError(ValidationError):
     """Ошибка пустого названия пары"""
-    pass
-
-
-class LessonNotFoundError(ParserServiceException):
-    """Ошибка отсутствия пары"""
     pass
 
 
@@ -32,30 +34,84 @@ class LessonOverlapError(ParserServiceException):
     """Ошибка пересечения пары"""
     pass
 
-class ScheduleGroupNotFound(ParserServiceException):
-    """Ошибка отсутствия группы"""
-    pass
 
-class ScheduleCabinetNotFound(ParserServiceException):
-    """Ошибка отсутствия кабинета"""
-    pass
-
-class DayScheduleNotFound(ParserServiceException):
-    """Ошибка отсутствия пар на указанную дату"""
-    pass
-
-class SendingScheduleForSomeGroups(ParserServiceException):
+class ScheduleForSomeGroupsError(ParserServiceException):
     """Ошибка передачи списка пар для нескольких групп"""
     pass
 
-class SendingScheduleForSomeDates(ParserServiceException):
+
+class ScheduleForSomeDatesError(ParserServiceException):
     """Ошибка передачи списка пар для нескольких дат"""
     pass
 
-class SendingScheduleGroupNotFound(ParserServiceException):
+
+# ====================== [ОШИБКИ ОТСУТСТВИЯ ДАННЫХ] ======================
+class NotFoundError(ParserServiceException):
+    """Ошибка отсутствия данных"""
+    pass
+
+
+class GroupNotFound(NotFoundError):
+    """Ошибка отсутствия группы"""
+    pass
+
+
+class CabinetNotFound(NotFoundError):
+    """Ошибка отсутствия кабинета"""
+    pass
+
+
+class LessonNotFoundError(NotFoundError):
+    """Ошибка отсутствия пары"""
+    pass
+
+
+class DayScheduleNotFound(NotFoundError):
+    """Ошибка отсутствия пар на указанную дату"""
+    pass
+
+
+class SavingDayScheduleGroupNotFound(NotFoundError):
     """Ошибка отсутствия группы в списке пар"""
     pass
 
-class SendingScheduleDateNotFound(ParserServiceException):
+
+class SavingDayScheduleDateNotFound(NotFoundError):
     """Ошибка отсутствия даты в списке пар"""
+    pass
+
+
+# ====================== [ОШИБКИ ПАРСИНГА] ======================
+class ParsingError(ParserServiceException):
+    """Ошибка парсинга"""
+    pass
+
+
+class FetchingTableError(ParsingError):
+    """Ошибка извлечения таблицы"""
+    pass
+
+
+class ParsingMatrixError(ParsingError):
+    """Ошибка преобразования таблицы в матрицу"""
+    pass
+
+
+class ParsingDateError(ParsingError):
+    """Ошибка парсинга даты расписания"""
+    pass
+
+
+class ParsingLessonTimesError(ParsingError):
+    """Ошибка парсинга времени расписания"""
+    pass
+
+
+class ParsingGroupsError(ParsingError):
+    """Ошибка парсинга групп"""
+    pass
+
+
+class ParsingDayScheduleError(ParsingError):
+    """Ошибка парсинга расписания пар"""
     pass

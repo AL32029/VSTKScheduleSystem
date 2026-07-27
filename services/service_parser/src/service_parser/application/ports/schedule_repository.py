@@ -8,13 +8,8 @@ from service_parser.domain.entities.lesson import DaySchedule
 
 class ScheduleRepository(ABC):
     @abstractmethod
-    async def save(self, day_schedule: DaySchedule) -> None:
-        """Сохранение расписания для группы"""
-        raise NotImplementedError
-
-    @abstractmethod
-    async def save_all(self, day_schedules: Iterable[DaySchedule]) -> None:
-        """Массовое сохранение расписания для групп"""
+    async def save(self, day_schedule: Iterable[DaySchedule]) -> None:
+        """Сохранение расписания для групп"""
         raise NotImplementedError
 
     @abstractmethod

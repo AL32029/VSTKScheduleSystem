@@ -1,41 +1,25 @@
-import asyncio
 import os
 import pathlib
 import subprocess
-import sys
-from typing import AsyncIterable
+from typing import AsyncIterable, Any, Generator
 
 import pytest
-from dishka import make_async_container, Scope
+from dishka import make_async_container
 from pydantic import PostgresDsn
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncEngine, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, async_sessionmaker, AsyncSession
 from testcontainers.postgres import PostgresContainer
 
 from service_parser.application.ports import CabinetRepository, GroupRepository, ScheduleRepository
+from service_parser.infrastructure.config.database import DatabaseSettings
 from service_parser.infrastructure.di.providers import HTTPXClientProvider
 from service_parser.infrastructure.repositories import SQLAlchemyCabinetRepository, SQLAlchemyGroupRepository, \
     SQLAlchemyScheduleRepository
 
-if sys.platform == "win32":
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-
-@pytest.fixture(scope="session")
-def postgres_container():
-    with PostgresContainer('postgres:17') as postgres:
-        db_url = postgres.get_connection_url(driver='asyncpg')
-        os.environ["MIGRATION_DATABASE_URL"] = db_url
-        project_root = pathlib.Path(__file__).parent.parent.parent.parent
-        subprocess.run(
-            ["alembic", "-c", str(project_root / "schedule_alembic.ini"), "upgrade", "head"],
-            check=True,
-            env=os.environ,
-        )
-        yield postgres
-
-
+# ====================== [ФУНКЦИИ] ======================
 async def _truncate_all_tables(async_engine):
+    """Функция очистки всех таблиц БД"""
     async with async_engine.connect() as conn:
         await conn.execute(text("SET session_replication_role = 'replica';"))
         result = await conn.execute(text(
@@ -50,20 +34,42 @@ async def _truncate_all_tables(async_engine):
 
 
 @pytest.fixture(scope="function")
-async def test_container(request, postgres_container):
+async def test_container(request):
     from dishka import Provider, Scope, provide
 
+    # ====================== [ПРОВАЙДЕР БД] ======================
     class TestDatabaseProvider(Provider):
         scope = Scope.APP
 
         @provide
-        async def database_url(self) -> PostgresDsn:
-            pass
+        def database_settings(self) -> DatabaseSettings:
+            """Настройки БД"""
+            return DatabaseSettings()
 
         @provide
-        async def provide_engine(self) -> AsyncIterable[AsyncEngine]:
+        async def database_url(self, settings: DatabaseSettings) -> PostgresDsn:
+            """URL БД"""
+            return settings.URL
+
+        @provide
+        def postgres_container(self) -> Generator[PostgresContainer, Any, None]:
+            """Контейнер БД"""
+            with PostgresContainer('postgres:17') as postgres:
+                db_url = postgres.get_connection_url(driver='asyncpg')
+                os.environ["MIGRATION_DATABASE_URL"] = db_url
+                project_root = pathlib.Path(__file__).parent.parent.parent.parent
+                subprocess.run(
+                    ["alembic", "-c", str(project_root / "schedule_alembic.ini"), "upgrade", "head"],
+                    check=True,
+                    env=os.environ,
+                )
+                yield postgres
+
+        @provide
+        async def provide_engine(self, postgres: PostgresContainer) -> AsyncIterable[AsyncEngine]:
+            """Database engine"""
             engine = create_async_engine(
-                os.environ["MIGRATION_DATABASE_URL"],
+                postgres.get_connection_url(driver='asyncpg'),
                 echo=False,
                 pool_size=5,
                 pool_pre_ping=True,
@@ -73,6 +79,7 @@ async def test_container(request, postgres_container):
 
         @provide
         def provide_session_maker(self, async_engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
+            """Database session maker"""
             return async_sessionmaker(
                 async_engine,
                 expire_on_commit=False,
@@ -83,11 +90,13 @@ async def test_container(request, postgres_container):
         @provide(scope=Scope.REQUEST)
         async def provide_session(self, async_engine: AsyncEngine,
                                   session_maker: async_sessionmaker[AsyncSession]) -> AsyncIterable[AsyncSession]:
+            """Database session"""
             await _truncate_all_tables(async_engine)
 
             async with session_maker() as session:
                 yield session
 
+    # ====================== [ПРОВАЙДЕР РЕПОЗИТОРИЕВ] ======================
     class TestRepositoriesProvide(Provider):
         scope = Scope.REQUEST
 
@@ -110,21 +119,3 @@ async def test_container(request, postgres_container):
     )
     yield container
     await container.close()
-
-
-@pytest.fixture
-async def group_repository(test_container) -> GroupRepository:
-    async with test_container(scope=Scope.REQUEST) as container:
-        yield await container.get(GroupRepository)
-
-
-@pytest.fixture
-async def cabinet_repository(test_container) -> SQLAlchemyCabinetRepository:
-    async with test_container(scope=Scope.REQUEST) as container:
-        yield await container.get(CabinetRepository)
-
-
-@pytest.fixture
-async def schedule_repository(test_container) -> SQLAlchemyScheduleRepository:
-    async with test_container(scope=Scope.REQUEST) as container:
-        yield await container.get(ScheduleRepository)

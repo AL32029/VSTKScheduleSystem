@@ -10,6 +10,8 @@ from numpy import vectorize, argwhere, ndarray, dtype
 
 from service_parser.application.ports.schedule_provider import ScheduleProvider
 from service_parser.domain.entities import DaySchedule, Group, GroupParser, Lesson, Cabinet
+from service_parser.domain.exceptions.parser_exceptions import FetchingTableError, ParsingMatrixError, ParsingDateError, \
+    ParsingLessonTimesError, ParsingGroupsError, ParsingDayScheduleError
 from service_parser.domain.shared.patterns import CABINET_NUMBER
 
 
@@ -17,6 +19,7 @@ class HTTPXScheduleProvider(ScheduleProvider):
     _DATE_WORD_PATTERN = re.compile(r'((\d{2})\s*+([а-я]+)\s*+(\d{4}))')
     _DATE_NUMBERED_PATTERN = re.compile(r'((\d{2}).(\d{2}).(\d{4}))')
     _LESSONS_TIME_PATTERN = re.compile(r'^(\d{1,2})[.:](\d{1,2})\s*[—\-–−-]\s*(\d{1,2})[.:](\d{1,2})$')
+    _SCHEDULE_SITE_URL = 'https://vgtk.by/schedule/lessons/day-{schedule_type}.php'
 
     _MONTH_TO_NUMBER = {
         'января': 1,
@@ -37,34 +40,18 @@ class HTTPXScheduleProvider(ScheduleProvider):
         self.client = client
         self.schedule_type = schedule_type
 
-    async def get_schedule_for_groups(self, url: str) -> dict[Group, tuple[DaySchedule, ...]]:
-        # TODO: Реализовать кастомную ошибку при некорректном парсинге (return {})
-        html = await self._fetch_html(url)
+    async def get_schedule_for_groups(self) -> dict[Group, tuple[DaySchedule, ...]]:
+        html = await self._fetch_html(self._SCHEDULE_SITE_URL.format(schedule_type=self.schedule_type))
 
         table = self._fetch_table(html)
 
-        if table is None:
-            return {}
-
         matrix = self._parse_table_to_matrix(table)
-
-        if matrix is None:
-            return {}
 
         date_list = self._extract_dates(matrix)
 
-        if date_list is None:
-            return {}
-
         lessons_time = self._extract_times(matrix)
 
-        if lessons_time is None:
-            return {}
-
         groups = self._extract_groups(matrix)
-
-        if groups is None:
-            return {}
 
         group_lessons = self._extract_lessons(matrix, date_list, lessons_time, groups)
 
@@ -78,21 +65,21 @@ class HTTPXScheduleProvider(ScheduleProvider):
         return response.text
 
     @staticmethod
-    def _fetch_table(html: str) -> BeautifulSoup | None:
+    def _fetch_table(html: str) -> BeautifulSoup:
         soup = BeautifulSoup(html, 'lxml')
         table = soup.find('table', class_='excel')
 
         if not table:
-            return None
+            raise FetchingTableError(f'The HTML content does not contain a <table> with the class {'excel'!r}')
 
         return table
 
     @staticmethod
-    def _parse_table_to_matrix(table: BeautifulSoup) -> ndarray[tuple[int, int], dtype[Any]] | None:
+    def _parse_table_to_matrix(table: BeautifulSoup) -> ndarray[tuple[int, int], dtype[Any]]:
         rows_raw = [tr.find_all('td') for tr in table.find_all('tr')]
         rows_count = len(rows_raw)
         if rows_count == 0:
-            return None
+            raise ParsingMatrixError('The schedule table does not contain any rows')
 
         max_cols = 0
         rows = []
@@ -110,6 +97,9 @@ class HTTPXScheduleProvider(ScheduleProvider):
             if row_cols > max_cols:
                 max_cols = row_cols
 
+        if max_cols == 0:
+            raise ParsingMatrixError('The schedule table does not contain any columns')
+
         matrix = numpy.full((rows_count, max_cols), None, dtype=object)
 
         for r_idx, row_data in enumerate(rows):
@@ -124,15 +114,15 @@ class HTTPXScheduleProvider(ScheduleProvider):
 
         return matrix
 
-    def _extract_dates(self, matrix: ndarray[tuple[int, int], dtype[Any]]) -> tuple[datetime.date, ...] | None:
+    def _extract_dates(self, matrix: ndarray[tuple[int, int], dtype[Any]]) -> tuple[datetime.date, ...]:
         match_func = vectorize(lambda s: s and bool(
             self._DATE_WORD_PATTERN.findall(s) or self._DATE_NUMBERED_PATTERN.findall(s)
         ))
 
         mask = match_func(matrix)
 
-        if not (matrix_mask := matrix[mask]).all():
-            return None
+        if not (matrix_mask := matrix[mask]).any():
+            raise ParsingDateError('The schedule table does not contain a schedule date with a predefined format')
 
         date_list: list[datetime.date] = []
 
@@ -146,9 +136,6 @@ class HTTPXScheduleProvider(ScheduleProvider):
             if date := self._DATE_NUMBERED_PATTERN.findall(m_mask):
                 for d in date:
                     date_list.append(datetime.date(day=int(d[1]), month=int(d[2]), year=int(d[3])))
-
-        if not date_list:
-            return None
 
         date_list = list(sorted(date_list, key=lambda x: x))
 
@@ -165,19 +152,20 @@ class HTTPXScheduleProvider(ScheduleProvider):
         ))
 
         if not date_list:
-            return None
+            raise ParsingDateError('The schedule table does not contain the schedule date after '
+                                   'checking the items for date compliance')
 
         return tuple(date_list)
 
     def _extract_times(
             self, matrix: ndarray[tuple[int, int], dtype[Any]]
-    ) -> tuple[tuple[datetime.time, datetime.time], ...] | None:
+    ) -> tuple[tuple[datetime.time, datetime.time], ...]:
         match_func = vectorize(lambda s: s and bool(self._LESSONS_TIME_PATTERN.match(s)))
 
         mask = match_func(matrix)
 
-        if not (matrix_mask := matrix[mask]).all():
-            return None
+        if not (matrix_mask := matrix[mask]).any():
+            raise ParsingLessonTimesError('The schedule table does not contain pairs with a predefined format')
 
         lessons_time = []
 
@@ -195,20 +183,22 @@ class HTTPXScheduleProvider(ScheduleProvider):
             lessons_time.append(time_item)
 
         if not lessons_time:
-            return None
+            raise ParsingLessonTimesError('The schedule table does not contain the time of the pairs after '
+                                          'checking the elements that match the formats')
 
         return tuple(sorted(lessons_time, key=lambda x: x[0]))
 
     @staticmethod
-    def _extract_groups(matrix: ndarray[tuple[int, int], dtype[Any]]) -> tuple[GroupParser, ...] | None:
+    def _extract_groups(matrix: ndarray[tuple[int, int], dtype[Any]]) -> tuple[GroupParser, ...]:
         match_func = vectorize(lambda s: s and bool(CABINET_NUMBER.match(s)))
 
         mask = match_func(matrix)
 
-        if not (matrix_mask := matrix[mask]).all():
-            return None
+        if not (matrix_mask := matrix[mask]).any():
+            raise ParsingGroupsError('The schedule table does not contain groups with a predefined format')
 
-        groups = list(GroupParser(group=g, pos_x=int(x), pos_y=int(y)) for g, (y, x) in zip(matrix_mask, argwhere(mask)))
+        groups = list(GroupParser(group=g, pos_x=int(x), pos_y=int(y))
+                      for g, (y, x) in zip(matrix_mask, argwhere(mask)))
 
         return tuple(sorted(groups, key=lambda x: x.group.index))
 
@@ -247,17 +237,18 @@ class HTTPXScheduleProvider(ScheduleProvider):
                 ))
 
             if lessons:
+                if lessons[-1].name.lower() == 'обед':
+                    lessons.pop(-1)
+
+                if not lessons:
+                    continue
+
                 group_lessons[group.group].extend([
                     DaySchedule.from_existing(date, group.group, sorted(lessons, key=lambda x: x.start))
                     for date in date_list
                 ])
 
         if not group_lessons:
-            return {}
+            raise ParsingDayScheduleError('The schedule table does not contain any pairs')
 
-        lessons_return: dict[Group, tuple[DaySchedule, ...]] = {
-            k: tuple(sorted(v, key=lambda x: x.date))
-            for k, v in group_lessons.items()
-        }
-
-        return lessons_return
+        return group_lessons

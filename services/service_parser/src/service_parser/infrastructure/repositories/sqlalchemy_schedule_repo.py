@@ -1,65 +1,24 @@
 import datetime
 from collections import defaultdict
-from itertools import batched, chain
+from itertools import batched
 from typing import Iterable
 
-from schedule_db_models.models import GroupORM, CabinetORM, LessonORM
+from schedule_db_models.models import GroupORM, LessonORM
 from sqlalchemy import select, exists, delete, or_, and_
-from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from service_parser.application.ports.schedule_repository import ScheduleRepository
 from service_parser.domain.entities import DaySchedule, Group
-from service_parser.domain.exceptions.parser_exceptions import ScheduleGroupNotFound, ScheduleCabinetNotFound, \
-    DayScheduleNotFound
-from service_parser.infrastructure.db.mappers import cabinet_orm_to_domain, day_schedule_domain_to_lessons_orm, \
-    lessons_orm_to_day_schedule_domain, group_orm_to_domain, lesson_domain_in_orm
+from service_parser.domain.exceptions.parser_exceptions import GroupNotFound, DayScheduleNotFound
+from service_parser.infrastructure.db.mappers import lessons_orm_to_day_schedule_domain, group_orm_to_domain, \
+    lesson_domain_in_orm
 
 
 class SQLAlchemyScheduleRepository(ScheduleRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def save(self, day_schedule: DaySchedule, commit: bool = True) -> None:
-        group_is_exists = await self.session.scalar(
-            select(exists(GroupORM).where(GroupORM.index == day_schedule.group.index))
-        )
-
-        if not group_is_exists:
-            raise ScheduleGroupNotFound(f'Group {str(day_schedule.group)!r} not found')
-
-        cabinets_database = {
-            cabinet_orm_to_domain(cabinet)
-            async for cabinet in await self.session.stream_scalars(select(CabinetORM))
-        }
-
-        for lesson_index, lesson in enumerate(day_schedule.lessons):
-            if not lesson.cabinets:
-                continue
-
-            missing = set(lesson.cabinets) - cabinets_database
-
-            if missing:
-                raise ScheduleCabinetNotFound(f'The following classrooms are missing for the '
-                                              f'{lesson.name!r} (№{lesson_index + 1}) pair: '
-                                              f'{', '.join([cab.number for cab in missing])}')
-
-        stmt = (
-            delete(LessonORM).
-            where(
-                LessonORM.date == day_schedule.date,
-                LessonORM.group_index == day_schedule.group.index,
-            )
-        )
-
-        await self.session.execute(stmt)
-
-        if day_schedule.lessons:
-            self.session.add_all(day_schedule_domain_to_lessons_orm(day_schedule))
-
-        await self.session.commit()
-
-    async def save_all(self, day_schedules: Iterable[DaySchedule]) -> None:
+    async def save(self, day_schedules: Iterable[DaySchedule]) -> None:
         schedule_groups = {day_schedule.group for day_schedule in day_schedules}
         database_groups = {
             group_orm_to_domain(group)
@@ -69,7 +28,7 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
         }
 
         if (schedule_groups and not database_groups) or (len(database_groups) < len(schedule_groups)):
-            raise ScheduleGroupNotFound(f'The following groups are missing: '
+            raise GroupNotFound(f'The following groups are missing: '
                                         f'{', '.join(str(group) for group in schedule_groups - database_groups)}')
 
         schedule_updates = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
@@ -151,7 +110,7 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
         )
 
         if not group_is_exists:
-            raise ScheduleGroupNotFound(f'Group {str(group)!r} not found')
+            raise GroupNotFound(f'Group {str(group)!r} not found')
 
         stmt = (
             select(LessonORM).
@@ -183,7 +142,7 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
         }
 
         if (schedule_groups and not db_groups) or (len(db_groups) < len(schedule_groups)):
-            raise ScheduleGroupNotFound(f'The following groups are missing: '
+            raise GroupNotFound(f'The following groups are missing: '
                                         f'{', '.join(str(group) for group in schedule_groups - db_groups)}')
 
         items_return = defaultdict(lambda: defaultdict(list))

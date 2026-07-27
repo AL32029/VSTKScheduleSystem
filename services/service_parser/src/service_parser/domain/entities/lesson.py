@@ -4,7 +4,7 @@ from datetime import time
 from typing import Tuple, List, Iterable
 
 from service_parser.domain.entities import Group, Cabinet
-from service_parser.domain.exceptions import InvalidLessonEndTime, MissingLessonNameError, \
+from service_parser.domain.exceptions import LessonEndTimeError, LessonEmptyNameError, \
     LessonOverlapError
 
 
@@ -20,11 +20,11 @@ class Lesson:
 
     def __post_init__(self):
         if self.end < self.start:
-            raise InvalidLessonEndTime(f'End time {str(self.end)!r} should be '
+            raise LessonEndTimeError(f'End time {str(self.end)!r} should be '
                                        f'greater than start time {str(self.start)!r}')
 
         if not self.name.strip():
-            raise MissingLessonNameError('Lesson name is missing')
+            raise LessonEmptyNameError('Lesson name is missing')
 
         if self.name != self.name.strip():
             object.__setattr__(self, 'name', self.name.strip())
@@ -34,9 +34,9 @@ class Lesson:
 
 
 class DaySchedule:
-    def __init__(self, date: datetime.date, group: Group):
+    def __init__(self, date: datetime.date, group: str | Group):
         self._date = date
-        self._group = group
+        self._group = group if isinstance(group, Group) else Group(group)
         self._lessons: List[Lesson] = []
 
     @classmethod

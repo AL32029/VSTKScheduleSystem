@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from service_parser.application.ports import GroupRepository
 from service_parser.domain.entities import Group
-from service_parser.domain.exceptions.parser_exceptions import ScheduleGroupNotFound
+from service_parser.domain.exceptions.parser_exceptions import GroupNotFound
 from service_parser.infrastructure.db.mappers import group_domain_to_orm, group_orm_to_domain
 
 
@@ -15,13 +15,7 @@ class SQLAlchemyGroupRepository(GroupRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def save(self, group: Group) -> None:
-        group_orm = group_domain_to_orm(group)
-
-        await self.session.merge(group_orm)
-        await self.session.commit()
-
-    async def save_all(self, groups: Iterable[Group]) -> None:
+    async def save(self, groups: Iterable[Group]) -> None:
         stmt = (
             insert(GroupORM).
             values([
@@ -41,7 +35,7 @@ class SQLAlchemyGroupRepository(GroupRepository):
         group_orm = await self.session.get(GroupORM, group.index)
 
         if group_orm is None:
-            raise ScheduleGroupNotFound(f'Group {str(group)!r} not found')
+            raise GroupNotFound(f'Group {str(group)!r} not found')
 
         await self.session.delete(group_orm)
         await self.session.commit()
@@ -50,7 +44,7 @@ class SQLAlchemyGroupRepository(GroupRepository):
         group_orm: GroupORM | None = await self.session.get(GroupORM, group_index)
 
         if group_orm is None:
-            raise ScheduleGroupNotFound(f'Group with index {str(group_index)!r} not found')
+            raise GroupNotFound(f'Group with index {str(group_index)!r} not found')
 
         return group_orm_to_domain(group_orm)
 

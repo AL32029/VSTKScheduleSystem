@@ -6,13 +6,8 @@ from service_parser.domain.entities import Group
 
 class GroupRepository(ABC):
     @abstractmethod
-    async def save(self, group: Group) -> None:
-        """Сохранение группы в БД"""
-        raise NotImplementedError
-
-    @abstractmethod
-    async def save_all(self, groups: Iterable[Group]) -> None:
-        """Сохранение группы в БД"""
+    async def save(self, group: Iterable[Group]) -> None:
+        """Сохранение групп в БД"""
         raise NotImplementedError
 
     @abstractmethod

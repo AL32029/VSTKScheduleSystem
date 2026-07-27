@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from service_parser.application.ports import CabinetRepository
 from service_parser.domain.entities import Cabinet
-from service_parser.domain.exceptions.parser_exceptions import ScheduleCabinetNotFound
+from service_parser.domain.exceptions.parser_exceptions import CabinetNotFound
 from service_parser.infrastructure.db.mappers import cabinet_domain_to_orm, cabinet_orm_to_domain
 
 
@@ -15,13 +15,7 @@ class SQLAlchemyCabinetRepository(CabinetRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def save(self, cabinet: Cabinet) -> None:
-        cabinet_orm = cabinet_domain_to_orm(cabinet)
-
-        await self.session.merge(cabinet_orm)
-        await self.session.commit()
-
-    async def save_all(self, cabinets: Iterable[Cabinet]) -> None:
+    async def save(self, cabinets: Iterable[Cabinet]) -> None:
         stmt = (
             insert(CabinetORM).
             values([
@@ -41,7 +35,7 @@ class SQLAlchemyCabinetRepository(CabinetRepository):
         cabinet_orm: CabinetORM | None = await self.session.get(CabinetORM, cabinet_index)
 
         if cabinet_orm is None:
-            raise ScheduleCabinetNotFound(f'Cabinet with index {str(cabinet_index)!r} not found')
+            raise CabinetNotFound(f'Cabinet with index {str(cabinet_index)!r} not found')
 
         return cabinet_orm_to_domain(cabinet_orm)
 
