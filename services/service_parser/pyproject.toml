@@ -21,6 +21,7 @@ schedule-db-models = { path = "../../libs/schedule_db_models" }
 dishka = "^1.10.1"
 logging-json = "^0.6.0"
 structlog = "^26.1.0"
+redis = "^8.0.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.1.1"

@@ -7,7 +7,8 @@ from service_parser.domain.shared.patterns import ITEM_INDEX
 _VALID_CABINET_NUMBERS = ['упм. 1, л. 6', 'сз3', '52к']
 
 # ====================== [СУЩНОСТИ] ======================
-_CABINET_ITEMS = [Cabinet('упм. 1, л. 6'), Cabinet('сз3'), Cabinet('52к')]
+_CABINET_ITEMS = [Cabinet(cabinet)
+                  for cabinet in _VALID_CABINET_NUMBERS]
 
 
 # ====================== [ТЕСТЫ СУЩНОСТИ CABINET] ======================

@@ -25,7 +25,8 @@ class SQLAlchemyCabinetRepository(CabinetRepository):
                     if k != '_sa_instance_state'
                 }
                 for cabinet in cabinets
-            ])
+            ]).
+            on_conflict_do_nothing()
         )
 
         await self.session.execute(stmt)

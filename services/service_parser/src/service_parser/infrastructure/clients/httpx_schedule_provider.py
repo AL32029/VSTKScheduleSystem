@@ -1,4 +1,5 @@
 import datetime
+import hashlib
 import re
 from collections import defaultdict
 from typing import Any, Literal
@@ -7,11 +8,12 @@ import numpy
 from bs4 import BeautifulSoup
 from httpx import AsyncClient
 from numpy import vectorize, argwhere, ndarray, dtype
+from redis.asyncio import Redis
 
 from service_parser.application.ports.schedule_provider import ScheduleProvider
 from service_parser.domain.entities import DaySchedule, Group, GroupParser, Lesson, Cabinet
 from service_parser.domain.exceptions.parser_exceptions import FetchingTableError, ParsingMatrixError, ParsingDateError, \
-    ParsingLessonTimesError, ParsingGroupsError, ParsingDayScheduleError
+    ParsingLessonTimesError, ParsingGroupsError, ParsingDayScheduleError, ScheduleUnchangedError
 from service_parser.domain.shared.patterns import CABINET_NUMBER
 
 
@@ -36,18 +38,36 @@ class HTTPXScheduleProvider(ScheduleProvider):
         'декабря': 12
     }
 
-    def __init__(self, client: AsyncClient, schedule_type: Literal['today', 'tomorrow']):
+    def __init__(self, client: AsyncClient, redis_client: Redis, schedule_type: Literal['today', 'tomorrow']):
         self.client = client
+        self.redis_client = redis_client
         self.schedule_type = schedule_type
 
-    async def get_schedule_for_groups(self) -> dict[Group, tuple[DaySchedule, ...]]:
+    async def get_schedule_for_groups(self) -> dict[Group, list[DaySchedule]]:
         html = await self._fetch_html(self._SCHEDULE_SITE_URL.format(schedule_type=self.schedule_type))
 
         table = self._fetch_table(html)
 
+        table_hash = hashlib.md5(str(table).encode('utf-8')).hexdigest()
+
         matrix = self._parse_table_to_matrix(table)
 
         date_list = self._extract_dates(matrix)
+
+        dates_hash = hashlib.md5(str(date_list).encode('utf-8')).hexdigest()
+
+        check_hash = hashlib.md5(table_hash.encode('utf-8') + dates_hash.encode('utf-8')).hexdigest()
+
+        redis_key = f'schedule_table:hash:{self.schedule_type}'
+
+        redis_hash = await self.redis_client.get(redis_key)
+
+        if redis_hash:
+            cached_hash = redis_hash.decode('utf-8')
+            if cached_hash == check_hash:
+                raise ScheduleUnchangedError('The schedule has not changed since the last check')
+
+        await self.redis_client.set(redis_key, check_hash, ex=432000)
 
         lessons_time = self._extract_times(matrix)
 
@@ -90,7 +110,7 @@ class HTTPXScheduleProvider(ScheduleProvider):
             for cell in row:
                 colspan = int(cell.get('colspan', '1'))
                 rowspan = int(cell.get('rowspan', '1'))
-                text = cell.text or None
+                text = cell.text or ''
                 row_data.append((text, rowspan, colspan))
                 row_cols += colspan
             rows.append(row_data)
@@ -182,10 +202,6 @@ class HTTPXScheduleProvider(ScheduleProvider):
 
             lessons_time.append(time_item)
 
-        if not lessons_time:
-            raise ParsingLessonTimesError('The schedule table does not contain the time of the pairs after '
-                                          'checking the elements that match the formats')
-
         return tuple(sorted(lessons_time, key=lambda x: x[0]))
 
     @staticmethod
@@ -204,7 +220,7 @@ class HTTPXScheduleProvider(ScheduleProvider):
 
     def _extract_lessons(self, matrix: ndarray[tuple[int, int], dtype[Any]], date_list: tuple[datetime.date, ...],
                          lessons_time: tuple[tuple[datetime.time, datetime.time], ...],
-                         groups: tuple[GroupParser, ...]) -> dict[Group, tuple[DaySchedule, ...]]:
+                         groups: tuple[GroupParser, ...]) -> dict[Group, list[DaySchedule]]:
         group_lessons: dict[Group, list[DaySchedule]] = defaultdict(list[DaySchedule])
 
         lessons_count = len(lessons_time)
@@ -212,8 +228,7 @@ class HTTPXScheduleProvider(ScheduleProvider):
         for group in groups:
             lessons: list[Lesson] = []
             for l_idx, (lesson, cabinets) in enumerate(
-                    matrix[group.pos_y + 1:group.pos_y + lessons_count + 1,
-                    group.pos_x:group.pos_x + 2]
+                    matrix[group.pos_y + 1:group.pos_y + lessons_count, group.pos_x:group.pos_x + 2]
             ):
                 if group.group in group_lessons and lesson is None:
                     break
@@ -224,7 +239,7 @@ class HTTPXScheduleProvider(ScheduleProvider):
                 if lesson is None or not lesson.strip():
                     continue
 
-                if not self._LESSONS_TIME_PATTERN.match(matrix[group.pos_y + l_idx + 1, 1]):
+                if not self._LESSONS_TIME_PATTERN.match(matrix[group.pos_y + 1 + l_idx, 1]):
                     break
 
                 cabinets = tuple(cabinets.split('/')) if cabinets else tuple()
@@ -235,10 +250,12 @@ class HTTPXScheduleProvider(ScheduleProvider):
                     name=lesson,
                     cabinets=tuple(Cabinet(cab) for cab in cabinets)
                 ))
-
             if lessons:
-                if lessons[-1].name.lower() == 'обед':
-                    lessons.pop(-1)
+                while lessons and lessons[-1].name.lower() == 'обед':
+                    lessons.pop()
+
+                while lessons and lessons[0].name.lower() == 'обед':
+                    lessons.pop(0)
 
                 if not lessons:
                     continue

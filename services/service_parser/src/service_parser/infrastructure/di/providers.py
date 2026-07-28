@@ -1,12 +1,14 @@
-from typing import AsyncIterable
+from typing import AsyncIterable, Any, AsyncGenerator
 
 import httpx
 from dishka import Provider, Scope, provide
 from httpx import AsyncClient
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, async_sessionmaker, AsyncSession
 
 from service_parser.application.ports import CabinetRepository, GroupRepository, ScheduleRepository
 from service_parser.infrastructure.config.database import DatabaseSettings
+from service_parser.infrastructure.config.redis_settings import RedisSettings
 from service_parser.infrastructure.repositories import SQLAlchemyCabinetRepository, SQLAlchemyGroupRepository, \
     SQLAlchemyScheduleRepository
 
@@ -16,14 +18,13 @@ class DatabaseProvider(Provider):
 
     @provide
     def provide_engine(self, settings: DatabaseSettings) -> AsyncEngine:
-        engine = create_async_engine(
+        return create_async_engine(
             settings.URL.unicode_string(),
             echo=False,
             pool_pre_ping=True,
             pool_size=10,
             max_overflow=20,
         )
-        return engine
 
     @provide
     def provide_session_maker(self, engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
@@ -38,6 +39,18 @@ class DatabaseProvider(Provider):
     async def provide_session(self, session_maker: async_sessionmaker[AsyncSession]) -> AsyncIterable[AsyncSession]:
         async with session_maker() as session:
             yield session
+
+
+class RedisProvider(Provider):
+    scope = Scope.APP
+
+    @provide
+    async def redis_engine(self, settings: RedisSettings) -> AsyncIterable[Redis]:
+        client = Redis.from_url(
+            settings.URL.unicode_string()
+        )
+        yield client
+        await client.aclose()
 
 
 class RepositoriesProvide(Provider):
@@ -60,6 +73,6 @@ class HTTPXClientProvider(Provider):
     scope = Scope.APP
 
     @provide
-    async def provide_client(self) -> AsyncIterable[AsyncClient]:
+    async def provide_client(self) -> AsyncGenerator[AsyncClient, Any]:
         async with httpx.AsyncClient() as client:
             yield client

@@ -27,12 +27,12 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
             )
         }
 
-        if (schedule_groups and not database_groups) or (len(database_groups) < len(schedule_groups)):
+        if schedule_groups - database_groups:
             raise GroupNotFound(f'The following groups are missing: '
-                                        f'{', '.join(str(group) for group in schedule_groups - database_groups)}')
+                                f'{', '.join(str(group) for group in schedule_groups - database_groups)}')
 
         schedule_updates = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
-        for schedules in batched(day_schedules, 650):
+        for schedules in batched(day_schedules, 250):
             db_schedules = await self.get_many_by_groups([
                 (day_schedule.group, day_schedule.date)
                 for day_schedule in schedules
@@ -130,20 +130,17 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
     async def get_many_by_groups(self, items: Iterable[tuple[Group, datetime.date]]) -> Iterable[DaySchedule]:
         schedule_groups = {group for group, _ in items}
 
-        if not schedule_groups:
-            return []
-
         db_groups = {
-            group
+            group_orm_to_domain(group)
             async for group in await self.session.stream_scalars(
                 select(GroupORM).
                 where(GroupORM.index.in_(schedule_group.index for schedule_group in schedule_groups))
             )
         }
 
-        if (schedule_groups and not db_groups) or (len(db_groups) < len(schedule_groups)):
+        if schedule_groups - db_groups:
             raise GroupNotFound(f'The following groups are missing: '
-                                        f'{', '.join(str(group) for group in schedule_groups - db_groups)}')
+                                f'{', '.join(str(group) for group in schedule_groups - db_groups)}')
 
         items_return = defaultdict(lambda: defaultdict(list))
 
@@ -163,8 +160,7 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
                 items_return[lesson.date][group_orm_to_domain(lesson.group)].append(lesson)
 
         return {
-            lessons_orm_to_day_schedule_domain(lesson)
+            lessons_orm_to_day_schedule_domain(lessons)
             for date, groups in items_return.items() if groups
             for group, lessons in groups.items() if lessons
-            for lesson in lessons
         }

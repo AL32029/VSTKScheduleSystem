@@ -1,5 +1,5 @@
-from .providers import DatabaseProvider
+from .providers import DatabaseProvider, RedisProvider
 
 __all__ = [
-    'DatabaseProvider'
+    'DatabaseProvider', 'RedisProvider'
 ]

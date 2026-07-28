@@ -45,3 +45,23 @@ async def html_content_with_invalid_date_format(schedule_provider, httpx_mock) -
 async def html_content_with_older_date(schedule_provider, httpx_mock) -> str:
     """HTML страница с устаревшим расписанием"""
     return await _html_invalid_scenario(schedule_provider, httpx_mock, 'schedule_with_older_date.html')
+
+
+# ===================== [НЕКОРРЕКТНОЕ ВРЕМЯ ПАР] =====================
+@pytest.fixture
+async def html_content_with_invalid_time_format(schedule_provider, httpx_mock) -> str:
+    """HTML страница с некорректным форматом временных промежутков"""
+    return await _html_invalid_scenario(schedule_provider, httpx_mock, 'schedule_invalid_time_format.html')
+
+
+# ===================== [НЕКОРРЕКТНЫЙ НОМЕР ГРУППЫ] =====================
+@pytest.fixture
+async def html_content_with_invalid_group_format(schedule_provider, httpx_mock) -> str:
+    """HTML страница с некорректным форматом номера группы"""
+    return await _html_invalid_scenario(schedule_provider, httpx_mock, 'schedule_invalid_group_format.html')
+
+# ===================== [ПУСТОЕ РАСПИСАНИЕ] =====================
+@pytest.fixture
+async def html_content_without_lessons(schedule_provider, httpx_mock) -> str:
+    """HTML страница с пустым расписанием"""
+    return await _html_invalid_scenario(schedule_provider, httpx_mock, 'schedule_without_lessons.html')

@@ -56,3 +56,25 @@ def test_extract_schedule_lessons(schedule_provider, html_matrix, schedule_dates
     assert all(day_schedule.lessons == tuple(sorted(day_schedule.lessons, key=lambda x: x.start))
                for day_schedules in schedule.values() if day_schedules
                for day_schedule in day_schedules if day_schedule.lessons)
+
+
+async def test_get_schedule_for_groups(schedule_provider, httpx_mock):
+    """Тест должен провести полный цикл парсинга расписания"""
+    with open('./tests/fixtures/schedule.html', 'rb') as f:
+        httpx_mock.add_response(
+            method='GET',
+            url='https://vgtk.by/schedule/lessons/day-tomorrow.php',
+            content=f.read()
+        )
+
+    schedule = await schedule_provider.get_schedule_for_groups()
+
+    assert schedule
+    assert len(schedule.keys()) == 64
+    assert len(set(schedule.keys())) == 64
+    assert all(isinstance(group, Group)
+               for group in schedule.keys())
+    assert all(len(day_schedules) == 1 for day_schedules in schedule.values())
+    assert all(day_schedule.lessons == tuple(sorted(day_schedule.lessons, key=lambda x: x.start))
+               for day_schedules in schedule.values() if day_schedules
+               for day_schedule in day_schedules if day_schedule.lessons)

@@ -25,7 +25,8 @@ class SQLAlchemyGroupRepository(GroupRepository):
                     if k != '_sa_instance_state'
                 }
                 for group in groups
-            ])
+            ]).
+            on_conflict_do_nothing()
         )
 
         await self.session.execute(stmt)
@@ -34,9 +35,6 @@ class SQLAlchemyGroupRepository(GroupRepository):
     async def delete(self, group: Group) -> None:
         group_orm = await self.session.get(GroupORM, group.index)
 
-        if group_orm is None:
-            raise GroupNotFound(f'Group {str(group)!r} not found')
-
         await self.session.delete(group_orm)
         await self.session.commit()
 
@@ -44,7 +42,7 @@ class SQLAlchemyGroupRepository(GroupRepository):
         group_orm: GroupORM | None = await self.session.get(GroupORM, group_index)
 
         if group_orm is None:
-            raise GroupNotFound(f'Group with index {str(group_index)!r} not found')
+            raise GroupNotFound(f'Group with index {group_index!r} not found')
 
         return group_orm_to_domain(group_orm)
 

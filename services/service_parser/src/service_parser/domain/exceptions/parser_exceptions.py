@@ -92,6 +92,11 @@ class FetchingTableError(ParsingError):
     pass
 
 
+class ScheduleUnchangedError(ParsingError):
+    """Ошибка отсутствия изменений в расписании"""
+    pass
+
+
 class ParsingMatrixError(ParsingError):
     """Ошибка преобразования таблицы в матрицу"""
     pass

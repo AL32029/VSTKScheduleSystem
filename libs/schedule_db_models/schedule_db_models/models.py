@@ -4,7 +4,6 @@ from sqlalchemy import String, Integer, Date, Time, ForeignKey, BigInteger, Smal
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
-# [MISC][DONE] Доделать модели
 class Base(DeclarativeBase):
     pass
 
@@ -80,7 +79,6 @@ class CabinetRedirectORM(Base):
 
 
 class LessonORM(Base):
-    # [MISC][DONE] Дописать модель
     __tablename__ = 'lessons'
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
