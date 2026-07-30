@@ -17,7 +17,6 @@ container = get_dishka_container()
 
 
 async def main():
-    start = time.perf_counter()
     async with container() as cont:
         client = await cont.get(AsyncClient)
         redis_client = await cont.get(Redis)
@@ -31,10 +30,6 @@ async def main():
         use_case = ScheduleParserUseCase(group_repo, cabinet_repo, day_schedule_repo, provider)
 
         await use_case.execute()
-
-    end = time.perf_counter()
-
-    print(end - start)
 
 
 if __name__ == '__main__':

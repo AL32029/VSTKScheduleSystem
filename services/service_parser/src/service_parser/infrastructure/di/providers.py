@@ -1,9 +1,13 @@
+import ssl
 from typing import AsyncIterable, Any, AsyncGenerator
 
 import httpx
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
 from dishka import Provider, Scope, provide
 from httpx import AsyncClient
 from redis.asyncio import Redis
+from sqlalchemy import URL
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, async_sessionmaker, AsyncSession
 
 from service_parser.application.ports import CabinetRepository, GroupRepository, ScheduleRepository
@@ -17,13 +21,39 @@ class DatabaseProvider(Provider):
     scope = Scope.APP
 
     @provide
-    def provide_engine(self, settings: DatabaseSettings) -> AsyncEngine:
+    def provide_engine(self) -> AsyncEngine:
+        settings = DatabaseSettings()
+
+        with open(settings.SSL_CERT_FILE, 'rb') as f:
+            cert_data = f.read()
+
+        cert = x509.load_pem_x509_certificate(cert_data, default_backend())
+
+        common_name = cert.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)[0].value
+
+        ssl_context = ssl.create_default_context(cafile=settings.SSL_CA_CERT_FILE)
+        ssl_context.load_cert_chain(
+            certfile=settings.SSL_CERT_FILE,
+            keyfile=settings.SSL_KEY_FILE
+        )
+        ssl_context.verify_mode = ssl.CERT_REQUIRED
+        ssl_context.check_hostname = True
+
+        connection_url = URL.create(
+            "postgresql+asyncpg",
+            username=str(common_name),
+            host=settings.HOST,
+            port=settings.PORT,
+            database=settings.BASE,
+        )
+
         return create_async_engine(
-            settings.URL.unicode_string(),
+            connection_url,
             echo=False,
             pool_pre_ping=True,
             pool_size=10,
             max_overflow=20,
+            connect_args={"ssl": ssl_context}
         )
 
     @provide
@@ -45,9 +75,19 @@ class RedisProvider(Provider):
     scope = Scope.APP
 
     @provide
-    async def redis_engine(self, settings: RedisSettings) -> AsyncIterable[Redis]:
-        client = Redis.from_url(
-            settings.URL.unicode_string()
+    async def redis_engine(self) -> AsyncIterable[Redis]:
+        settings = RedisSettings()
+
+        client = Redis(
+            host=settings.HOST,
+            port=settings.PORT,
+            db=settings.DB_NUMBER,
+            ssl=True,
+            ssl_certfile=settings.SSL_CERT_FILE,
+            ssl_keyfile=settings.SSL_KEY_FILE,
+            ssl_ca_certs=settings.SSL_CA_CERT_FILE,
+            ssl_cert_reqs=settings.SSL_CERT_REQS,
+            ssl_check_hostname=settings.SSL_CHECK_HOSTNAME
         )
         yield client
         await client.aclose()

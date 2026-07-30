@@ -7,13 +7,9 @@ from service_parser.infrastructure.di.providers import HTTPXClientProvider, Repo
 
 
 def get_dishka_container():
-    database_settings = DatabaseSettings()
-    redis_settings = RedisSettings()
-
     return make_async_container(
         DatabaseProvider(),
         RedisProvider(),
         RepositoriesProvide(),
         HTTPXClientProvider(),
-        context={DatabaseSettings: database_settings, RedisSettings: redis_settings}
     )
