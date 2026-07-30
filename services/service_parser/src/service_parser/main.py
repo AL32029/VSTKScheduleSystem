@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import sys
-import time
 
 from httpx import AsyncClient
 from redis.asyncio import Redis

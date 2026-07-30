@@ -34,7 +34,7 @@ def test_create_group_entity(group_number: str):
 
 @pytest.mark.parametrize('invalid_group_number', _INVALID_GROUP_NUMBERS)
 def test_create_group_entity_with_invalid_number(invalid_group_number: str):
-    """Тест должен выдать ошибку InvalidGroupNumberFormatError"""
+    """Тест должен выдать ошибку GroupNumberFormatError"""
     with pytest.raises(GroupNumberFormatError) as exc_info:
         Group(invalid_group_number)
 
