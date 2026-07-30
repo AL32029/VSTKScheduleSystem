@@ -41,6 +41,7 @@ class CabinetORM(Base):
     redirects_from: Mapped[list['CabinetRedirectORM']] = relationship(
         'CabinetRedirectORM',
         back_populates='to_cab',
+        foreign_keys='[CabinetRedirectORM.to_id]',
         lazy='noload',
         cascade='all, delete-orphan',
         passive_deletes=True
@@ -49,6 +50,7 @@ class CabinetORM(Base):
     redirect_to: Mapped['CabinetRedirectORM'] = relationship(
         'CabinetRedirectORM',
         back_populates='from_cab',
+        foreign_keys='[CabinetRedirectORM.from_id]',
         lazy='joined'
     )
 
@@ -69,11 +71,13 @@ class CabinetRedirectORM(Base):
     from_cab: Mapped['CabinetORM'] = relationship(
         'CabinetORM',
         back_populates='redirect_to',
+        foreign_keys='[CabinetRedirectORM.from_id]',
         lazy='joined'
     )
     to_cab: Mapped['CabinetORM'] = relationship(
         'CabinetORM',
         back_populates='redirects_from',
+        foreign_keys='[CabinetRedirectORM.to_id]',
         lazy='noload'
     )
 
