@@ -1,5 +1,5 @@
-from .models import Base
+from .models import Base, GroupORM, CabinetORM, CabinetRedirectORM, LessonORM, LessonCabinetORM
 
 __all__ = [
-    'Base'
+    'Base', 'GroupORM', 'CabinetORM', 'CabinetRedirectORM', 'LessonORM', 'LessonCabinetORM'
 ]

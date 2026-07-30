@@ -1,4 +1,5 @@
 import datetime
+from typing import Iterable
 
 from sqlalchemy import String, Integer, Date, Time, ForeignKey, BigInteger, SmallInteger, Index
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -55,10 +56,13 @@ class CabinetORM(Base):
     )
 
     @property
-    def redirected(self):
-        return self.redirect_to or self
+    def redirected(self) -> CabinetORM:
+        if not self.redirect_to:
+            return self
 
-    def __str__(self):
+        return self.redirect_to.to_cab
+
+    def __str__(self) -> str:
         return self.number
 
 
@@ -100,7 +104,8 @@ class LessonORM(Base):
         back_populates='lesson_item',
         lazy='selectin',
         cascade='all, delete-orphan',
-        passive_deletes=True
+        passive_deletes=True,
+        order_by='cabinet_index'
     )
     group: Mapped['GroupORM'] = relationship(
         'GroupORM',
@@ -111,6 +116,20 @@ class LessonORM(Base):
     __table_args__ = (
         Index('idx_lessons_group_index_date', 'group_index', 'date', unique=False),
     )
+
+    @property
+    def cabinets_without_redirects(self) -> Iterable[CabinetORM]:
+        return [
+            cabinet.cabinet_item
+            for cabinet in self.cabinet_relationships
+        ]
+
+    @property
+    def cabinets_with_redirects(self) -> Iterable[CabinetORM]:
+        return [
+            cabinet.cabinet_item.redirected
+            for cabinet in self.cabinet_relationships
+        ]
 
 
 class LessonCabinetORM(Base):
