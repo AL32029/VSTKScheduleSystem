@@ -1,0 +1,41 @@
+[project]
+name = "service-api"
+version = "0.1.0"
+description = "Microservice \"API Service\""
+authors = [
+    { name = "Nikita Bondarev", email = "nikitabondarevvitebsk@gmail.com" }
+]
+license = "No license"
+requires-python = ">=3.12,<3.15"
+[tool.poetry.dependencies]
+fastapi = { extras = ["uvicorn"], version = "^0.141.1" }
+uvicorn = "^0.52.0"
+sqlalchemy = "^2.0.51"
+asyncpg = "^0.31.0"
+pydantic = "^2.13.4"
+pydantic-settings = "^2.14.2"
+dishka = "^1.10.1"
+cryptography = "^49.0.0"
+redis = "^8.1.0"
+schedule-db-models = {path = "../../libs/schedule_db_models"}
+tzdata = "^2026.3"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^9.1.1"
+pytest-asyncio = "^1.4.0"
+testcontainers = "^4.15.0"
+pytest-cov = "^7.1.0"
+alembic = "^1.18.5"
+ruff = "^0.16.1"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+addopts = "--asyncio-mode=auto"
+
+[tool.coverage.run]
+source = ["src/service_api"]

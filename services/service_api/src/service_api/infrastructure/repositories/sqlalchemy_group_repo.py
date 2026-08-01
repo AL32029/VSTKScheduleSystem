@@ -1,0 +1,34 @@
+from schedule_db_models import GroupORM
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from service_api.application.ports import GroupRepository
+from service_api.domain.entities import Group
+from service_api.domain.exceptions.api_exceptions import GroupNotFound
+from service_api.infrastructure.db.mappers import group_orm_to_domain
+
+
+class SQLAlchemyGroupRepository(GroupRepository):
+    def __init__(self, session: AsyncSession):
+        self.session = session
+
+    async def get_by_number(self, number: str) -> Group:
+        group = await self.session.get(GroupORM, Group(number).index)
+
+        if group is None:
+            raise GroupNotFound(f'Group with number {number!r} not found')
+
+        return group_orm_to_domain(group)
+
+    async def get_all(self) -> list[Group]:
+        stmt = (
+            select(GroupORM).
+            order_by(GroupORM.index)
+        )
+
+        result = await self.session.stream_scalars(stmt)
+
+        return [
+            group_orm_to_domain(group)
+            async for group in result
+        ]
