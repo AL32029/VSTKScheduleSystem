@@ -127,7 +127,7 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
 
         return lessons_orm_to_day_schedule_domain(lessons)
 
-    async def get_many_by_groups(self, items: Iterable[tuple[Group, datetime.date]]) -> Iterable[DaySchedule]:
+    async def get_many_by_groups(self, items: Iterable[tuple[Group, datetime.date]]) -> set[DaySchedule]:
         schedule_groups = {group for group, _ in items}
 
         db_groups = {

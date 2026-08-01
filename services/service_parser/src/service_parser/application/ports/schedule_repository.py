@@ -18,6 +18,6 @@ class ScheduleRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_many_by_groups(self, items: Iterable[tuple[Group, datetime.date]]) -> Iterable[DaySchedule]:
+    async def get_many_by_groups(self, items: Iterable[tuple[Group, datetime.date]]) -> set[DaySchedule]:
         """Получение нескольких расписаний пар для групп"""
         raise NotImplementedError

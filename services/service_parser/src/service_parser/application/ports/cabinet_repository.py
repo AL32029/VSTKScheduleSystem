@@ -16,6 +16,6 @@ class CabinetRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_all(self) -> Iterable[Cabinet]:
+    async def get_all(self) -> list[Cabinet]:
         """Получение списка всех кабинетов"""
         raise NotImplementedError

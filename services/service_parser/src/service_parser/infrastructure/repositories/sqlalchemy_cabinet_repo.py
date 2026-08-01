@@ -40,10 +40,8 @@ class SQLAlchemyCabinetRepository(CabinetRepository):
 
         return cabinet_orm_to_domain(cabinet_orm)
 
-    async def get_all(self) -> Iterable[Cabinet]:
+    async def get_all(self) -> list[Cabinet]:
         groups = await self.session.stream_scalars(select(CabinetORM))
 
-        return [
-            cabinet_orm_to_domain(group)
-            async for group in groups
-        ]
+        return [cabinet_orm_to_domain(group)
+                async for group in groups]

@@ -21,6 +21,6 @@ class GroupRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_all(self) -> Iterable[Group]:
+    async def get_all(self) -> list[Group]:
         """Получение списка всех групп"""
         raise NotImplementedError

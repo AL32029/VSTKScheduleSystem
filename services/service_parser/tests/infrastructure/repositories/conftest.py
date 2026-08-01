@@ -4,7 +4,7 @@ from dishka import Scope
 from service_parser.application.ports import GroupRepository, CabinetRepository, ScheduleRepository
 
 
-# ===================== [ФИКСТУРЫ ДЛЯ РЕПОЗИТОРИЯ ГРУППЫ] =====================
+# ===================== [ФИКСТУРЫ ДЛЯ РЕПОЗИТОРИЕВ =====================
 @pytest.fixture(scope='function')
 async def sqlalchemy_group_repo(test_container) -> GroupRepository:
     """Репозиторий GroupRepository"""

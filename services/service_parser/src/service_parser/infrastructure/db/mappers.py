@@ -31,7 +31,7 @@ def cabinet_orm_to_domain(cabinet: CabinetORM, check_redirect: bool = False) -> 
     return Cabinet(c.number)
 
 
-def day_schedule_domain_to_lessons_orm(schedule: DaySchedule) -> Iterable[LessonORM]:
+def day_schedule_domain_to_lessons_orm(schedule: DaySchedule) -> list[LessonORM]:
     return [
         LessonORM(
             group_index=schedule.group.index,

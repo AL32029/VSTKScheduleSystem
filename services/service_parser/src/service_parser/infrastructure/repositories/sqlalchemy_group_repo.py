@@ -46,10 +46,8 @@ class SQLAlchemyGroupRepository(GroupRepository):
 
         return group_orm_to_domain(group_orm)
 
-    async def get_all(self) -> Iterable[Group]:
+    async def get_all(self) -> list[Group]:
         groups = await self.session.stream_scalars(select(GroupORM))
 
-        return [
-            group_orm_to_domain(group)
-            async for group in groups
-        ]
+        return [group_orm_to_domain(group)
+                async for group in groups]
