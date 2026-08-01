@@ -2,7 +2,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def test_app(test_container):
     from service_api.main import create_app
     return create_app(test_container)

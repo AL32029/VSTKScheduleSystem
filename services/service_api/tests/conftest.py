@@ -19,19 +19,13 @@ from sqlalchemy.ext.asyncio import (
 from testcontainers.community.postgres import PostgresContainer
 from testcontainers.community.redis import RedisContainer
 
-from service_api.application.ports import (
-    CabinetRepository,
-    GroupRepository,
-    ScheduleRepository,
-)
 from service_api.infrastructure.db.mappers import (
     cabinet_domain_to_orm,
     group_domain_to_orm,
 )
-from service_api.infrastructure.repositories import (
-    SQLAlchemyCabinetRepository,
-    SQLAlchemyGroupRepository,
-    SQLAlchemyScheduleRepository,
+from service_api.infrastructure.di.providers import (
+    RepositoriesProvider,
+    UseCasesProvider,
 )
 from tests.test_contains import (
     _CABINET_ITEM,
@@ -129,26 +123,11 @@ async def test_container(request, session_with_test_data, redis_container):
             port = redis_container.get_exposed_port(6379)
             yield Redis.from_url(f"redis://{host}:{port}")
 
-    # ====================== [ПРОВАЙДЕР РЕПОЗИТОРИЕВ] ======================
-    class TestRepositoriesProvide(Provider):
-        scope = Scope.REQUEST
-
-        @provide
-        async def sqlalchemy_cabinet_repository(self, session: AsyncSession) -> CabinetRepository:
-            return SQLAlchemyCabinetRepository(session)
-
-        @provide
-        async def sqlalchemy_group_repository(self, session: AsyncSession) -> GroupRepository:
-            return SQLAlchemyGroupRepository(session)
-
-        @provide
-        async def sqlalchemy_schedule_repository(self, session: AsyncSession) -> ScheduleRepository:
-            return SQLAlchemyScheduleRepository(session)
-
     container = make_async_container(
         TestRedisProvider(),
         TestDatabaseProvider(),
-        TestRepositoriesProvide()
+        RepositoriesProvider(),
+        UseCasesProvider()
     )
     yield container
     await container.close()
