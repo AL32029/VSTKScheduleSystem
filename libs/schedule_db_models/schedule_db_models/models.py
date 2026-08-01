@@ -105,7 +105,7 @@ class LessonORM(Base):
         lazy='selectin',
         cascade='all, delete-orphan',
         passive_deletes=True,
-        order_by='cabinet_index'
+        order_by='LessonCabinetORM.cabinet_index'
     )
     group: Mapped['GroupORM'] = relationship(
         'GroupORM',
@@ -118,18 +118,14 @@ class LessonORM(Base):
     )
 
     @property
-    def cabinets_without_redirects(self) -> Iterable[CabinetORM]:
-        return [
-            cabinet.cabinet_item
-            for cabinet in self.cabinet_relationships
-        ]
+    def cabinets_without_redirects(self) -> list[CabinetORM]:
+        return [cabinet.cabinet_item
+                for cabinet in self.cabinet_relationships]
 
     @property
-    def cabinets_with_redirects(self) -> Iterable[CabinetORM]:
-        return [
-            cabinet.cabinet_item.redirected
-            for cabinet in self.cabinet_relationships
-        ]
+    def cabinets_with_redirects(self) -> list[CabinetORM]:
+        return [cabinet.cabinet_item.redirected
+                for cabinet in self.cabinet_relationships]
 
 
 class LessonCabinetORM(Base):

@@ -1,6 +1,6 @@
 [project]
 name = "schedule-db-models"
-version = "0.1.3"
+version = "0.1.4"
 description = "SQLAlchemy model for microservices \"Parser Service\" and \"Schedule API Service\""
 authors = [
     {name = "Nikita Bondarev",email = "nikitabondarevvitebsk@gmail.com"}
