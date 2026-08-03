@@ -20,8 +20,8 @@ from service_parser.infrastructure.repositories import SQLAlchemyCabinetReposito
 class DatabaseProvider(Provider):
     scope = Scope.APP
 
-    @provide
-    def provide_engine(self) -> AsyncEngine:
+    # TODO: Вернуть название после завершения разработки системы
+    def prod_provide_engine(self) -> AsyncEngine:
         settings = DatabaseSettings()
 
         with open(settings.SSL_CERT_FILE, 'rb') as f:
@@ -57,6 +57,18 @@ class DatabaseProvider(Provider):
         )
 
     @provide
+    def provide_engine(self) -> AsyncEngine:
+        settings = DatabaseSettings()
+
+        return create_async_engine(
+            settings.DSN.unicode_string(),
+            echo=False,
+            pool_pre_ping=True,
+            pool_size=10,
+            max_overflow=20,
+        )
+
+    @provide
     def provide_session_maker(self, engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
         return async_sessionmaker(
             bind=engine,
@@ -74,8 +86,8 @@ class DatabaseProvider(Provider):
 class RedisProvider(Provider):
     scope = Scope.APP
 
-    @provide
-    async def redis_engine(self) -> AsyncIterable[Redis]:
+    # TODO: Вернуть название после завершения разработки системы
+    async def prod_redis_engine(self) -> AsyncIterable[Redis]:
         settings = RedisSettings()
 
         client = Redis(
@@ -88,6 +100,20 @@ class RedisProvider(Provider):
             ssl_ca_certs=settings.SSL_CA_CERT_FILE,
             ssl_cert_reqs=settings.SSL_CERT_REQS,
             ssl_check_hostname=settings.SSL_CHECK_HOSTNAME
+        )
+        yield client
+        await client.aclose()
+
+    @provide
+    async def redis_engine(self) -> AsyncIterable[Redis]:
+        settings = RedisSettings()
+
+        client = Redis(
+            host=settings.HOST,
+            port=settings.PORT,
+            username=settings.USERNAME,
+            password=settings.PASSWORD,
+            db=settings.DB_NUMBER,
         )
         yield client
         await client.aclose()
