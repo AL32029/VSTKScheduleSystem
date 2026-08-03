@@ -3,7 +3,7 @@ import os
 import pathlib
 import subprocess
 import sys
-from collections.abc import AsyncIterable, Generator
+from collections.abc import AsyncGenerator, AsyncIterable, Generator
 from typing import Any
 
 import pytest
@@ -118,10 +118,16 @@ async def test_container(request, session_with_test_data, redis_container):
         scope = Scope.REQUEST
 
         @provide
-        def redis_client(self) -> Generator[Redis, Any, None]:
+        async def redis_client(self) -> AsyncGenerator[Redis, Any]:
             host = redis_container.get_container_host_ip()
             port = redis_container.get_exposed_port(6379)
-            yield Redis.from_url(f"redis://{host}:{port}")
+
+            client = Redis.from_url(f"redis://{host}:{port}")
+
+            yield client
+
+            await client.delete('group', 'schedule')
+
 
     container = make_async_container(
         TestRedisProvider(),

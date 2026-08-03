@@ -1,5 +1,5 @@
 # ====================== [БАЗОВЫЕ ИСКЛЮЧЕНИЯ] ======================
-class APIServiceException(BaseException):
+class APIServiceException(Exception):
     """Базовое исключение API Service"""
 
 
@@ -43,3 +43,12 @@ class GroupDayScheduleNotFound(NotFoundError):
 
 class CabinetDayScheduleNotFound(NotFoundError):
     """Ошибка отсутствия пар для кабинета на указанную дату"""
+
+
+# ====================== [ОШИБКИ ОТСУТСТВИЯ ДАННЫХ] ======================
+class CacheError(APIServiceException):
+    """Ошибка кэша"""
+
+
+class CacheItemNotFound(CacheError):
+    """Ошибка отсутствия кэша в брокере"""

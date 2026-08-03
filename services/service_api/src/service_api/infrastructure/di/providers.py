@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import (
 
 from service_api.application.ports import (
     CabinetRepository,
+    CacheRepository,
     GroupRepository,
     ScheduleRepository,
 )
@@ -24,14 +25,15 @@ from service_api.application.services import (
     GetCabinetUseCase,
     GetGroupUseCase,
 )
-from service_api.domain.entities.get_cabinet_day_schedule import (
+from service_api.application.services.get_cabinet_day_schedule import (
     GetCabinetDayScheduleUseCase,
 )
-from service_api.domain.entities.get_group_day_schedule import (
+from service_api.application.services.get_group_day_schedule import (
     GetGroupDayScheduleUseCase,
 )
 from service_api.infrastructure.config import DatabaseSettings, RedisSettings
 from service_api.infrastructure.repositories import (
+    RedisCacheRepository,
     SQLAlchemyCabinetRepository,
     SQLAlchemyGroupRepository,
     SQLAlchemyScheduleRepository,
@@ -129,32 +131,42 @@ class RepositoriesProvider(Provider):
     async def sqlalchemy_schedule_repository(self, session: AsyncSession) -> ScheduleRepository:
         return SQLAlchemyScheduleRepository(session)
 
+    @provide
+    async def redis_cache_repository(self, redis_client: Redis) -> CacheRepository:
+        return RedisCacheRepository(redis_client)
+
 
 class UseCasesProvider(Provider):
     scope = Scope.REQUEST
 
     @provide
-    async def get_group_use_case(self, repo: GroupRepository) -> GetGroupUseCase:
-        return GetGroupUseCase(repo)
+    async def get_group_use_case(self, group_repo: GroupRepository,
+                                 cache_repo: CacheRepository) -> GetGroupUseCase:
+        return GetGroupUseCase(group_repo, cache_repo)
 
     @provide
-    async def get_all_groups_use_case(self, repo: GroupRepository) -> GetAllGroupsUseCase:
-        return GetAllGroupsUseCase(repo)
+    async def get_all_groups_use_case(self, group_repo: GroupRepository,
+                                      cache_repo: CacheRepository) -> GetAllGroupsUseCase:
+        return GetAllGroupsUseCase(group_repo, cache_repo)
 
     @provide
-    async def get_cabinet_use_case(self, repo: CabinetRepository) -> GetCabinetUseCase:
-        return GetCabinetUseCase(repo)
+    async def get_cabinet_use_case(self, cabinet_repo: CabinetRepository,
+                                   cache_repo: CacheRepository) -> GetCabinetUseCase:
+        return GetCabinetUseCase(cabinet_repo, cache_repo)
 
     @provide
-    async def get_all_cabinets_use_case(self, repo: CabinetRepository) -> GetAllCabinetsUseCase:
-        return GetAllCabinetsUseCase(repo)
+    async def get_all_cabinets_use_case(self, repo: CabinetRepository,
+                                        cache_repo: CacheRepository) -> GetAllCabinetsUseCase:
+        return GetAllCabinetsUseCase(repo, cache_repo)
 
     @provide
     async def get_group_day_schedule_use_case(self, group_repo: GroupRepository,
-                                              schedule_repo: ScheduleRepository) -> GetGroupDayScheduleUseCase:
-        return GetGroupDayScheduleUseCase(group_repo, schedule_repo)
+                                              schedule_repo: ScheduleRepository,
+                                              cache_repo: CacheRepository) -> GetGroupDayScheduleUseCase:
+        return GetGroupDayScheduleUseCase(group_repo, schedule_repo, cache_repo)
 
     @provide
     async def get_cabinet_day_schedule_use_case(self, cabinet_repo: CabinetRepository,
-                                                schedule_repo: ScheduleRepository) -> GetCabinetDayScheduleUseCase:
-        return GetCabinetDayScheduleUseCase(cabinet_repo, schedule_repo)
+                                                schedule_repo: ScheduleRepository,
+                                                cache_repo: CacheRepository) -> GetCabinetDayScheduleUseCase:
+        return GetCabinetDayScheduleUseCase(cabinet_repo, schedule_repo, cache_repo)

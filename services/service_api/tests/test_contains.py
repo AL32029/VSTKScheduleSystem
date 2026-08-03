@@ -65,7 +65,7 @@ _CABINET_LESSON_ITEMS = [
 
 # ====================== [РАСПИСАНИЕ НА ДЕНЬ] ======================
 _GROUP_DAY_SCHEDULE_ITEM = GroupDaySchedule(_GROUP_ITEM, _DAY_SCHEDULE_DATE, _GROUP_LESSON_ITEMS)
-_CABINET_DAY_SCHEDULE = CabinetDaySchedule(_CABINET_ITEM, _DAY_SCHEDULE_DATE, _CABINET_LESSON_ITEMS)
+_CABINET_DAY_SCHEDULE_ITEM = CabinetDaySchedule(_CABINET_ITEM, _DAY_SCHEDULE_DATE, _CABINET_LESSON_ITEMS)
 
 # ====================== [НЕВАЛИДНЫЕ ВАРИАНТЫ] ======================
 _GROUP_LESSON_ITEMS_INVALID_END_TIME = [

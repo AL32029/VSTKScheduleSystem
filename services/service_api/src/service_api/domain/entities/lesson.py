@@ -1,4 +1,5 @@
 import datetime
+from collections.abc import Iterable
 from dataclasses import dataclass
 
 from service_api.domain.exceptions import LessonEndTimeError
@@ -14,7 +15,7 @@ class GroupLesson:
 
     name: str
 
-    cabinets: tuple[Cabinet, ...]
+    cabinets: Iterable[Cabinet]
 
     def __hash__(self):
         return hash((self.start, self.end, self.name, tuple(self.cabinets)))
@@ -40,7 +41,7 @@ class CabinetLesson:
 
     name: str
 
-    cabinets: tuple[Cabinet, ...]
+    cabinets: Iterable[Cabinet]
 
     def __hash__(self):
         return hash((self.start, self.end, self.name, tuple(self.cabinets)))

@@ -2,58 +2,35 @@ from typing import Literal
 
 from dishka import FromDishka
 from dishka.integrations.fastapi import inject
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
-from service_api.domain.entities.get_cabinet_day_schedule import (
+from service_api.application.services import (
     GetCabinetDayScheduleUseCase,
-)
-from service_api.domain.entities.get_group_day_schedule import (
     GetGroupDayScheduleUseCase,
 )
-from service_api.domain.exceptions import (
-    CabinetDayScheduleNotFound,
-    CabinetNotFound,
-    GroupDayScheduleNotFound,
-    GroupNotFound,
-    GroupNumberFormatError,
-    ScheduleDateNotFound,
-)
-from service_api.presentation.rest.mappers import (
-    cabinet_day_schedule_to_response,
-    group_day_schedule_to_response,
-)
-from service_api.presentation.rest.schemas import (
-    CabinetDayScheduleResponse,
-    GroupDayScheduleResponse,
+from service_api.infrastructure.pydantic_items import (
+    CabinetDayScheduleSchema,
+    GroupDayScheduleSchema,
+    cabinet_day_schedule_to_schema,
+    group_day_schedule_to_schema,
 )
 
 schedule_router = APIRouter(prefix='/schedule', tags=['Schedule Items'])
 
-@schedule_router.get('/group', response_model=GroupDayScheduleResponse)
+
+@schedule_router.get('/group', response_model=GroupDayScheduleSchema)
 @inject
 async def get_group_day_schedule(group_number: str, schedule_to: Literal['today', 'tomorrow'],
-                                 use_case: FromDishka[GetGroupDayScheduleUseCase]) -> GroupDayScheduleResponse:
-    try:
-        day_schedule = await use_case.execute(group_number, schedule_to)
-    except GroupNumberFormatError as e:
-        raise HTTPException(status_code=422, detail=str(e))
-    except (GroupNotFound, ScheduleDateNotFound) as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except GroupDayScheduleNotFound as e:
-        raise HTTPException(status_code=404, detail=str(e))
+                                 use_case: FromDishka[GetGroupDayScheduleUseCase]) -> GroupDayScheduleSchema:
+    day_schedule = await use_case.execute(group_number, schedule_to)
 
-    return group_day_schedule_to_response(day_schedule)
+    return group_day_schedule_to_schema(day_schedule)
 
 
-@schedule_router.get('/cabinet', response_model=CabinetDayScheduleResponse)
+@schedule_router.get('/cabinet', response_model=CabinetDayScheduleSchema)
 @inject
 async def get_cabinet_day_schedule(cabinet_number: str, schedule_to: Literal['today', 'tomorrow'],
-                                   use_case: FromDishka[GetCabinetDayScheduleUseCase]) -> CabinetDayScheduleResponse:
-    try:
-        day_schedule = await use_case.execute(cabinet_number, schedule_to)
-    except (CabinetNotFound, ScheduleDateNotFound) as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except CabinetDayScheduleNotFound as e:
-        raise HTTPException(status_code=404, detail=str(e))
+                                   use_case: FromDishka[GetCabinetDayScheduleUseCase]) -> CabinetDayScheduleSchema:
+    day_schedule = await use_case.execute(cabinet_number, schedule_to)
 
-    return cabinet_day_schedule_to_response(day_schedule)
+    return cabinet_day_schedule_to_schema(day_schedule)

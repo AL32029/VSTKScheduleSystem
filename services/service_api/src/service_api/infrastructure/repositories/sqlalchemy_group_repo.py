@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from service_api.application.ports import GroupRepository
 from service_api.domain.entities import Group
 from service_api.domain.exceptions.api_exceptions import GroupNotFound
+from service_api.domain.shared.patterns import ITEM_INDEX
 from service_api.infrastructure.db.mappers import group_orm_to_domain
 
 
@@ -13,7 +14,7 @@ class SQLAlchemyGroupRepository(GroupRepository):
         self.session = session
 
     async def get_by_number(self, number: str) -> Group:
-        group = await self.session.get(GroupORM, Group(number).index)
+        group = await self.session.get(GroupORM, ITEM_INDEX.sub('', number.lower()))
 
         if group is None:
             raise GroupNotFound(f'Group with number {number!r} not found')

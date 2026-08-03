@@ -1,4 +1,4 @@
-from service_api.presentation.rest.schemas import ScheduleItemResponse
+from service_api.infrastructure.pydantic_items.schemas import ScheduleItemSchema
 from tests.test_contains import _CABINET_ITEM, _CABINET_ITEMS
 
 
@@ -9,10 +9,9 @@ async def test_get_cabinet_by_number_endpoint(client):
 
     assert resp.status_code == 200
 
-    cabinet = ScheduleItemResponse(**resp.json())
+    cabinet = ScheduleItemSchema.model_validate(resp.json()).to_domain('cabinet')
 
-    assert cabinet.index == _CABINET_ITEM.index
-    assert cabinet.number == _CABINET_ITEM.number
+    assert cabinet == _CABINET_ITEM
 
 
 async def test_get_all_cabinets_endpoint(client):
@@ -21,7 +20,7 @@ async def test_get_all_cabinets_endpoint(client):
 
     assert resp.status_code == 200
 
-    cabinets = {ScheduleItemResponse(**cabinet)
-                for cabinet in resp.json()}
+    cabinets = [*{ScheduleItemSchema.model_validate(cabinet)
+                  for cabinet in resp.json()}]
 
-    assert len(list(cabinets)) == len(_CABINET_ITEMS)
+    assert len(cabinets) == len(_CABINET_ITEMS)

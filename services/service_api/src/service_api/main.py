@@ -1,11 +1,21 @@
 from dishka.integrations.fastapi import setup_dishka
 from fastapi import FastAPI
 
+from service_api.domain.exceptions import (
+    CabinetDayScheduleNotFound,
+    CabinetNotFound,
+    GroupDayScheduleNotFound,
+    GroupNotFound,
+    ScheduleDateNotFound,
+)
 from service_api.infrastructure.di.container import get_dishka_container
 from service_api.presentation.rest.endpoints import (
     cabinet_router,
     group_router,
     schedule_router,
+)
+from service_api.presentation.rest.exceptions import (
+    not_found_exception,
 )
 
 
@@ -17,9 +27,15 @@ def create_app(container=None) -> FastAPI:
     )
 
     setup_dishka(container or get_dishka_container(), app)
-    app.include_router(group_router)
+
     app.include_router(cabinet_router)
+    app.include_router(group_router)
     app.include_router(schedule_router)
 
-    return app
+    app.add_exception_handler(CabinetDayScheduleNotFound, not_found_exception)
+    app.add_exception_handler(CabinetNotFound, not_found_exception)
+    app.add_exception_handler(GroupDayScheduleNotFound, not_found_exception)
+    app.add_exception_handler(GroupNotFound, not_found_exception)
+    app.add_exception_handler(ScheduleDateNotFound, not_found_exception)
 
+    return app

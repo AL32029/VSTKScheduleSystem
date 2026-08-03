@@ -8,8 +8,8 @@ class Cabinet:
     index: str
     number: str
 
-    def __init__(self, number: str):
-        object.__setattr__(self, 'index', ITEM_INDEX.sub('', number.lower()))
+    def __init__(self, number: str, **kwargs):
+        object.__setattr__(self, 'index', kwargs.get('index') or ITEM_INDEX.sub('', number.lower()))
         object.__setattr__(self, 'number', number)
 
     def __hash__(self):

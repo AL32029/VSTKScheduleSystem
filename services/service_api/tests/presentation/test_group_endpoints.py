@@ -1,4 +1,4 @@
-from service_api.presentation.rest.schemas import ScheduleItemResponse
+from service_api.infrastructure.pydantic_items.schemas import ScheduleItemSchema
 from tests.test_contains import _GROUP_ITEM, _GROUP_ITEMS
 
 
@@ -9,7 +9,7 @@ async def test_get_group_by_number_endpoint(client):
 
     assert resp.status_code == 200
 
-    group = ScheduleItemResponse(**resp.json())
+    group = ScheduleItemSchema.model_validate(resp.json())
 
     assert group.index == _GROUP_ITEM.index
     assert group.number == _GROUP_ITEM.number
@@ -21,7 +21,7 @@ async def test_get_all_groups_endpoint(client):
 
     assert resp.status_code == 200
 
-    groups = {ScheduleItemResponse(**group)
+    groups = {ScheduleItemSchema.model_validate(group)
               for group in resp.json()}
 
     assert len(list(groups)) == len(_GROUP_ITEMS)

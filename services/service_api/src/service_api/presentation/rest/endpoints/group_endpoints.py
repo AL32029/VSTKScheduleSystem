@@ -1,33 +1,30 @@
 from dishka import FromDishka
 from dishka.integrations.fastapi import inject
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import TypeAdapter
 
 from service_api.application.services import GetAllGroupsUseCase, GetGroupUseCase
-from service_api.domain.exceptions import GroupNotFound, GroupNumberFormatError
-from service_api.presentation.rest.mappers import schedule_domain_to_response
-from service_api.presentation.rest.schemas import ScheduleItemResponse
+from service_api.infrastructure.pydantic_items import (
+    ScheduleItemSchema,
+    schedule_domain_to_schema,
+)
 
-all_groups_annotated = TypeAdapter(list[ScheduleItemResponse])
+all_groups_annotated = TypeAdapter(list[ScheduleItemSchema])
 
 group_router = APIRouter(prefix='/groups', tags=['Group Items'])
 
-@group_router.get('/{group_number}', response_model=ScheduleItemResponse)
+
+@group_router.get('/{group_number}', response_model=ScheduleItemSchema)
 @inject
-async def get_group_by_number(group_number: str, repo: FromDishka[GetGroupUseCase]) -> ScheduleItemResponse:
-    try:
-        group_item = await repo.execute(group_number)
-    except GroupNumberFormatError as e:
-        raise HTTPException(status_code=422, detail=str(e))
-    except GroupNotFound as e:
-        raise HTTPException(status_code=404, detail=str(e))
+async def get_group_by_number(group_number: str, repo: FromDishka[GetGroupUseCase]) -> ScheduleItemSchema:
+    group_item = await repo.execute(group_number)
 
-    return schedule_domain_to_response(group_item)
+    return schedule_domain_to_schema(group_item)
 
 
-@group_router.get('/', response_model=list[ScheduleItemResponse])
+@group_router.get('/', response_model=list[ScheduleItemSchema])
 @inject
-async def get_all_groups(repo: FromDishka[GetAllGroupsUseCase]) -> list[ScheduleItemResponse]:
+async def get_all_groups(repo: FromDishka[GetAllGroupsUseCase]) -> list[ScheduleItemSchema]:
     group_items = await repo.execute()
 
-    return [schedule_domain_to_response(group) for group in group_items]
+    return [schedule_domain_to_schema(group) for group in group_items]

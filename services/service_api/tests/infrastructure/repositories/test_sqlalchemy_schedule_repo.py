@@ -9,7 +9,7 @@ from service_api.domain.exceptions import (
     ScheduleDateNotFound,
 )
 from tests.test_contains import (
-    _CABINET_DAY_SCHEDULE,
+    _CABINET_DAY_SCHEDULE_ITEM,
     _CABINET_ITEM,
     _CABINET_ITEM_NOT_SAVED,
     _DAY_SCHEDULE_DATE,
@@ -61,7 +61,7 @@ async def test_get_by_cabinet(sqlalchemy_schedule_repo):
 
     assert day_schedule is not None
     assert isinstance(day_schedule, CabinetDaySchedule)
-    assert day_schedule == _CABINET_DAY_SCHEDULE
+    assert day_schedule == _CABINET_DAY_SCHEDULE_ITEM
 
 
 async def test_get_by_cabinet_not_found(sqlalchemy_schedule_repo):

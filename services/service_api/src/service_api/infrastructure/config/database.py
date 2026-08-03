@@ -1,13 +1,13 @@
 import os
 from typing import Literal
 
-from pydantic import Field, PostgresDsn
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class DatabaseSettings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=os.getenv('DATABASE_SETTINGS_PATH', '/vault/secrets/database.env'),
+        env_file=os.getenv('DATABASE_SETTINGS_ENV', '/vault/secrets/database.env'),
         env_prefix='DATABASE_',
         extra='ignore'
     )
@@ -31,12 +31,3 @@ class DatabaseSettings(BaseSettings):
     @property
     def BASE(self) -> str:
         return os.getenv('DATABASE_BASE')
-
-    @property
-    def URL(self) -> PostgresDsn:
-        return PostgresDsn.build(
-            scheme='postgresql+asyncpg',
-            host=self.HOST,
-            port=self.PORT,
-            path=self.BASE
-        )

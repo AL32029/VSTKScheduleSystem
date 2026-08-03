@@ -1,6 +1,7 @@
 from .api_exceptions import (
     CabinetDayScheduleNotFound,
     CabinetNotFound,
+    CacheItemNotFound,
     DayScheduleEmptyLessonsError,
     GroupDayScheduleNotFound,
     GroupNotFound,
@@ -12,6 +13,7 @@ from .api_exceptions import (
 __all__ = [
     'CabinetDayScheduleNotFound',
     'CabinetNotFound',
+    'CacheItemNotFound',
     'DayScheduleEmptyLessonsError',
     'GroupDayScheduleNotFound',
     'GroupNotFound',
