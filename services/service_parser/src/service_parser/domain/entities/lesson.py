@@ -14,7 +14,7 @@ class Lesson:
     end: time
 
     name: str
-    cabinets: tuple[Cabinet, ...] = ()
+    cabinets: tuple['Cabinet', ...] = ()
 
     id: int | None = None
 
@@ -34,19 +34,19 @@ class Lesson:
 
 
 class DaySchedule:
-    def __init__(self, date: datetime.date, group: str | Group):
+    def __init__(self, date: datetime.date, group: 'str | Group'):
         self._date = date
         self._group = group if isinstance(group, Group) else Group(group)
-        self._lessons: List[Lesson] = []
+        self._lessons: List['Lesson'] = []
 
     @classmethod
-    def from_existing(cls, date: datetime.date, group: str | Group, lessons: Iterable[Lesson]) -> 'DaySchedule':
+    def from_existing(cls, date: datetime.date, group: 'str | Group', lessons: Iterable['Lesson']) -> 'DaySchedule':
         instance = cls(date, group if isinstance(group, Group) else Group(group))
         for lesson in lessons:
             instance._add_lesson_internal(lesson)
         return instance
 
-    def add_lesson(self, start: time, end: time, name: str, cabinets: Iterable[Cabinet] | None = None,
+    def add_lesson(self, start: time, end: time, name: str, cabinets: Iterable['Cabinet'] | None = None,
                    lesson_id: int | None = None) -> Lesson:
         cabinets_tuple = tuple(cab for cab in (cabinets or ()))
         new_lesson = Lesson(start, end, name, cabinets_tuple, lesson_id)
@@ -61,24 +61,24 @@ class DaySchedule:
         return self._date
 
     @property
-    def group(self) -> Group:
+    def group(self) -> 'Group':
         return self._group
 
     @property
-    def lessons(self) -> Tuple[Lesson, ...]:
+    def lessons(self) -> tuple['Lesson', ...]:
         return tuple(self._lessons)
 
-    def _ensure_no_overlap(self, new_lesson: Lesson) -> None:
+    def _ensure_no_overlap(self, new_lesson: 'Lesson') -> None:
         for existing in self._lessons:
             if self._is_overlap(existing, new_lesson):
                 raise LessonOverlapError(f'The lesson overlaps with the lesson {existing.name!r} '
                                          f'({str(existing.start)} - {str(existing.end)})')
 
     @staticmethod
-    def _is_overlap(a: Lesson, b: Lesson) -> bool:
+    def _is_overlap(a: 'Lesson', b: 'Lesson') -> bool:
         return a.start < b.end and b.start < a.end
 
-    def _add_lesson_internal(self, lesson: Lesson) -> None:
+    def _add_lesson_internal(self, lesson: 'Lesson') -> None:
         self._ensure_no_overlap(lesson)
         self._lessons.append(lesson)
 
