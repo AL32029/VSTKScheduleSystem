@@ -56,7 +56,7 @@ class CabinetORM(Base):
     )
 
     @property
-    def redirected(self) -> CabinetORM:
+    def redirected(self) -> 'CabinetORM':
         if not self.redirect_to:
             return self
 
@@ -118,12 +118,12 @@ class LessonORM(Base):
     )
 
     @property
-    def cabinets_without_redirects(self) -> list[CabinetORM]:
+    def cabinets_without_redirects(self) -> list['CabinetORM']:
         return [cabinet.cabinet_item
                 for cabinet in self.cabinet_relationships]
 
     @property
-    def cabinets_with_redirects(self) -> list[CabinetORM]:
+    def cabinets_with_redirects(self) -> list['CabinetORM']:
         return [cabinet.cabinet_item.redirected
                 for cabinet in self.cabinet_relationships]
 
