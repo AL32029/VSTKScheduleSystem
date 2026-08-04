@@ -10,10 +10,10 @@ from service_api.infrastructure.db.mappers import cabinet_orm_to_domain
 
 
 class SQLAlchemyCabinetRepository(CabinetRepository):
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: 'AsyncSession'):
         self.session = session
 
-    async def get_by_number(self, number: str) -> Cabinet:
+    async def get_by_number(self, number: str) -> 'Cabinet':
         cabinet = await self.session.get(CabinetORM, ITEM_INDEX.sub('', number.lower()))
 
         if cabinet is None:
@@ -21,7 +21,7 @@ class SQLAlchemyCabinetRepository(CabinetRepository):
 
         return cabinet_orm_to_domain(cabinet)
 
-    async def get_all(self) -> list[Cabinet]:
+    async def get_all(self) -> 'list[Cabinet]':
         stmt = (
             select(CabinetORM).
             order_by(CabinetORM.index)

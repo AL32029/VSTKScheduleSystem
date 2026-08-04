@@ -5,11 +5,11 @@ from service_api.domain.exceptions import CacheItemNotFound
 
 
 class GetAllCabinetsUseCase:
-    def __init__(self, cabinet_repo: CabinetRepository, cache_repo: CacheRepository):
+    def __init__(self, cabinet_repo: 'CabinetRepository', cache_repo: 'CacheRepository'):
         self.cabinet_repo = cabinet_repo
         self.cache_repo = cache_repo
 
-    async def execute(self) -> list[Cabinet]:
+    async def execute(self) -> 'list[Cabinet]':
         try:
             cabinets = await self.cache_repo.get_all_cabinets_cache()
         except CacheItemNotFound:

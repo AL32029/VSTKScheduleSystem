@@ -25,10 +25,10 @@ from service_api.infrastructure.pydantic_items import (
 
 
 class RedisCacheRepository(CacheRepository):
-    def __init__(self, redis_repo: Redis):
+    def __init__(self, redis_repo: 'Redis'):
         self.redis_repo = redis_repo
 
-    async def get_group_cache(self, group_number: str) -> Group:
+    async def get_group_cache(self, group_number: str) -> 'Group':
         group = await self.redis_repo.hget('group', ITEM_INDEX.sub('', group_number.lower()))
 
         if group is None:
@@ -36,11 +36,11 @@ class RedisCacheRepository(CacheRepository):
 
         return Group(**json.loads(group))
 
-    async def set_group_cache(self, group_item: Group, ttl: int = 21600) -> None:
+    async def set_group_cache(self, group_item: 'Group', ttl: int = 21600) -> None:
         await self.redis_repo.hset('group', group_item.index, json.dumps(asdict(group_item), ensure_ascii=False))
         await self.redis_repo.hexpire('group', ttl, group_item.index)
 
-    async def get_all_groups_cache(self) -> list[Group]:
+    async def get_all_groups_cache(self) -> 'list[Group]':
         groups = await self.redis_repo.hget('group', 'all')
 
         if groups is None:
@@ -49,7 +49,7 @@ class RedisCacheRepository(CacheRepository):
         return [Group(**group)
                 for group in json.loads(groups)]
 
-    async def set_all_groups_cache(self, group_items: Iterable[Group], ttl: int = 21600) -> None:
+    async def set_all_groups_cache(self, group_items: 'Iterable[Group]', ttl: int = 21600) -> None:
         items_to_set = {
             'all': json.dumps([asdict(group) for group in group_items], ensure_ascii=False),
             **{
@@ -61,7 +61,7 @@ class RedisCacheRepository(CacheRepository):
         await self.redis_repo.hsetex('group', mapping=items_to_set)
         await self.redis_repo.hexpire('group', ttl, *items_to_set.keys())
 
-    async def get_cabinet_cache(self, cabinet_number: str) -> Cabinet:
+    async def get_cabinet_cache(self, cabinet_number: str) -> 'Cabinet':
         cabinet = await self.redis_repo.hget('cabinet', ITEM_INDEX.sub('', cabinet_number.lower()))
 
         if cabinet is None:
@@ -69,12 +69,12 @@ class RedisCacheRepository(CacheRepository):
 
         return Cabinet(**json.loads(cabinet))
 
-    async def set_cabinet_cache(self, cabinet_item: Cabinet, ttl: int = 604800) -> None:
+    async def set_cabinet_cache(self, cabinet_item: 'Cabinet', ttl: int = 604800) -> None:
         await self.redis_repo.hset('cabinet', cabinet_item.index,
                                    json.dumps(asdict(cabinet_item), ensure_ascii=False))
         await self.redis_repo.hexpire('cabinet', ttl, cabinet_item.index)
 
-    async def get_all_cabinets_cache(self) -> list[Cabinet]:
+    async def get_all_cabinets_cache(self) -> 'list[Cabinet]':
         cabinets = await self.redis_repo.hget('cabinet', 'all')
 
         if cabinets is None:
@@ -83,7 +83,7 @@ class RedisCacheRepository(CacheRepository):
         return [Cabinet(**group)
                 for group in json.loads(cabinets)]
 
-    async def set_all_cabinets_cache(self, cabinet_items: Iterable[Cabinet], ttl: int = 604800) -> None:
+    async def set_all_cabinets_cache(self, cabinet_items: 'Iterable[Cabinet]', ttl: int = 604800) -> None:
         items_to_set = {
             'all': json.dumps([asdict(cabinet) for cabinet in cabinet_items], ensure_ascii=False),
             **{
@@ -96,7 +96,7 @@ class RedisCacheRepository(CacheRepository):
         await self.redis_repo.hexpire('cabinet', ttl, *items_to_set.keys())
 
     async def get_group_day_schedule(self, schedule_to: Literal['today', 'tomorrow'],
-                                     group_number: str) -> GroupDaySchedule:
+                                     group_number: str) -> 'GroupDaySchedule':
         day_schedule = await self.redis_repo.hget('schedule',
                                                   f'group:{ITEM_INDEX.sub('', group_number.lower())}:{schedule_to}')
 
@@ -106,7 +106,7 @@ class RedisCacheRepository(CacheRepository):
         return GroupDayScheduleSchema.model_validate_json(day_schedule).to_domain()
 
     async def set_group_day_schedule(self, schedule_to: Literal['today', 'tomorrow'],
-                                     day_schedule: GroupDaySchedule) -> None:
+                                     day_schedule: 'GroupDaySchedule') -> None:
         await self.set_group_cache(day_schedule.group)
 
         cabinets_to_save = {cabinet
@@ -124,7 +124,7 @@ class RedisCacheRepository(CacheRepository):
                                         f'group:{day_schedule.group.index}:{schedule_to}')
 
     async def get_cabinet_day_schedule(self, cabinet_number: str,
-                                       schedule_to: Literal['today', 'tomorrow']) -> CabinetDaySchedule:
+                                       schedule_to: Literal['today', 'tomorrow']) -> 'CabinetDaySchedule':
         day_schedule = await self.redis_repo.hget(
             'schedule',
             f'cabinet:{ITEM_INDEX.sub('', cabinet_number.lower())}:{schedule_to}'
@@ -136,7 +136,7 @@ class RedisCacheRepository(CacheRepository):
         return CabinetDayScheduleSchema.model_validate(day_schedule).to_domain()
 
     async def set_cabinet_day_schedule(self, schedule_to: Literal['today', 'tomorrow'],
-                                       day_schedule: CabinetDaySchedule) -> None:
+                                       day_schedule: 'CabinetDaySchedule') -> None:
         groups_to_save = {lesson.group for lesson in day_schedule.lessons}
         if groups_to_save:
             await self.set_all_groups_cache(groups_to_save)

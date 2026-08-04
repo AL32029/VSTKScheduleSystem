@@ -17,13 +17,13 @@ class ScheduleRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_group(self, group: Group, schedule_date: datetime.date,
-                           redirect: bool = True) -> GroupDaySchedule:
+    async def get_by_group(self, group: 'Group', schedule_date: datetime.date,
+                           redirect: bool = True) -> 'GroupDaySchedule':
         """Получение расписания по группе"""
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_cabinet(self, cabinet: Cabinet, schedule_date: datetime.date,
-                             redirect: bool = True) -> CabinetDaySchedule:
+    async def get_by_cabinet(self, cabinet: 'Cabinet', schedule_date: datetime.date,
+                             redirect: bool = True) -> 'CabinetDaySchedule':
         """Получение расписания по кабинету"""
         raise NotImplementedError

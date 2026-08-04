@@ -9,7 +9,7 @@ from .providers import (
 )
 
 
-def get_dishka_container() -> AsyncContainer:
+def get_dishka_container() -> 'AsyncContainer':
     """Dishka контейнер зависимостей"""
     return make_async_container(
         DatabaseProvider(),

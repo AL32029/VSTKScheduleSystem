@@ -1,16 +1,12 @@
-import ssl
 from collections.abc import AsyncIterable
+from typing import cast
 
-from cryptography import x509
-from cryptography.hazmat.backends import default_backend
 from dishka import Provider, Scope, provide
 from redis.asyncio import Redis
-from sqlalchemy import URL
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
     async_sessionmaker,
-    create_async_engine,
 )
 
 from service_api.application.ports import (
@@ -32,6 +28,10 @@ from service_api.application.services.get_group_day_schedule import (
     GetGroupDayScheduleUseCase,
 )
 from service_api.infrastructure.config import DatabaseSettings, RedisSettings
+from service_api.infrastructure.managers import (
+    DatabaseEngineManager,
+    RedisClientManager,
+)
 from service_api.infrastructure.repositories import (
     RedisCacheRepository,
     SQLAlchemyCabinetRepository,
@@ -44,52 +44,21 @@ class DatabaseProvider(Provider):
     scope = Scope.APP
 
     @provide
-    def provide_engine(self) -> AsyncEngine:
+    def database_engine_manager(self) -> 'DatabaseEngineManager':
         settings = DatabaseSettings()
+        return DatabaseEngineManager(settings)
 
-        with open(settings.SSL_CERT_FILE, 'rb') as f:
-            cert_data = f.read()
-
-        cert = x509.load_pem_x509_certificate(cert_data, default_backend())
-
-        common_name = cert.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)[0].value
-
-        ssl_context = ssl.create_default_context(cafile=settings.SSL_CA_CERT_FILE)
-        ssl_context.load_cert_chain(
-            certfile=settings.SSL_CERT_FILE,
-            keyfile=settings.SSL_KEY_FILE
-        )
-        ssl_context.verify_mode = ssl.CERT_REQUIRED
-        ssl_context.check_hostname = True
-
-        connection_url = URL.create(
-            "postgresql+asyncpg",
-            username=str(common_name),
-            host=settings.HOST,
-            port=settings.PORT,
-            database=settings.BASE,
-        )
-
-        return create_async_engine(
-            connection_url,
-            echo=False,
-            pool_pre_ping=True,
-            pool_size=10,
-            max_overflow=20,
-            connect_args={"ssl": ssl_context}
-        )
-
-    @provide
-    def provide_session_maker(self, engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
+    @provide(scope=Scope.REQUEST)
+    async def provide_session_maker(self, manager: 'DatabaseEngineManager') -> 'async_sessionmaker[AsyncSession]':
         return async_sessionmaker(
-            bind=engine,
+            cast('AsyncEngine', cast(object, await manager.get_engine())),
             expire_on_commit=False,
             class_=AsyncSession,
-            autoflush=False,
+            autoflush=False
         )
 
-    @provide
-    async def provide_session(self, session_maker: async_sessionmaker[AsyncSession]) -> AsyncIterable[AsyncSession]:
+    @provide(scope=Scope.REQUEST)
+    async def provide_session(self, session_maker: 'async_sessionmaker[AsyncSession]') -> 'AsyncIterable[AsyncSession]':
         async with session_maker() as session:
             yield session
 
@@ -98,41 +67,32 @@ class RedisProvider(Provider):
     scope = Scope.APP
 
     @provide
-    async def redis_engine(self) -> AsyncIterable[Redis]:
+    def redis_client_manager(self) -> 'RedisClientManager':
         settings = RedisSettings()
+        return RedisClientManager(settings)
 
-        client = Redis(
-            host=settings.HOST,
-            port=settings.PORT,
-            db=settings.DB_NUMBER,
-            ssl=True,
-            ssl_certfile=settings.SSL_CERT_FILE,
-            ssl_keyfile=settings.SSL_KEY_FILE,
-            ssl_ca_certs=settings.SSL_CA_CERT_FILE,
-            ssl_cert_reqs=settings.SSL_CERT_REQS,
-            ssl_check_hostname=settings.SSL_CHECK_HOSTNAME
-        )
-        yield client
-        await client.aclose()
+    @provide(scope=Scope.REQUEST)
+    async def provide_redis_client(self, manager: 'RedisClientManager') -> 'Redis':
+        return await manager.get_client()
 
 
 class RepositoriesProvider(Provider):
     scope = Scope.REQUEST
 
     @provide
-    async def sqlalchemy_group_repository(self, session: AsyncSession) -> GroupRepository:
+    async def sqlalchemy_group_repository(self, session: 'AsyncSession') -> 'GroupRepository':
         return SQLAlchemyGroupRepository(session)
 
     @provide
-    async def sqlalchemy_cabinet_repository(self, session: AsyncSession) -> CabinetRepository:
+    async def sqlalchemy_cabinet_repository(self, session: 'AsyncSession') -> 'CabinetRepository':
         return SQLAlchemyCabinetRepository(session)
 
     @provide
-    async def sqlalchemy_schedule_repository(self, session: AsyncSession) -> ScheduleRepository:
+    async def sqlalchemy_schedule_repository(self, session: 'AsyncSession') -> 'ScheduleRepository':
         return SQLAlchemyScheduleRepository(session)
 
     @provide
-    async def redis_cache_repository(self, redis_client: Redis) -> CacheRepository:
+    async def redis_cache_repository(self, redis_client: 'Redis') -> 'CacheRepository':
         return RedisCacheRepository(redis_client)
 
 
@@ -140,33 +100,33 @@ class UseCasesProvider(Provider):
     scope = Scope.REQUEST
 
     @provide
-    async def get_group_use_case(self, group_repo: GroupRepository,
-                                 cache_repo: CacheRepository) -> GetGroupUseCase:
+    async def get_group_use_case(self, group_repo: 'GroupRepository',
+                                 cache_repo: 'CacheRepository') -> 'GetGroupUseCase':
         return GetGroupUseCase(group_repo, cache_repo)
 
     @provide
-    async def get_all_groups_use_case(self, group_repo: GroupRepository,
-                                      cache_repo: CacheRepository) -> GetAllGroupsUseCase:
+    async def get_all_groups_use_case(self, group_repo: 'GroupRepository',
+                                      cache_repo: 'CacheRepository') -> 'GetAllGroupsUseCase':
         return GetAllGroupsUseCase(group_repo, cache_repo)
 
     @provide
-    async def get_cabinet_use_case(self, cabinet_repo: CabinetRepository,
-                                   cache_repo: CacheRepository) -> GetCabinetUseCase:
+    async def get_cabinet_use_case(self, cabinet_repo: 'CabinetRepository',
+                                   cache_repo: 'CacheRepository') -> 'GetCabinetUseCase':
         return GetCabinetUseCase(cabinet_repo, cache_repo)
 
     @provide
-    async def get_all_cabinets_use_case(self, repo: CabinetRepository,
-                                        cache_repo: CacheRepository) -> GetAllCabinetsUseCase:
+    async def get_all_cabinets_use_case(self, repo: 'CabinetRepository',
+                                        cache_repo: 'CacheRepository') -> 'GetAllCabinetsUseCase':
         return GetAllCabinetsUseCase(repo, cache_repo)
 
     @provide
-    async def get_group_day_schedule_use_case(self, group_repo: GroupRepository,
-                                              schedule_repo: ScheduleRepository,
-                                              cache_repo: CacheRepository) -> GetGroupDayScheduleUseCase:
+    async def get_group_day_schedule_use_case(self, group_repo: 'GroupRepository',
+                                              schedule_repo: 'ScheduleRepository',
+                                              cache_repo: 'CacheRepository') -> 'GetGroupDayScheduleUseCase':
         return GetGroupDayScheduleUseCase(group_repo, schedule_repo, cache_repo)
 
     @provide
-    async def get_cabinet_day_schedule_use_case(self, cabinet_repo: CabinetRepository,
-                                                schedule_repo: ScheduleRepository,
-                                                cache_repo: CacheRepository) -> GetCabinetDayScheduleUseCase:
+    async def get_cabinet_day_schedule_use_case(self, cabinet_repo: 'CabinetRepository',
+                                                schedule_repo: 'ScheduleRepository',
+                                                cache_repo: 'CacheRepository') -> 'GetCabinetDayScheduleUseCase':
         return GetCabinetDayScheduleUseCase(cabinet_repo, schedule_repo, cache_repo)

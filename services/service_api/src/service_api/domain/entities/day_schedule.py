@@ -15,11 +15,11 @@ _IGNORED_LESSONS = (
 
 @dataclass(frozen=True)
 class GroupDaySchedule:
-    group: Group
+    group: 'Group'
 
     date: datetime.date
 
-    lessons: Iterable[GroupLesson]
+    lessons: 'Iterable[GroupLesson]'
 
     @property
     def lessons_count(self) -> int:
@@ -49,11 +49,11 @@ class GroupDaySchedule:
 
 @dataclass(frozen=True)
 class CabinetDaySchedule:
-    cabinet: Cabinet
+    cabinet: 'Cabinet'
 
     date: datetime.date
 
-    lessons: Iterable[CabinetLesson]
+    lessons: 'Iterable[CabinetLesson]'
 
     @property
     def lessons_count(self) -> int:

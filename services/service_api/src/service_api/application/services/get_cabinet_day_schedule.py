@@ -10,12 +10,13 @@ from service_api.domain.exceptions import CacheItemNotFound
 
 
 class GetCabinetDayScheduleUseCase:
-    def __init__(self, cabinet_repo: CabinetRepository, schedule_repo: ScheduleRepository, cache_repo: CacheRepository):
+    def __init__(self, cabinet_repo: 'CabinetRepository', schedule_repo: 'ScheduleRepository',
+                 cache_repo: 'CacheRepository'):
         self.schedule_repo = schedule_repo
         self.group_repo = cabinet_repo
         self.cache_repo = cache_repo
 
-    async def execute(self, cabinet_number: str, schedule_to: Literal['today', 'tomorrow']) -> CabinetDaySchedule:
+    async def execute(self, cabinet_number: str, schedule_to: Literal['today', 'tomorrow']) -> 'CabinetDaySchedule':
         try:
             day_schedule = await self.cache_repo.get_cabinet_day_schedule(cabinet_number, schedule_to)
         except CacheItemNotFound:

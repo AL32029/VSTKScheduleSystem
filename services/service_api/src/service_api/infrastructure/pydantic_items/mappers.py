@@ -13,14 +13,14 @@ from service_api.infrastructure.pydantic_items.schemas import (
 )
 
 
-def schedule_domain_to_schema(schedule_item: Group | Cabinet) -> ScheduleItemSchema:
+def schedule_domain_to_schema(schedule_item: 'Group | Cabinet') -> 'ScheduleItemSchema':
     return ScheduleItemSchema(
         index=schedule_item.index,
         number=schedule_item.number
     )
 
 
-def group_day_schedule_to_schema(day_schedule: GroupDaySchedule) -> GroupDayScheduleSchema:
+def group_day_schedule_to_schema(day_schedule: 'GroupDaySchedule') -> 'GroupDayScheduleSchema':
     return GroupDayScheduleSchema(
         group=schedule_domain_to_schema(day_schedule.group),
         date=day_schedule.date,
@@ -31,7 +31,7 @@ def group_day_schedule_to_schema(day_schedule: GroupDaySchedule) -> GroupDaySche
     )
 
 
-def cabinet_day_schedule_to_schema(day_schedule: CabinetDaySchedule) -> CabinetDayScheduleSchema:
+def cabinet_day_schedule_to_schema(day_schedule: 'CabinetDaySchedule') -> 'CabinetDayScheduleSchema':
     return CabinetDayScheduleSchema(
         cabinet=schedule_domain_to_schema(day_schedule.cabinet),
         date=day_schedule.date,

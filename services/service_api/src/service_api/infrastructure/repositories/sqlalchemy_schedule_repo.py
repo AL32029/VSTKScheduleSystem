@@ -2,7 +2,7 @@ import datetime
 from collections.abc import Iterable
 from typing import Literal
 
-from schedule_db_models import LessonCabinetORM, LessonORM
+from schedule_db_models.models import LessonCabinetORM, LessonORM
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,7 +26,7 @@ from service_api.infrastructure.db.mappers import (
 
 
 class SQLAlchemyScheduleRepository(ScheduleRepository):
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: 'AsyncSession'):
         self.session = session
 
     async def get_schedule_date(self, schedule_type: Literal['today', 'tomorrow']) -> datetime.date:
@@ -46,8 +46,8 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
 
         return date
 
-    async def get_by_group(self, group: Group, schedule_date: datetime.date,
-                           redirect: bool = True) -> GroupDaySchedule:
+    async def get_by_group(self, group: 'Group', schedule_date: datetime.date,
+                           redirect: bool = True) -> 'GroupDaySchedule':
         stmt = (
             select(LessonORM).
             where(LessonORM.group_index == group.index, LessonORM.date == schedule_date).
@@ -62,8 +62,8 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
 
         return lessons_orm_to_group_day_schedule_domain(lessons, redirect)
 
-    async def get_by_cabinet(self, cabinet: Cabinet, schedule_date: datetime.date,
-                             redirect: bool = True) -> CabinetDaySchedule:
+    async def get_by_cabinet(self, cabinet: 'Cabinet', schedule_date: datetime.date,
+                             redirect: bool = True) -> 'CabinetDaySchedule':
         stmt = (
             select(LessonORM).
             join(LessonCabinetORM).

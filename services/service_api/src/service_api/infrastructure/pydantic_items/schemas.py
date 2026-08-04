@@ -19,7 +19,7 @@ class ScheduleItemSchema(BaseModel):
     index: str
     number: str
 
-    def to_domain(self, domain_type: Literal['group', 'cabinet']) -> Group | Cabinet:
+    def to_domain(self, domain_type: Literal['group', 'cabinet']) -> 'Group | Cabinet':
         if domain_type == 'group':
             return Group(**self.model_dump(mode='json'))
         else:
@@ -35,14 +35,14 @@ class GroupLessonSchema(BaseModel):
 
     name: str
 
-    cabinets: Iterable[ScheduleItemSchema]
+    cabinets: Iterable['ScheduleItemSchema']
 
-    def to_domain(self) -> GroupLesson:
+    def to_domain(self) -> 'GroupLesson':
         return GroupLesson(
             start=self.start,
             end=self.end,
             name=self.name,
-            cabinets=(x.to_domain('cabinet') for x in self.cabinets)
+            cabinets=[x.to_domain('cabinet') for x in self.cabinets]
         )
 
     def __hash__(self):
@@ -53,19 +53,19 @@ class CabinetLessonSchema(BaseModel):
     start: datetime.time
     end: datetime.time
 
-    group: ScheduleItemSchema
+    group: 'ScheduleItemSchema'
 
     name: str
 
-    cabinets: Iterable[ScheduleItemSchema]
+    cabinets: Iterable['ScheduleItemSchema']
 
-    def to_domain(self) -> CabinetLesson:
+    def to_domain(self) -> 'CabinetLesson':
         return CabinetLesson(
             start=self.start,
             end=self.end,
             group=cast(Group, self.group.to_domain('group')),
             name=self.name,
-            cabinets=(x.to_domain('cabinet') for x in self.cabinets)
+            cabinets=[x.to_domain('cabinet') for x in self.cabinets]
         )
 
     def __hash__(self):
@@ -73,11 +73,11 @@ class CabinetLessonSchema(BaseModel):
 
 
 class GroupDayScheduleSchema(BaseModel):
-    group: ScheduleItemSchema
+    group: 'ScheduleItemSchema'
 
     date: datetime.date
 
-    lessons: Iterable[GroupLessonSchema]
+    lessons: 'Iterable[GroupLessonSchema]'
 
     @computed_field
     @property
@@ -91,7 +91,7 @@ class GroupDayScheduleSchema(BaseModel):
     def pairs_count(self) -> float:
         return self.lessons_count / 2
 
-    def to_domain(self) -> GroupDaySchedule:
+    def to_domain(self) -> 'GroupDaySchedule':
         return GroupDaySchedule(
             group=cast(Group, self.group.to_domain('group')),
             date=self.date,
@@ -103,11 +103,11 @@ class GroupDayScheduleSchema(BaseModel):
 
 
 class CabinetDayScheduleSchema(BaseModel):
-    cabinet: ScheduleItemSchema
+    cabinet: 'ScheduleItemSchema'
 
     date: datetime.date
 
-    lessons: Iterable[CabinetLessonSchema]
+    lessons: 'Iterable[CabinetLessonSchema]'
 
     @computed_field
     @property
@@ -121,7 +121,7 @@ class CabinetDayScheduleSchema(BaseModel):
     def pairs_count(self) -> float:
         return self.lessons_count / 2
 
-    def to_domain(self) -> CabinetDaySchedule:
+    def to_domain(self) -> 'CabinetDaySchedule':
         return CabinetDaySchedule(
             cabinet=cast(Cabinet, self.cabinet.to_domain('cabinet')),
             date=self.date,

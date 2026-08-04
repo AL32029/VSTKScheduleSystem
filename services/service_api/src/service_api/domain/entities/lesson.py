@@ -15,7 +15,7 @@ class GroupLesson:
 
     name: str
 
-    cabinets: Iterable[Cabinet]
+    cabinets: 'Iterable[Cabinet]'
 
     def __hash__(self):
         return hash((self.start, self.end, self.name, tuple(self.cabinets)))
@@ -37,11 +37,11 @@ class CabinetLesson:
     start: datetime.time
     end: datetime.time
 
-    group: Group
+    group: 'Group'
 
     name: str
 
-    cabinets: Iterable[Cabinet]
+    cabinets: 'Iterable[Cabinet]'
 
     def __hash__(self):
         return hash((self.start, self.end, self.name, tuple(self.cabinets)))

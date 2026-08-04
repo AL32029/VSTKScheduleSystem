@@ -5,11 +5,11 @@ from service_api.domain.exceptions import CacheItemNotFound
 
 
 class GetAllGroupsUseCase:
-    def __init__(self, group_repo: GroupRepository, cache_repo: CacheRepository):
+    def __init__(self, group_repo: 'GroupRepository', cache_repo: 'CacheRepository'):
         self.group_repo = group_repo
         self.cache_repo = cache_repo
 
-    async def execute(self) -> list[Group]:
+    async def execute(self) -> 'list[Group]':
         try:
             groups = await self.cache_repo.get_all_groups_cache()
         except CacheItemNotFound:

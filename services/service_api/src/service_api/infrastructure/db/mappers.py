@@ -1,6 +1,6 @@
 from collections.abc import Iterable
 
-from schedule_db_models import CabinetORM, GroupORM, LessonORM
+from schedule_db_models.models import CabinetORM, GroupORM, LessonORM
 
 from service_api.domain.entities import (
     Cabinet,
@@ -10,14 +10,19 @@ from service_api.domain.entities import (
     GroupDaySchedule,
     GroupLesson,
 )
+from service_api.domain.exceptions.api_exceptions import (
+    LessonsDifferentDatesError,
+    LessonsMultipleGroupsError,
+    NoLessonsForCabinetError,
+)
 
 
 # =================== [МАППЕРЫ GROUP] ===================
-def group_orm_to_domain(group: GroupORM) -> Group:
+def group_orm_to_domain(group: 'GroupORM') -> 'Group':
     return Group(group.number)
 
 
-def group_domain_to_orm(group: Group) -> GroupORM:
+def group_domain_to_orm(group: 'Group') -> 'GroupORM':
     return GroupORM(
         index=group.index,
         number=group.number
@@ -25,13 +30,13 @@ def group_domain_to_orm(group: Group) -> GroupORM:
 
 
 # =================== [МАППЕРЫ CABINET] ===================
-def cabinet_orm_to_domain(cabinet: CabinetORM, redirect: bool = False) -> Cabinet:
+def cabinet_orm_to_domain(cabinet: 'CabinetORM', redirect: bool = False) -> 'Cabinet':
     cabinet_result = cabinet.redirected if redirect else cabinet
 
     return Cabinet(cabinet_result.number)
 
 
-def cabinet_domain_to_orm(cabinet: Cabinet) -> CabinetORM:
+def cabinet_domain_to_orm(cabinet: 'Cabinet') -> 'CabinetORM':
     return CabinetORM(
         index=cabinet.index,
         number=cabinet.number
@@ -39,7 +44,7 @@ def cabinet_domain_to_orm(cabinet: Cabinet) -> CabinetORM:
 
 
 # =================== [МАППЕРЫ LESSON] ===================
-def lesson_orm_to_group_domain(lesson: LessonORM, redirect: bool = False) -> GroupLesson:
+def lesson_orm_to_group_domain(lesson: 'LessonORM', redirect: bool = False) -> 'GroupLesson':
     cabinets = [cabinet_orm_to_domain(cabinet)
                 for cabinet in (lesson.cabinets_with_redirects if redirect else lesson.cabinets_without_redirects)]
 
@@ -51,7 +56,7 @@ def lesson_orm_to_group_domain(lesson: LessonORM, redirect: bool = False) -> Gro
     )
 
 
-def lesson_orm_to_cabinet_domain(lesson: LessonORM, redirect: bool = False):
+def lesson_orm_to_cabinet_domain(lesson: 'LessonORM', redirect: bool = False):
     cabinets = [cabinet_orm_to_domain(cabinet)
                 for cabinet in (lesson.cabinets_with_redirects if redirect else lesson.cabinets_without_redirects)]
 
@@ -65,20 +70,19 @@ def lesson_orm_to_cabinet_domain(lesson: LessonORM, redirect: bool = False):
 
 
 # =================== [МАППЕРЫ DAYSCHEDULE] ===================
-def lessons_orm_to_group_day_schedule_domain(lessons: Iterable[LessonORM], redirect: bool = False) -> GroupDaySchedule:
+def lessons_orm_to_group_day_schedule_domain(lessons: 'Iterable[LessonORM]',
+                                             redirect: bool = False) -> 'GroupDaySchedule':
     dates = tuple({lesson.date
                    for lesson in lessons})
 
     if len(dates) > 1:
-        # TODO: Заменить кастомной ошибкой
-        raise ValueError('The provided list of couples contains couples for different days')
+        raise LessonsDifferentDatesError('The provided list of couples contains couples for different days')
 
     groups = tuple({group_orm_to_domain(lesson.group)
                     for lesson in lessons})
 
     if len(groups) > 1:
-        # TODO: Заменить кастомной ошибкой
-        raise ValueError('The provided list of pairs contains pairs for multiple groups')
+        raise LessonsMultipleGroupsError('The provided list of pairs contains pairs for multiple groups')
 
     return GroupDaySchedule(
         groups[0],
@@ -90,14 +94,13 @@ def lessons_orm_to_group_day_schedule_domain(lessons: Iterable[LessonORM], redir
     )
 
 
-def lessons_orm_to_cabinet_day_schedule_domain(cabinet: Cabinet, lessons: Iterable[LessonORM],
-                                               redirect: bool = False) -> CabinetDaySchedule:
+def lessons_orm_to_cabinet_day_schedule_domain(cabinet: 'Cabinet', lessons: 'Iterable[LessonORM]',
+                                               redirect: bool = False) -> 'CabinetDaySchedule':
     dates = tuple({lesson.date
                    for lesson in lessons})
 
     if len(dates) > 1:
-        # TODO: Заменить кастомной ошибкой
-        raise ValueError('The provided list of couples contains couples for different days')
+        raise LessonsDifferentDatesError('The provided list of couples contains couples for different days')
 
     lessons_result = [
         lesson_orm_to_cabinet_domain(lesson, redirect)
@@ -108,8 +111,7 @@ def lessons_orm_to_cabinet_day_schedule_domain(cabinet: Cabinet, lessons: Iterab
     ]
 
     if not lessons_result:
-        # TODO: Заменить кастомной ошибкой
-        raise ValueError('The provided list of pairs does not contain pairs for the requested room')
+        raise NoLessonsForCabinetError('The provided list of pairs does not contain pairs for the requested room')
 
     return CabinetDaySchedule(
         cabinet=cabinet,

@@ -45,10 +45,27 @@ class CabinetDayScheduleNotFound(NotFoundError):
     """Ошибка отсутствия пар для кабинета на указанную дату"""
 
 
-# ====================== [ОШИБКИ ОТСУТСТВИЯ ДАННЫХ] ======================
+# ====================== [ОШИБКИ КЭША] ======================
 class CacheError(APIServiceException):
     """Ошибка кэша"""
 
 
 class CacheItemNotFound(CacheError):
     """Ошибка отсутствия кэша в брокере"""
+
+
+# ====================== [ОШИБКИ МАППЕРОВ] ======================
+class MapperError(APIServiceException):
+    """Ошибка маппера"""
+
+
+class LessonsDifferentDatesError(MapperError):
+    """Ошибка разных дат в списке пар"""
+
+
+class LessonsMultipleGroupsError(MapperError):
+    """Ошибка нескольких групп в списке пар"""
+
+
+class NoLessonsForCabinetError(MapperError):
+    """Ошибка отсутствия пар для запрошенного кабинета"""

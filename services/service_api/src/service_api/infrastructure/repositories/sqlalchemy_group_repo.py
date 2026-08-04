@@ -1,4 +1,4 @@
-from schedule_db_models import GroupORM
+from schedule_db_models.models import GroupORM
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,10 +10,10 @@ from service_api.infrastructure.db.mappers import group_orm_to_domain
 
 
 class SQLAlchemyGroupRepository(GroupRepository):
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: 'AsyncSession'):
         self.session = session
 
-    async def get_by_number(self, number: str) -> Group:
+    async def get_by_number(self, number: str) -> 'Group':
         group = await self.session.get(GroupORM, ITEM_INDEX.sub('', number.lower()))
 
         if group is None:
@@ -21,7 +21,7 @@ class SQLAlchemyGroupRepository(GroupRepository):
 
         return group_orm_to_domain(group)
 
-    async def get_all(self) -> list[Group]:
+    async def get_all(self) -> 'list[Group]':
         stmt = (
             select(GroupORM).
             order_by(GroupORM.index)
