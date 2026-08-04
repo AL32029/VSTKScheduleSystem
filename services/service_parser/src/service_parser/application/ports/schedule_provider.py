@@ -6,6 +6,6 @@ from service_parser.domain.entities.lesson import DaySchedule
 
 class ScheduleProvider(ABC):
     @abstractmethod
-    async def get_schedule_for_groups(self) -> dict[Group, list[DaySchedule]]:
+    async def get_schedule_for_groups(self) -> dict['Group', list['DaySchedule']]:
         """Получение расписания по URL"""
         raise NotImplementedError

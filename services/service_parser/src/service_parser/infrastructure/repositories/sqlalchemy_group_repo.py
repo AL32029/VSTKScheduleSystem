@@ -12,10 +12,10 @@ from service_parser.infrastructure.db.mappers import group_domain_to_orm, group_
 
 
 class SQLAlchemyGroupRepository(GroupRepository):
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: 'AsyncSession'):
         self.session = session
 
-    async def save(self, groups: Iterable[Group]) -> None:
+    async def save(self, groups: Iterable['Group']) -> None:
         stmt = (
             insert(GroupORM).
             values([
@@ -32,21 +32,21 @@ class SQLAlchemyGroupRepository(GroupRepository):
         await self.session.execute(stmt)
         await self.session.commit()
 
-    async def delete(self, group: Group) -> None:
+    async def delete(self, group: 'Group') -> None:
         group_orm = await self.session.get(GroupORM, group.index)
 
         await self.session.delete(group_orm)
         await self.session.commit()
 
-    async def get_by_index(self, group_index: str) -> Group | None:
-        group_orm: GroupORM | None = await self.session.get(GroupORM, group_index)
+    async def get_by_index(self, group_index: str) -> 'Group | None':
+        group_orm: 'GroupORM | None' = await self.session.get(GroupORM, group_index)
 
         if group_orm is None:
             raise GroupNotFound(f'Group with index {group_index!r} not found')
 
         return group_orm_to_domain(group_orm)
 
-    async def get_all(self) -> list[Group]:
+    async def get_all(self) -> list['Group']:
         groups = await self.session.stream_scalars(select(GroupORM))
 
         return [group_orm_to_domain(group)

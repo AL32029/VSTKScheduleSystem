@@ -19,8 +19,6 @@ pydantic-settings = "^2.14.2"
 httpx = "^0.28.1"
 schedule-db-models = { path = "../../libs/schedule_db_models" }
 dishka = "^1.10.1"
-logging-json = "^0.6.0"
-structlog = "^26.1.0"
 redis = "^8.0.1"
 cryptography = "^49.0.0"
 

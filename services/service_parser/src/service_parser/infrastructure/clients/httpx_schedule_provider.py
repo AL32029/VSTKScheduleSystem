@@ -43,7 +43,7 @@ class HTTPXScheduleProvider(ScheduleProvider):
         self.redis_client = redis_client
         self.schedule_type = schedule_type
 
-    async def get_schedule_for_groups(self) -> dict[Group, list[DaySchedule]]:
+    async def get_schedule_for_groups(self) -> dict['Group', list['DaySchedule']]:
         html = await self._fetch_html(self._SCHEDULE_SITE_URL.format(schedule_type=self.schedule_type))
 
         table = self._fetch_table(html)
@@ -85,7 +85,7 @@ class HTTPXScheduleProvider(ScheduleProvider):
         return response.text
 
     @staticmethod
-    def _fetch_table(html: str) -> BeautifulSoup:
+    def _fetch_table(html: str) -> 'BeautifulSoup':
         soup = BeautifulSoup(html, 'lxml')
         table = soup.find('table', class_='excel')
 
@@ -95,7 +95,7 @@ class HTTPXScheduleProvider(ScheduleProvider):
         return table
 
     @staticmethod
-    def _parse_table_to_matrix(table: BeautifulSoup) -> ndarray[tuple[int, int], dtype[Any]]:
+    def _parse_table_to_matrix(table: 'BeautifulSoup') -> ndarray[tuple[int, int], dtype[Any]]:
         rows_raw = [tr.find_all('td') for tr in table.find_all('tr')]
         rows_count = len(rows_raw)
         if rows_count == 0:
@@ -205,7 +205,7 @@ class HTTPXScheduleProvider(ScheduleProvider):
         return tuple(sorted(lessons_time, key=lambda x: x[0]))
 
     @staticmethod
-    def _extract_groups(matrix: ndarray[tuple[int, int], dtype[Any]]) -> tuple[GroupParser, ...]:
+    def _extract_groups(matrix: ndarray[tuple[int, int], dtype[Any]]) -> tuple['GroupParser', ...]:
         match_func = vectorize(lambda s: s and bool(CABINET_NUMBER.match(s)))
 
         mask = match_func(matrix)
@@ -220,13 +220,13 @@ class HTTPXScheduleProvider(ScheduleProvider):
 
     def _extract_lessons(self, matrix: ndarray[tuple[int, int], dtype[Any]], date_list: tuple[datetime.date, ...],
                          lessons_time: tuple[tuple[datetime.time, datetime.time], ...],
-                         groups: tuple[GroupParser, ...]) -> dict[Group, list[DaySchedule]]:
-        group_lessons: dict[Group, list[DaySchedule]] = defaultdict(list[DaySchedule])
+                         groups: tuple['GroupParser', ...]) -> dict['Group', list['DaySchedule']]:
+        group_lessons: dict['Group', list['DaySchedule']] = defaultdict(list['DaySchedule'])
 
         lessons_count = len(lessons_time)
 
         for group in groups:
-            lessons: list[Lesson] = []
+            lessons: list['Lesson'] = []
             for l_idx, (lesson, cabinets) in enumerate(
                     matrix[group.pos_y + 1:group.pos_y + lessons_count, group.pos_x:group.pos_x + 2]
             ):

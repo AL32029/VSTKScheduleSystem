@@ -20,8 +20,8 @@ from service_parser.infrastructure.repositories import SQLAlchemyCabinetReposito
 class DatabaseProvider(Provider):
     scope = Scope.APP
 
-    # TODO: Вернуть название после завершения разработки системы
-    def prod_provide_engine(self) -> AsyncEngine:
+    @provide
+    def provide_engine(self) -> 'AsyncEngine':
         settings = DatabaseSettings()
 
         with open(settings.SSL_CERT_FILE, 'rb') as f:
@@ -56,20 +56,20 @@ class DatabaseProvider(Provider):
             connect_args={"ssl": ssl_context}
         )
 
-    @provide
-    def provide_engine(self) -> AsyncEngine:
-        settings = DatabaseSettings()
+    # @provide
+    # def provide_engine(self) -> 'AsyncEngine':
+    #     settings = DatabaseSettings()
+    #
+    #     return create_async_engine(
+    #         settings.DSN.unicode_string(),
+    #         echo=False,
+    #         pool_pre_ping=True,
+    #         pool_size=10,
+    #         max_overflow=20,
+    #     )
 
-        return create_async_engine(
-            settings.DSN.unicode_string(),
-            echo=False,
-            pool_pre_ping=True,
-            pool_size=10,
-            max_overflow=20,
-        )
-
     @provide
-    def provide_session_maker(self, engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
+    def provide_session_maker(self, engine: 'AsyncEngine') -> async_sessionmaker['AsyncSession']:
         return async_sessionmaker(
             bind=engine,
             expire_on_commit=False,
@@ -78,7 +78,7 @@ class DatabaseProvider(Provider):
         )
 
     @provide
-    async def provide_session(self, session_maker: async_sessionmaker[AsyncSession]) -> AsyncIterable[AsyncSession]:
+    async def provide_session(self, session_maker: async_sessionmaker['AsyncSession']) -> AsyncIterable['AsyncSession']:
         async with session_maker() as session:
             yield session
 
@@ -86,8 +86,8 @@ class DatabaseProvider(Provider):
 class RedisProvider(Provider):
     scope = Scope.APP
 
-    # TODO: Вернуть название после завершения разработки системы
-    async def prod_redis_engine(self) -> AsyncIterable[Redis]:
+    @provide
+    async def redis_engine(self) -> AsyncIterable['Redis']:
         settings = RedisSettings()
 
         client = Redis(
@@ -104,34 +104,34 @@ class RedisProvider(Provider):
         yield client
         await client.aclose()
 
-    @provide
-    async def redis_engine(self) -> AsyncIterable[Redis]:
-        settings = RedisSettings()
-
-        client = Redis(
-            host=settings.HOST,
-            port=settings.PORT,
-            username=settings.USERNAME,
-            password=settings.PASSWORD,
-            db=settings.DB_NUMBER,
-        )
-        yield client
-        await client.aclose()
+    # @provide
+    # async def redis_engine(self) -> AsyncIterable['Redis']:
+    #     settings = RedisSettings()
+    #
+    #     client = Redis(
+    #         host=settings.HOST,
+    #         port=settings.PORT,
+    #         username=settings.USERNAME,
+    #         password=settings.PASSWORD,
+    #         db=settings.DB_NUMBER,
+    #     )
+    #     yield client
+    #     await client.aclose()
 
 
 class RepositoriesProvide(Provider):
     scope = Scope.REQUEST
 
     @provide
-    async def sqlalchemy_cabinet_repository(self, session: AsyncSession) -> CabinetRepository:
+    async def sqlalchemy_cabinet_repository(self, session: 'AsyncSession') -> 'CabinetRepository':
         return SQLAlchemyCabinetRepository(session)
 
     @provide
-    async def sqlalchemy_group_repository(self, session: AsyncSession) -> GroupRepository:
+    async def sqlalchemy_group_repository(self, session: 'AsyncSession') -> 'GroupRepository':
         return SQLAlchemyGroupRepository(session)
 
     @provide
-    async def sqlalchemy_schedule_repository(self, session: AsyncSession) -> ScheduleRepository:
+    async def sqlalchemy_schedule_repository(self, session: 'AsyncSession') -> 'ScheduleRepository':
         return SQLAlchemyScheduleRepository(session)
 
 
@@ -139,6 +139,6 @@ class HTTPXClientProvider(Provider):
     scope = Scope.APP
 
     @provide
-    async def provide_client(self) -> AsyncGenerator[AsyncClient, Any]:
+    async def provide_client(self) -> AsyncGenerator['AsyncClient', Any]:
         async with httpx.AsyncClient() as client:
             yield client

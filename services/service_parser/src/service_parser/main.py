@@ -1,6 +1,4 @@
 import asyncio
-import logging
-import sys
 
 from httpx import AsyncClient
 from redis.asyncio import Redis
@@ -9,8 +7,6 @@ from service_parser.application.ports import GroupRepository, CabinetRepository,
 from service_parser.application.services import ScheduleParserUseCase
 from service_parser.infrastructure.clients import HTTPXScheduleProvider
 from service_parser.infrastructure.di.container import get_dishka_container
-
-logging.basicConfig(level=logging.CRITICAL, stream=sys.stdout)
 
 container = get_dishka_container()
 

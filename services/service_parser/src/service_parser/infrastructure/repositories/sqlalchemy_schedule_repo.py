@@ -15,10 +15,10 @@ from service_parser.infrastructure.db.mappers import lessons_orm_to_day_schedule
 
 
 class SQLAlchemyScheduleRepository(ScheduleRepository):
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: 'AsyncSession'):
         self.session = session
 
-    async def save(self, day_schedules: Iterable[DaySchedule]) -> None:
+    async def save(self, day_schedules: Iterable['DaySchedule']) -> None:
         schedule_groups = {day_schedule.group for day_schedule in day_schedules}
         database_groups = {
             group_orm_to_domain(group)
@@ -38,7 +38,7 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
                 for day_schedule in schedules
             ])
 
-            schedules_check: set[tuple[DaySchedule, DaySchedule | None]] = {
+            schedules_check: set[tuple['DaySchedule', 'DaySchedule | None']] = {
                 (
                     day_schedule,
                     next(
@@ -104,7 +104,7 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
 
         await self.session.commit()
 
-    async def get_by_group(self, group: Group, date: datetime.date) -> DaySchedule:
+    async def get_by_group(self, group: 'Group', date: datetime.date) -> 'DaySchedule':
         group_is_exists = await self.session.scalar(
             select(exists(GroupORM).where(GroupORM.index == group.index))
         )
@@ -127,7 +127,7 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
 
         return lessons_orm_to_day_schedule_domain(lessons)
 
-    async def get_many_by_groups(self, items: Iterable[tuple[Group, datetime.date]]) -> set[DaySchedule]:
+    async def get_many_by_groups(self, items: Iterable[tuple['Group', datetime.date]]) -> set['DaySchedule']:
         schedule_groups = {group for group, _ in items}
 
         db_groups = {

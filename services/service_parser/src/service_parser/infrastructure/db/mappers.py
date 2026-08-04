@@ -8,30 +8,30 @@ from service_parser.domain.exceptions.parser_exceptions import ScheduleForSomeGr
     ScheduleForSomeDatesError, SavingDayScheduleGroupNotFound, SavingDayScheduleDateNotFound
 
 
-def group_domain_to_orm(group: Group) -> GroupORM:
+def group_domain_to_orm(group: 'Group') -> 'GroupORM':
     return GroupORM(
         index=group.index,
         number=group.number
     )
 
 
-def group_orm_to_domain(group: GroupORM) -> Group:
+def group_orm_to_domain(group: 'GroupORM') -> 'Group':
     return Group(group.number)
 
 
-def cabinet_domain_to_orm(cabinet: Cabinet) -> CabinetORM:
+def cabinet_domain_to_orm(cabinet: 'Cabinet') -> 'CabinetORM':
     return CabinetORM(
         index=cabinet.index,
         number=cabinet.number
     )
 
 
-def cabinet_orm_to_domain(cabinet: CabinetORM, check_redirect: bool = False) -> Cabinet:
+def cabinet_orm_to_domain(cabinet: 'CabinetORM', check_redirect: bool = False) -> 'Cabinet':
     c = cabinet.redirected if check_redirect else cabinet
     return Cabinet(c.number)
 
 
-def day_schedule_domain_to_lessons_orm(schedule: DaySchedule) -> list[LessonORM]:
+def day_schedule_domain_to_lessons_orm(schedule: 'DaySchedule') -> list['LessonORM']:
     return [
         LessonORM(
             group_index=schedule.group.index,
@@ -48,7 +48,7 @@ def day_schedule_domain_to_lessons_orm(schedule: DaySchedule) -> list[LessonORM]
     ]
 
 
-def lesson_orm_to_domain(lesson: LessonORM, check_redirect: bool = False) -> Lesson:
+def lesson_orm_to_domain(lesson: 'LessonORM', check_redirect: bool = False) -> 'Lesson':
     cabinets = list(sorted(
         [(cab.cabinet_index, cab.cabinet_item) for cab in lesson.cabinet_relationships],
         key=lambda x: x[0]
@@ -62,7 +62,7 @@ def lesson_orm_to_domain(lesson: LessonORM, check_redirect: bool = False) -> Les
     )
 
 
-def lesson_domain_in_orm(date: datetime.date, group: Group, lesson: Lesson) -> LessonORM:
+def lesson_domain_in_orm(date: datetime.date, group: 'Group', lesson: 'Lesson') -> 'LessonORM':
     return LessonORM(
         group_index=group.index,
         date=date,
@@ -76,7 +76,7 @@ def lesson_domain_in_orm(date: datetime.date, group: Group, lesson: Lesson) -> L
     )
 
 
-def lessons_orm_to_day_schedule_domain(schedule: Iterable[LessonORM], check_redirect: bool = False) -> DaySchedule:
+def lessons_orm_to_day_schedule_domain(schedule: Iterable['LessonORM'], check_redirect: bool = False) -> 'DaySchedule':
     groups_found: set[Group] = set()
     schedule_dates: set[datetime.date] = set()
 

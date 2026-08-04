@@ -5,8 +5,7 @@ from pydantic import PostgresDsn, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-# TODO: Вернуть название после завершения разработки системы
-class ProdDatabaseSettings(BaseSettings):
+class DatabaseSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=os.getenv('DATABASE_SETTINGS_ENV', '/vault/secrets/database.env'),
         env_prefix='DATABASE_',
@@ -34,35 +33,10 @@ class ProdDatabaseSettings(BaseSettings):
         return os.getenv('DATABASE_BASE')
 
     @property
-    def URL(self) -> PostgresDsn:
+    def URL(self) -> 'PostgresDsn':
         return PostgresDsn.build(
             scheme='postgresql+asyncpg',
             host=self.HOST,
             port=self.PORT,
-            path=self.BASE
-        )
-
-
-class DatabaseSettings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_file=os.getenv('DATABASE_SETTINGS_ENV', '/vault/secrets/database.env'),
-        env_prefix='DATABASE_',
-        extra='ignore'
-    )
-
-    HOST: str
-    PORT: int
-    USERNAME: str
-    PASSWORD: str
-    BASE: str
-
-    @property
-    def DSN(self) -> PostgresDsn:
-        return PostgresDsn.build(
-            scheme='postgresql+asyncpg',
-            host=self.HOST,
-            port=self.PORT,
-            username=self.USERNAME,
-            password=self.PASSWORD,
             path=self.BASE
         )

@@ -5,8 +5,7 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-# TODO: Вернуть название после завершения разработки системы
-class ProdRedisSettings(BaseSettings):
+class RedisSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=os.getenv('REDIS_SETTINGS_ENV', '/vault/secrets/database.env'),
                                       env_prefix='REDIS_', extra='ignore')
 
@@ -29,14 +28,3 @@ class ProdRedisSettings(BaseSettings):
     @property
     def DB_NUMBER(self) -> int:
         return int(os.getenv('REDIS_DB_NUMBER'))
-
-
-class RedisSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=os.getenv('REDIS_SETTINGS_ENV', '/vault/secrets/database.env'),
-                                      env_prefix='REDIS_', extra='ignore')
-
-    HOST: str
-    PORT: int
-    USERNAME: str | None
-    PASSWORD: str | None
-    DB_NUMBER: int
