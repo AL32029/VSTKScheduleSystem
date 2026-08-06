@@ -16,10 +16,6 @@ class DatabaseSettings(BaseSettings):
     SSL_KEY_FILE: str = Field(default='/vault/secrets/database-tls.key')
     SSL_CA_CERT_FILE: str = Field(default='/vault/secrets/database-tls.ca')
 
-    SSL_CERT_REQS: Literal['none', 'optional', 'required'] = Field(default='required')
-
-    SSL_CHECK_HOSTNAME: bool = Field(default=True)
-
     @property
     def HOST(self) -> str:
         return os.getenv('DATABASE_HOST')
@@ -31,6 +27,14 @@ class DatabaseSettings(BaseSettings):
     @property
     def BASE(self) -> str:
         return os.getenv('DATABASE_BASE')
+
+    @property
+    def SSL_CERT_REQS(self) -> Literal['none', 'optional', 'required']:
+        return os.getenv('DATABASE_SSL_CERT_REQS')
+
+    @property
+    def SSL_CHECK_HOSTNAME(self) -> bool:
+        return os.getenv('DATABASE_SSL_CHECK_HOSTNAME')
 
     @property
     def URL(self) -> 'PostgresDsn':
