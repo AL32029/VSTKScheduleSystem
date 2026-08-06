@@ -18,14 +18,10 @@ from service_api.application.ports import (
 from service_api.application.services import (
     GetAllCabinetsUseCase,
     GetAllGroupsUseCase,
-    GetCabinetUseCase,
-    GetGroupUseCase,
-)
-from service_api.application.services.get_cabinet_day_schedule import (
     GetCabinetDayScheduleUseCase,
-)
-from service_api.application.services.get_group_day_schedule import (
+    GetCabinetUseCase,
     GetGroupDayScheduleUseCase,
+    GetGroupUseCase,
 )
 from service_api.infrastructure.config import DatabaseSettings, RedisSettings
 from service_api.infrastructure.managers import (
@@ -49,16 +45,16 @@ class DatabaseProvider(Provider):
         return DatabaseEngineManager(settings)
 
     @provide(scope=Scope.REQUEST)
-    async def provide_session_maker(self, manager: 'DatabaseEngineManager') -> 'async_sessionmaker[AsyncSession]':
+    async def provide_session_maker(self, manager: 'DatabaseEngineManager') -> async_sessionmaker[AsyncSession]:
         return async_sessionmaker(
-            cast('AsyncEngine', cast(object, await manager.get_engine())),
+            cast(AsyncEngine, cast(object, await manager.get_engine())),
             expire_on_commit=False,
             class_=AsyncSession,
             autoflush=False
         )
 
     @provide(scope=Scope.REQUEST)
-    async def provide_session(self, session_maker: 'async_sessionmaker[AsyncSession]') -> 'AsyncIterable[AsyncSession]':
+    async def provide_session(self, session_maker: async_sessionmaker[AsyncSession]) -> AsyncIterable[AsyncSession]:
         async with session_maker() as session:
             yield session
 
@@ -72,7 +68,7 @@ class RedisProvider(Provider):
         return RedisClientManager(settings)
 
     @provide(scope=Scope.REQUEST)
-    async def provide_redis_client(self, manager: 'RedisClientManager') -> 'Redis':
+    async def provide_redis_client(self, manager: 'RedisClientManager') -> Redis:
         return await manager.get_client()
 
 
@@ -80,19 +76,19 @@ class RepositoriesProvider(Provider):
     scope = Scope.REQUEST
 
     @provide
-    async def sqlalchemy_group_repository(self, session: 'AsyncSession') -> 'GroupRepository':
+    async def sqlalchemy_group_repository(self, session: AsyncSession) -> 'GroupRepository':
         return SQLAlchemyGroupRepository(session)
 
     @provide
-    async def sqlalchemy_cabinet_repository(self, session: 'AsyncSession') -> 'CabinetRepository':
+    async def sqlalchemy_cabinet_repository(self, session: AsyncSession) -> 'CabinetRepository':
         return SQLAlchemyCabinetRepository(session)
 
     @provide
-    async def sqlalchemy_schedule_repository(self, session: 'AsyncSession') -> 'ScheduleRepository':
+    async def sqlalchemy_schedule_repository(self, session: AsyncSession) -> 'ScheduleRepository':
         return SQLAlchemyScheduleRepository(session)
 
     @provide
-    async def redis_cache_repository(self, redis_client: 'Redis') -> 'CacheRepository':
+    async def redis_cache_repository(self, redis_client: Redis) -> 'CacheRepository':
         return RedisCacheRepository(redis_client)
 
 

@@ -1,4 +1,4 @@
-from service_api.infrastructure.pydantic_items.schemas import ScheduleItemSchema
+from service_api.infrastructure.pydantic_schemas import ScheduleItemSchema
 from tests.test_contains import _GROUP_ITEM, _GROUP_ITEMS
 
 

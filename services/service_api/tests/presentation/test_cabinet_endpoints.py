@@ -1,4 +1,4 @@
-from service_api.infrastructure.pydantic_items.schemas import ScheduleItemSchema
+from service_api.infrastructure.pydantic_schemas import ScheduleItemSchema
 from tests.test_contains import _CABINET_ITEM, _CABINET_ITEMS
 
 

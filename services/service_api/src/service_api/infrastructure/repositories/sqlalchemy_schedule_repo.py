@@ -19,7 +19,7 @@ from service_api.domain.exceptions import (
     ScheduleDateNotFound,
 )
 from service_api.infrastructure.config import system_settings
-from service_api.infrastructure.db.mappers import (
+from service_api.infrastructure.mappers import (
     lessons_orm_to_cabinet_day_schedule_domain,
     lessons_orm_to_group_day_schedule_domain,
 )

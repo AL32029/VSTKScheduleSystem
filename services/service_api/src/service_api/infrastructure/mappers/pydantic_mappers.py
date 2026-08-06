@@ -4,7 +4,7 @@ from service_api.domain.entities import (
     Group,
     GroupDaySchedule,
 )
-from service_api.infrastructure.pydantic_items.schemas import (
+from service_api.infrastructure.pydantic_schemas import (
     CabinetDayScheduleSchema,
     CabinetLessonSchema,
     GroupDayScheduleSchema,

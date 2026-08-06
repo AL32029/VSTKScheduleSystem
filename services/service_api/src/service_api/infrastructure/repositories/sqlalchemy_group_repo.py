@@ -6,7 +6,7 @@ from service_api.application.ports import GroupRepository
 from service_api.domain.entities import Group
 from service_api.domain.exceptions.api_exceptions import GroupNotFound
 from service_api.domain.shared.patterns import ITEM_INDEX
-from service_api.infrastructure.db.mappers import group_orm_to_domain
+from service_api.infrastructure.mappers import group_orm_to_domain
 
 
 class SQLAlchemyGroupRepository(GroupRepository):
@@ -21,7 +21,7 @@ class SQLAlchemyGroupRepository(GroupRepository):
 
         return group_orm_to_domain(group)
 
-    async def get_all(self) -> 'list[Group]':
+    async def get_all(self) -> list['Group']:
         stmt = (
             select(GroupORM).
             order_by(GroupORM.index)

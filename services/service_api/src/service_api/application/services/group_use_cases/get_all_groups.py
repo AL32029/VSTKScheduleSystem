@@ -9,7 +9,7 @@ class GetAllGroupsUseCase:
         self.group_repo = group_repo
         self.cache_repo = cache_repo
 
-    async def execute(self) -> 'list[Group]':
+    async def execute(self) -> list['Group']:
         try:
             groups = await self.cache_repo.get_all_groups_cache()
         except CacheItemNotFound:

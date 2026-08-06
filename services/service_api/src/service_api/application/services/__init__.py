@@ -1,9 +1,6 @@
-from .get_all_cabinets import GetAllCabinetsUseCase
-from .get_all_groups import GetAllGroupsUseCase
-from .get_cabinet import GetCabinetUseCase
-from .get_cabinet_day_schedule import GetCabinetDayScheduleUseCase
-from .get_group import GetGroupUseCase
-from .get_group_day_schedule import GetGroupDayScheduleUseCase
+from .cabinet_use_cases import GetAllCabinetsUseCase, GetCabinetUseCase
+from .group_use_cases import GetAllGroupsUseCase, GetGroupUseCase
+from .schedule_use_cases import GetCabinetDayScheduleUseCase, GetGroupDayScheduleUseCase
 
 __all__ = [
     'GetAllCabinetsUseCase',

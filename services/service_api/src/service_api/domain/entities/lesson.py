@@ -2,8 +2,6 @@ import datetime
 from collections.abc import Iterable
 from dataclasses import dataclass
 
-from service_api.domain.exceptions import LessonEndTimeError
-
 from .cabinet import Cabinet
 from .group import Group
 
@@ -15,7 +13,7 @@ class GroupLesson:
 
     name: str
 
-    cabinets: 'Iterable[Cabinet]'
+    cabinets: Iterable['Cabinet']
 
     def __hash__(self):
         return hash((self.start, self.end, self.name, tuple(self.cabinets)))
@@ -27,10 +25,6 @@ class GroupLesson:
         return (self.start, self.end, self.name, tuple(self.cabinets)) == (other.start, other.end,
                                                                            other.name, tuple(other.cabinets))
 
-    def __post_init__(self):
-        if self.end < self.start:
-            raise LessonEndTimeError('End time cannot be less than start time')
-
 
 @dataclass(frozen=True)
 class CabinetLesson:
@@ -41,7 +35,7 @@ class CabinetLesson:
 
     name: str
 
-    cabinets: 'Iterable[Cabinet]'
+    cabinets: Iterable['Cabinet']
 
     def __hash__(self):
         return hash((self.start, self.end, self.name, tuple(self.cabinets)))
@@ -52,7 +46,3 @@ class CabinetLesson:
 
         return (self.start, self.end, self.name, tuple(self.cabinets)) == (other.start, other.end,
                                                                            other.name, tuple(other.cabinets))
-
-    def __post_init__(self):
-        if self.end < self.start:
-            raise LessonEndTimeError('End time cannot be less than start time')

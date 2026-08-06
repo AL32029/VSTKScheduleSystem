@@ -2,8 +2,6 @@ import datetime
 from collections.abc import Iterable
 from dataclasses import dataclass
 
-from service_api.domain.exceptions import DayScheduleEmptyLessonsError
-
 from .cabinet import Cabinet
 from .group import Group
 from .lesson import CabinetLesson, GroupLesson
@@ -19,7 +17,7 @@ class GroupDaySchedule:
 
     date: datetime.date
 
-    lessons: 'Iterable[GroupLesson]'
+    lessons: Iterable['GroupLesson']
 
     @property
     def lessons_count(self) -> int:
@@ -40,12 +38,6 @@ class GroupDaySchedule:
 
         return (self.group, self.date, self.lessons) == (other.group, other.date, tuple(other.lessons))
 
-    def __post_init__(self):
-        if not self.lessons:
-            raise DayScheduleEmptyLessonsError('Day schedule cannot have an empty schedule')
-
-        object.__setattr__(self, 'lessons', tuple(sorted(self.lessons, key=lambda x: x.start)))
-
 
 @dataclass(frozen=True)
 class CabinetDaySchedule:
@@ -53,7 +45,7 @@ class CabinetDaySchedule:
 
     date: datetime.date
 
-    lessons: 'Iterable[CabinetLesson]'
+    lessons: Iterable['CabinetLesson']
 
     @property
     def lessons_count(self) -> int:
@@ -73,9 +65,3 @@ class CabinetDaySchedule:
             raise NotImplementedError
 
         return (self.cabinet, self.date, self.lessons) == (other.cabinet, other.date, tuple(other.lessons))
-
-    def __post_init__(self):
-        if not self.lessons:
-            raise DayScheduleEmptyLessonsError('Day schedule cannot have an empty schedule')
-
-        object.__setattr__(self, 'lessons', tuple(sorted(self.lessons, key=lambda x: x.start)))

@@ -16,11 +16,13 @@ from service_api.domain.entities import (
 from service_api.domain.exceptions import CacheItemNotFound
 from service_api.domain.shared.patterns import ITEM_INDEX
 from service_api.infrastructure.config import system_settings
-from service_api.infrastructure.pydantic_items import (
-    CabinetDayScheduleSchema,
-    GroupDayScheduleSchema,
+from service_api.infrastructure.mappers import (
     cabinet_day_schedule_to_schema,
     group_day_schedule_to_schema,
+)
+from service_api.infrastructure.pydantic_schemas import (
+    CabinetDayScheduleSchema,
+    GroupDayScheduleSchema,
 )
 
 
@@ -40,7 +42,7 @@ class RedisCacheRepository(CacheRepository):
         await self.redis_repo.hset('group', group_item.index, json.dumps(asdict(group_item), ensure_ascii=False))
         await self.redis_repo.hexpire('group', ttl, group_item.index)
 
-    async def get_all_groups_cache(self) -> 'list[Group]':
+    async def get_all_groups_cache(self) -> list['Group']:
         groups = await self.redis_repo.hget('group', 'all')
 
         if groups is None:
@@ -49,7 +51,7 @@ class RedisCacheRepository(CacheRepository):
         return [Group(**group)
                 for group in json.loads(groups)]
 
-    async def set_all_groups_cache(self, group_items: 'Iterable[Group]', ttl: int = 21600) -> None:
+    async def set_all_groups_cache(self, group_items: Iterable['Group'], ttl: int = 21600) -> None:
         items_to_set = {
             'all': json.dumps([asdict(group) for group in group_items], ensure_ascii=False),
             **{
@@ -74,7 +76,7 @@ class RedisCacheRepository(CacheRepository):
                                    json.dumps(asdict(cabinet_item), ensure_ascii=False))
         await self.redis_repo.hexpire('cabinet', ttl, cabinet_item.index)
 
-    async def get_all_cabinets_cache(self) -> 'list[Cabinet]':
+    async def get_all_cabinets_cache(self) -> list['Cabinet']:
         cabinets = await self.redis_repo.hget('cabinet', 'all')
 
         if cabinets is None:
@@ -83,7 +85,7 @@ class RedisCacheRepository(CacheRepository):
         return [Cabinet(**group)
                 for group in json.loads(cabinets)]
 
-    async def set_all_cabinets_cache(self, cabinet_items: 'Iterable[Cabinet]', ttl: int = 604800) -> None:
+    async def set_all_cabinets_cache(self, cabinet_items: Iterable['Cabinet'], ttl: int = 604800) -> None:
         items_to_set = {
             'all': json.dumps([asdict(cabinet) for cabinet in cabinet_items], ensure_ascii=False),
             **{

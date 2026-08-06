@@ -19,7 +19,7 @@ class DatabaseEngineManager:
         self._lock = asyncio.Lock()
         print('DatabaseEngineManager initialized')
 
-    async def get_engine(self) -> 'AsyncEngine':
+    async def get_engine(self) -> AsyncEngine:
         print('Getting database engine...')
         if self._engine is None:
             async with self._lock:
@@ -28,7 +28,7 @@ class DatabaseEngineManager:
                     self._engine = self._build_engine()
 
         print('Database engine retrieved')
-        return cast('AsyncEngine', self._engine)
+        return cast(AsyncEngine, self._engine)
 
     async def rotate(self) -> bool:
         print('Rotating of database engine is started')
@@ -77,14 +77,14 @@ class DatabaseEngineManager:
         print('New database engine built')
         return engine
 
-    async def _dispose_engine(self, engine: 'AsyncEngine', delay: float = 30.0) -> None:
+    async def _dispose_engine(self, engine: AsyncEngine, delay: float = 30.0) -> None:
         print(f'Disposing old database engine, wait {delay} sec...')
         await asyncio.sleep(delay)
         print('Disposing database engine...')
         await engine.dispose()
         print('Database engine disposed')
 
-    def _load_ssl_context(self) -> 'SSLContext':
+    def _load_ssl_context(self) -> SSLContext:
         print('Loading SSL context...')
         ssl_context = ssl.create_default_context(cafile=self.settings.SSL_CA_CERT_FILE)
         ssl_context.load_cert_chain(
@@ -94,7 +94,7 @@ class DatabaseEngineManager:
         print('SSL context loaded')
         return ssl_context
 
-    def _build_engine_url(self) -> 'URL':
+    def _build_engine_url(self) -> URL:
         print('Building engine URL...')
         with open(self.settings.SSL_CERT_FILE, 'rb') as f:
             cert_data = f.read()

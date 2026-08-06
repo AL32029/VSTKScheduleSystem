@@ -14,7 +14,7 @@ class RedisClientManager:
         self._lock = asyncio.Lock()
         print('RedisClientManager initialized')
 
-    async def get_client(self) -> 'Redis':
+    async def get_client(self) -> Redis:
         print('Getting Redis client...')
         if self._client is None:
             async with self._lock:
@@ -23,7 +23,7 @@ class RedisClientManager:
                     self._client = self._build_client()
 
         print('Redis client retrieved')
-        return cast('Redis', self._client)
+        return cast(Redis, self._client)
 
     async def rotate(self) -> bool:
         print('Rotating of Redis client is started')
@@ -55,7 +55,7 @@ class RedisClientManager:
         if self._client is not None:
             await self._close_client(self._client, delay)
 
-    def _build_client(self) -> 'Redis':
+    def _build_client(self) -> Redis:
         print('Build new Redis client')
         return Redis(
             host=self.settings.HOST,

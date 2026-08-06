@@ -23,7 +23,7 @@ from service_api.presentation.rest.endpoints import (
     group_router,
     schedule_router,
 )
-from service_api.presentation.rest.exceptions import (
+from service_api.presentation.rest.exception_responses import (
     not_found_exception,
 )
 

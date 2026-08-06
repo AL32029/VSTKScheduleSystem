@@ -22,12 +22,12 @@ class CacheRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_all_groups_cache(self) -> 'list[Group]':
+    async def get_all_groups_cache(self) -> list['Group']:
         """Получение всех групп из кэша"""
         raise NotImplementedError
 
     @abstractmethod
-    async def set_all_groups_cache(self, group_items: 'Iterable[Group]', ttl: int = 21600) -> None:
+    async def set_all_groups_cache(self, group_items: Iterable['Group'], ttl: int = 21600) -> None:
         """Сохранение всех групп в кэш"""
         raise NotImplementedError
 
@@ -42,12 +42,12 @@ class CacheRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_all_cabinets_cache(self) -> 'list[Cabinet]':
+    async def get_all_cabinets_cache(self) -> list['Cabinet']:
         """Получение всех кабинетов из кэша"""
         raise NotImplementedError
 
     @abstractmethod
-    async def set_all_cabinets_cache(self, cabinet_items: 'Iterable[Cabinet]', ttl: int = 604800) -> None:
+    async def set_all_cabinets_cache(self, cabinet_items: Iterable['Cabinet'], ttl: int = 604800) -> None:
         """Сохранение всех кабинетов в кэш"""
         raise NotImplementedError
 

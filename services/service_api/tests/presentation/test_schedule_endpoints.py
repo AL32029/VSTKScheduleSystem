@@ -1,4 +1,4 @@
-from service_api.infrastructure.pydantic_items import (
+from service_api.infrastructure.pydantic_schemas import (
     CabinetDayScheduleSchema,
     GroupDayScheduleSchema,
 )

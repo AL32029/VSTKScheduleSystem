@@ -7,6 +7,9 @@ from .api_exceptions import (
     GroupNotFound,
     GroupNumberFormatError,
     LessonEndTimeError,
+    LessonsDifferentDatesError,
+    LessonsMultipleGroupsError,
+    NoLessonsForCabinetError,
     ScheduleDateNotFound,
 )
 
@@ -19,5 +22,8 @@ __all__ = [
     'GroupNotFound',
     'GroupNumberFormatError',
     'LessonEndTimeError',
-    'ScheduleDateNotFound'
+    'LessonsDifferentDatesError',
+    'LessonsMultipleGroupsError',
+    'NoLessonsForCabinetError',
+    'ScheduleDateNotFound',
 ]

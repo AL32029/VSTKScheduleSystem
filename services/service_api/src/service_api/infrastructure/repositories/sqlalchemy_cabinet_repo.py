@@ -6,7 +6,7 @@ from service_api.application.ports import CabinetRepository
 from service_api.domain.entities import Cabinet
 from service_api.domain.exceptions.api_exceptions import CabinetNotFound
 from service_api.domain.shared.patterns import ITEM_INDEX
-from service_api.infrastructure.db.mappers import cabinet_orm_to_domain
+from service_api.infrastructure.mappers import cabinet_orm_to_domain
 
 
 class SQLAlchemyCabinetRepository(CabinetRepository):
@@ -21,7 +21,7 @@ class SQLAlchemyCabinetRepository(CabinetRepository):
 
         return cabinet_orm_to_domain(cabinet)
 
-    async def get_all(self) -> 'list[Cabinet]':
+    async def get_all(self) -> list['Cabinet']:
         stmt = (
             select(CabinetORM).
             order_by(CabinetORM.index)

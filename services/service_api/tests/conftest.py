@@ -19,13 +19,13 @@ from sqlalchemy.ext.asyncio import (
 from testcontainers.community.postgres import PostgresContainer
 from testcontainers.community.redis import RedisContainer
 
-from service_api.infrastructure.db.mappers import (
-    cabinet_domain_to_orm,
-    group_domain_to_orm,
-)
 from service_api.infrastructure.di.providers import (
     RepositoriesProvider,
     UseCasesProvider,
+)
+from service_api.infrastructure.mappers.domain_mappers import (
+    cabinet_domain_to_orm,
+    group_domain_to_orm,
 )
 from tests.test_contains import (
     _CABINET_ITEM,

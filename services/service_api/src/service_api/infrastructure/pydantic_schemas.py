@@ -42,7 +42,7 @@ class GroupLessonSchema(BaseModel):
             start=self.start,
             end=self.end,
             name=self.name,
-            cabinets=[x.to_domain('cabinet') for x in self.cabinets]
+            cabinets=[cast('Cabinet', x.to_domain('cabinet')) for x in self.cabinets]
         )
 
     def __hash__(self):
@@ -63,9 +63,9 @@ class CabinetLessonSchema(BaseModel):
         return CabinetLesson(
             start=self.start,
             end=self.end,
-            group=cast(Group, self.group.to_domain('group')),
+            group=cast('Group', self.group.to_domain('group')),
             name=self.name,
-            cabinets=[x.to_domain('cabinet') for x in self.cabinets]
+            cabinets=[cast('Cabinet', x.to_domain('cabinet')) for x in self.cabinets]
         )
 
     def __hash__(self):
@@ -77,7 +77,7 @@ class GroupDayScheduleSchema(BaseModel):
 
     date: datetime.date
 
-    lessons: 'Iterable[GroupLessonSchema]'
+    lessons: Iterable['GroupLessonSchema']
 
     @computed_field
     @property
@@ -107,7 +107,7 @@ class CabinetDayScheduleSchema(BaseModel):
 
     date: datetime.date
 
-    lessons: 'Iterable[CabinetLessonSchema]'
+    lessons: Iterable['CabinetLessonSchema']
 
     @computed_field
     @property

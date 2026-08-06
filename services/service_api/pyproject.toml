@@ -1,6 +1,6 @@
 [project]
 name = "service-api"
-version = "0.0.1dev"
+version = "0.0.2dev"
 description = "Microservice \"API Service\""
 authors = [
     { name = "Nikita Bondarev", email = "nikitabondarevvitebsk@gmail.com" }
