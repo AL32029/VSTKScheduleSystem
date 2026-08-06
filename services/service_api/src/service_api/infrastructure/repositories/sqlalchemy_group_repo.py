@@ -1,4 +1,4 @@
-from schedule_db_models.models import GroupORM
+from schedule_db_models import GroupORM
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 

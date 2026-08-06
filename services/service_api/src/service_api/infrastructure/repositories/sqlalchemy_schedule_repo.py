@@ -2,7 +2,7 @@ import datetime
 from collections.abc import Iterable
 from typing import Literal
 
-from schedule_db_models.models import LessonCabinetORM, LessonORM
+from schedule_db_models import LessonCabinetORM, LessonORM
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
