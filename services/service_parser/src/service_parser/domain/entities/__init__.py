@@ -1,7 +1,11 @@
 from .cabinet import Cabinet
 from .group import Group, GroupParser
-from .lesson import Lesson, DaySchedule
+from .lesson import DaySchedule, Lesson
 
 __all__ = [
-    'Group', 'GroupParser', 'Cabinet', 'Lesson', 'DaySchedule'
+    'Cabinet',
+    'DaySchedule',
+    'Group',
+    'GroupParser',
+    'Lesson'
 ]

@@ -1,3 +1,4 @@
+import aiofiles
 import pytest
 
 
@@ -5,7 +6,7 @@ import pytest
 async def _html_invalid_scenario(schedule_provider, httpx_mock, file_name) -> str:
     """Фикстура, возвращающая HTML для разных сценариев ошибок"""
     file_path = f'./tests/fixtures/invalid_schedules/{file_name}'
-    with open(file_path, 'rb') as f:
+    async with aiofiles.open(file_path, 'rb') as f:
         httpx_mock.add_response(
             method='GET',
             url='https://vgtk.by/schedule/lessons/day-tomorrow.php',

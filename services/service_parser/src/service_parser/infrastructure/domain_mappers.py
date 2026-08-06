@@ -1,11 +1,15 @@
 import datetime
-from typing import Iterable
+from collections.abc import Iterable
 
-from schedule_db_models.models import GroupORM, CabinetORM, LessonORM, LessonCabinetORM
+from schedule_db_models import CabinetORM, GroupORM, LessonCabinetORM, LessonORM
 
-from service_parser.domain.entities import Group, Cabinet, Lesson, DaySchedule
-from service_parser.domain.exceptions.parser_exceptions import ScheduleForSomeGroupsError, \
-    ScheduleForSomeDatesError, SavingDayScheduleGroupNotFound, SavingDayScheduleDateNotFound
+from service_parser.domain.entities import Cabinet, DaySchedule, Group, Lesson
+from service_parser.domain.exceptions import (
+    SavingDayScheduleDateNotFound,
+    SavingDayScheduleGroupNotFound,
+    ScheduleForSomeDatesError,
+    ScheduleForSomeGroupsError,
+)
 
 
 def group_domain_to_orm(group: 'Group') -> 'GroupORM':
@@ -49,10 +53,10 @@ def day_schedule_domain_to_lessons_orm(schedule: 'DaySchedule') -> list['LessonO
 
 
 def lesson_orm_to_domain(lesson: 'LessonORM', check_redirect: bool = False) -> 'Lesson':
-    cabinets = list(sorted(
+    cabinets = sorted(
         [(cab.cabinet_index, cab.cabinet_item) for cab in lesson.cabinet_relationships],
         key=lambda x: x[0]
-    ))
+    )
 
     return Lesson(
         start=lesson.start,

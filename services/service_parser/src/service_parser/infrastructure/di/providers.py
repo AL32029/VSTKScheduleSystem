@@ -1,5 +1,6 @@
 import ssl
-from typing import AsyncIterable, Any, AsyncGenerator
+from collections.abc import AsyncGenerator, AsyncIterable
+from typing import Any
 
 import httpx
 from cryptography import x509
@@ -8,13 +9,24 @@ from dishka import Provider, Scope, provide
 from httpx import AsyncClient
 from redis.asyncio import Redis
 from sqlalchemy import URL
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
-from service_parser.application.ports import CabinetRepository, GroupRepository, ScheduleRepository
-from service_parser.infrastructure.config.database import DatabaseSettings
-from service_parser.infrastructure.config.redis_settings import RedisSettings
-from service_parser.infrastructure.repositories import SQLAlchemyCabinetRepository, SQLAlchemyGroupRepository, \
-    SQLAlchemyScheduleRepository
+from service_parser.application.ports import (
+    CabinetRepository,
+    GroupRepository,
+    ScheduleRepository,
+)
+from service_parser.infrastructure.config import DatabaseSettings, RedisSettings
+from service_parser.infrastructure.repositories import (
+    SQLAlchemyCabinetRepository,
+    SQLAlchemyGroupRepository,
+    SQLAlchemyScheduleRepository,
+)
 
 
 class DatabaseProvider(Provider):

@@ -1,14 +1,17 @@
-from typing import Iterable
+from collections.abc import Iterable
 
-from schedule_db_models.models import CabinetORM
+from schedule_db_models import CabinetORM
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from service_parser.application.ports import CabinetRepository
 from service_parser.domain.entities import Cabinet
-from service_parser.domain.exceptions.parser_exceptions import CabinetNotFound
-from service_parser.infrastructure.db.mappers import cabinet_domain_to_orm, cabinet_orm_to_domain
+from service_parser.domain.exceptions import CabinetNotFound
+from service_parser.infrastructure.domain_mappers import (
+    cabinet_domain_to_orm,
+    cabinet_orm_to_domain,
+)
 
 
 class SQLAlchemyCabinetRepository(CabinetRepository):
@@ -33,7 +36,7 @@ class SQLAlchemyCabinetRepository(CabinetRepository):
         await self.session.commit()
 
     async def get_by_index(self, cabinet_index: str) -> 'Cabinet':
-        cabinet_orm: 'CabinetORM | None' = await self.session.get(CabinetORM, cabinet_index)
+        cabinet_orm: CabinetORM | None = await self.session.get(CabinetORM, cabinet_index)
 
         if cabinet_orm is None:
             raise CabinetNotFound(f'Cabinet with index {str(cabinet_index)!r} not found')

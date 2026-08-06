@@ -1,7 +1,10 @@
 import pytest
 
 from service_parser.domain.entities import Group, GroupParser
-from service_parser.domain.exceptions import GroupNumberFormatError, GroupParserPositionError
+from service_parser.domain.exceptions import (
+    GroupNumberFormatError,
+    GroupParserPositionError,
+)
 from service_parser.domain.shared.patterns import ITEM_INDEX
 
 # ====================== [ВАЛИДНЫЕ ЗНАЧЕНИЯ] ======================

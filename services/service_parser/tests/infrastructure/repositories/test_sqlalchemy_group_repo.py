@@ -1,9 +1,9 @@
-from typing import Iterable
+from collections.abc import Iterable
 
 import pytest
 
 from service_parser.domain.entities import Group
-from service_parser.domain.exceptions.parser_exceptions import GroupNotFound
+from service_parser.domain.exceptions import GroupNotFound
 from service_parser.domain.shared.patterns import ITEM_INDEX
 
 # ===================== [СУЩНОСТИ ДЛЯ ТЕСТОВ] =====================

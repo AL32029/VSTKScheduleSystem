@@ -3,21 +3,34 @@ import os
 import pathlib
 import subprocess
 import sys
-from typing import AsyncIterable, Any, Generator
+from collections.abc import AsyncIterable, Generator
+from typing import Any
 
 import pytest
 from dishka import make_async_container
 from httpx import AsyncClient
 from redis.asyncio import Redis
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine, async_sessionmaker, AsyncSession
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from testcontainers.postgres import PostgresContainer
 from testcontainers.redis import RedisContainer
 
-from service_parser.application.ports import CabinetRepository, GroupRepository, ScheduleRepository
-from service_parser.infrastructure.di.providers import HTTPXClientProvider
-from service_parser.infrastructure.repositories import SQLAlchemyCabinetRepository, SQLAlchemyGroupRepository, \
-    SQLAlchemyScheduleRepository
+from service_parser.application.ports import (
+    CabinetRepository,
+    GroupRepository,
+    ScheduleRepository,
+)
+from service_parser.infrastructure.di import HTTPXClientProvider
+from service_parser.infrastructure.repositories import (
+    SQLAlchemyCabinetRepository,
+    SQLAlchemyGroupRepository,
+    SQLAlchemyScheduleRepository,
+)
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())

@@ -3,8 +3,12 @@ import datetime as dt
 
 import pytest
 
-from service_parser.domain.entities import Cabinet, Lesson, DaySchedule, Group
-from service_parser.domain.exceptions import LessonEndTimeError, LessonEmptyNameError, LessonOverlapError
+from service_parser.domain.entities import Cabinet, DaySchedule, Group, Lesson
+from service_parser.domain.exceptions import (
+    LessonEmptyNameError,
+    LessonEndTimeError,
+    LessonOverlapError,
+)
 
 # ====================== [ВАЛИДНЫЕ ЗНАЧЕНИЯ] ======================
 _LESSON_VALUES = [
@@ -121,7 +125,7 @@ def test_create_day_schedule_entity_with_overlap_lessons(existing_lesson: Lesson
         DaySchedule.from_existing(_DAY_SCHEDULE_DATE, _GROUP_NUMBER, (existing_lesson, new_lesson))
 
     assert exc_info.value.args[0] == (f'The lesson overlaps with the lesson {existing_lesson.name!r} '
-                                      f'({str(existing_lesson.start)} - {str(existing_lesson.end)})')
+                                      f'({existing_lesson.start!s} - {existing_lesson.end!s})')
 
 
 @pytest.mark.parametrize('start, end, name, cabinets', _LESSON_VALUES)

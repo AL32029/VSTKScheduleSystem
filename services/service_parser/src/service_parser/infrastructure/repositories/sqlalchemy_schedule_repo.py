@@ -1,17 +1,20 @@
 import datetime
 from collections import defaultdict
+from collections.abc import Iterable
 from itertools import batched
-from typing import Iterable
 
-from schedule_db_models.models import GroupORM, LessonORM
-from sqlalchemy import select, exists, delete, or_, and_
+from schedule_db_models import GroupORM, LessonORM
+from sqlalchemy import and_, delete, exists, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from service_parser.application.ports.schedule_repository import ScheduleRepository
+from service_parser.application.ports import ScheduleRepository
 from service_parser.domain.entities import DaySchedule, Group
-from service_parser.domain.exceptions.parser_exceptions import GroupNotFound, DayScheduleNotFound
-from service_parser.infrastructure.db.mappers import lessons_orm_to_day_schedule_domain, group_orm_to_domain, \
-    lesson_domain_in_orm
+from service_parser.domain.exceptions import DayScheduleNotFound, GroupNotFound
+from service_parser.infrastructure.domain_mappers import (
+    group_orm_to_domain,
+    lesson_domain_in_orm,
+    lessons_orm_to_day_schedule_domain,
+)
 
 
 class SQLAlchemyScheduleRepository(ScheduleRepository):
@@ -38,7 +41,7 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
                 for day_schedule in schedules
             ])
 
-            schedules_check: set[tuple['DaySchedule', 'DaySchedule | None']] = {
+            schedules_check: set[tuple[DaySchedule, DaySchedule | None]] = {
                 (
                     day_schedule,
                     next(
@@ -123,7 +126,7 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
         lessons = (await self.session.scalars(stmt)).all()
 
         if not lessons:
-            raise DayScheduleNotFound(f'Day schedule at {str(date)} for group {str(group)!r} not found')
+            raise DayScheduleNotFound(f'Day schedule at {date!s} for group {str(group)!r} not found')
 
         return lessons_orm_to_day_schedule_domain(lessons)
 

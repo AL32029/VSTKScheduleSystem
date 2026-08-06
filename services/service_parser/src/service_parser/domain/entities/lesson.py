@@ -1,11 +1,14 @@
 import datetime
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import time
-from typing import Tuple, List, Iterable
 
-from service_parser.domain.entities import Group, Cabinet
-from service_parser.domain.exceptions import LessonEndTimeError, LessonEmptyNameError, \
-    LessonOverlapError
+from service_parser.domain.entities import Cabinet, Group
+from service_parser.domain.exceptions import (
+    LessonEmptyNameError,
+    LessonEndTimeError,
+    LessonOverlapError,
+)
 
 
 @dataclass(frozen=True)
@@ -37,7 +40,7 @@ class DaySchedule:
     def __init__(self, date: datetime.date, group: 'str | Group'):
         self._date = date
         self._group = group if isinstance(group, Group) else Group(group)
-        self._lessons: List['Lesson'] = []
+        self._lessons: list[Lesson] = []
 
     @classmethod
     def from_existing(cls, date: datetime.date, group: 'str | Group', lessons: Iterable['Lesson']) -> 'DaySchedule':
@@ -72,7 +75,7 @@ class DaySchedule:
         for existing in self._lessons:
             if self._is_overlap(existing, new_lesson):
                 raise LessonOverlapError(f'The lesson overlaps with the lesson {existing.name!r} '
-                                         f'({str(existing.start)} - {str(existing.end)})')
+                                         f'({existing.start!s} - {existing.end!s})')
 
     @staticmethod
     def _is_overlap(a: 'Lesson', b: 'Lesson') -> bool:

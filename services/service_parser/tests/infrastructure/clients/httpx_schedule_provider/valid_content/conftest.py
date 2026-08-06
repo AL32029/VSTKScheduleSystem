@@ -1,9 +1,10 @@
 import datetime
 from typing import Any
 
+import aiofiles
 import pytest
 from bs4 import BeautifulSoup
-from numpy import ndarray, dtype
+from numpy import dtype, ndarray
 
 from service_parser.domain.entities import GroupParser
 
@@ -11,7 +12,7 @@ from service_parser.domain.entities import GroupParser
 @pytest.fixture
 async def html_content(schedule_provider, httpx_mock) -> str:
     """Мок HTLM-контента страницы с расписанием"""
-    with open('./tests/fixtures/schedule.html', 'rb') as f:
+    async with aiofiles.open('./tests/fixtures/schedule.html', 'rb') as f:
         httpx_mock.add_response(
             method='GET',
             url='https://vgtk.by/schedule/lessons/day-tomorrow.php',

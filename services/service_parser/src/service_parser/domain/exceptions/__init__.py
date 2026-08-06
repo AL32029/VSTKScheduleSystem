@@ -1,7 +1,45 @@
-from .parser_exceptions import GroupNumberFormatError, GroupParserPositionError, LessonEndTimeError, \
-    LessonEmptyNameError, LessonNotFoundError, LessonOverlapError
+from .parser_exceptions import (
+    CabinetNotFound,
+    DayScheduleNotFound,
+    FetchingTableError,
+    GroupNotFound,
+    GroupNumberFormatError,
+    GroupParserPositionError,
+    LessonEmptyNameError,
+    LessonEndTimeError,
+    LessonNotFoundError,
+    LessonOverlapError,
+    ParsingDateError,
+    ParsingDayScheduleError,
+    ParsingGroupsError,
+    ParsingLessonTimesError,
+    ParsingMatrixError,
+    SavingDayScheduleDateNotFound,
+    SavingDayScheduleGroupNotFound,
+    ScheduleForSomeDatesError,
+    ScheduleForSomeGroupsError,
+    ScheduleUnchangedError,
+)
 
 __all__ = [
-    'GroupNumberFormatError', 'GroupParserPositionError', 'LessonEndTimeError',
-    'LessonEmptyNameError', 'LessonNotFoundError', 'LessonOverlapError'
+    'CabinetNotFound',
+    'DayScheduleNotFound',
+    'FetchingTableError',
+    'GroupNotFound',
+    'GroupNumberFormatError',
+    'GroupParserPositionError',
+    'LessonEmptyNameError',
+    'LessonEndTimeError',
+    'LessonNotFoundError',
+    'LessonOverlapError',
+    'ParsingDateError',
+    'ParsingDayScheduleError',
+    'ParsingGroupsError',
+    'ParsingLessonTimesError',
+    'ParsingMatrixError',
+    'SavingDayScheduleDateNotFound',
+    'SavingDayScheduleGroupNotFound',
+    'ScheduleForSomeDatesError',
+    'ScheduleForSomeGroupsError',
+    'ScheduleUnchangedError'
 ]

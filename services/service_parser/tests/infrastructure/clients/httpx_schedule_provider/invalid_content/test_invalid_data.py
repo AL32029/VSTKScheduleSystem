@@ -1,7 +1,13 @@
 import pytest
 
-from service_parser.domain.exceptions.parser_exceptions import FetchingTableError, ParsingMatrixError, ParsingDateError, \
-    ParsingLessonTimesError, ParsingGroupsError, ParsingDayScheduleError
+from service_parser.domain.exceptions.parser_exceptions import (
+    FetchingTableError,
+    ParsingDateError,
+    ParsingDayScheduleError,
+    ParsingGroupsError,
+    ParsingLessonTimesError,
+    ParsingMatrixError,
+)
 
 
 # ===================== [ТЕСТЫ ОШИБКИ FetchingTableError] =====================
@@ -30,10 +36,10 @@ def test_parse_table_to_matrix_errors(schedule_provider, request, html_fixture, 
 
 # ===================== [ТЕСТЫ ОШИБКИ ParsingDateError] =====================
 @pytest.mark.parametrize('html_fixture, expected_message', [
-    ('html_content_with_invalid_date_format', 'The schedule table does not contain a schedule '
-                                              'date with a predefined format'),
-    ('html_content_with_older_date', 'The schedule table does not contain the schedule date after '
-                                     'checking the items for date compliance'),
+    ('html_content_with_invalid_date_format', ('The schedule table does not contain a schedule '
+                                              'date with a predefined format')),
+    ('html_content_with_older_date', ('The schedule table does not contain the schedule date after '
+                                     'checking the items for date compliance')),
 ])
 def test_extract_dates_errors(schedule_provider, request, html_fixture, expected_message):
     """Тест должен выдать ошибку ParsingDateError при некорректном формате даты либо устаревшем расписании"""

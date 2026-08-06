@@ -1,7 +1,10 @@
 from dataclasses import dataclass
 
-from service_parser.domain.exceptions.parser_exceptions import GroupNumberFormatError, GroupParserPositionError
-from service_parser.domain.shared.patterns import ITEM_INDEX, GROUP_NUMBER
+from service_parser.domain.exceptions import (
+    GroupNumberFormatError,
+    GroupParserPositionError,
+)
+from service_parser.domain.shared.patterns import GROUP_NUMBER, ITEM_INDEX
 
 
 @dataclass(frozen=True)
@@ -33,7 +36,7 @@ class Group:
 
 @dataclass(frozen=True)
 class GroupParser:
-    group: Group
+    group: 'Group'
     pos_x: int
     pos_y: int
 

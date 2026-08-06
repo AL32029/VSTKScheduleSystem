@@ -1,9 +1,9 @@
-from typing import Iterable
+from collections.abc import Iterable
 
 import pytest
 
 from service_parser.domain.entities import Cabinet
-from service_parser.domain.exceptions.parser_exceptions import CabinetNotFound
+from service_parser.domain.exceptions import CabinetNotFound
 from service_parser.domain.shared.patterns import ITEM_INDEX
 
 # ===================== [СУЩНОСТИ ДЛЯ ТЕСТОВ] =====================

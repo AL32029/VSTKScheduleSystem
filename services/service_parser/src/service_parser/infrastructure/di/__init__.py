@@ -1,5 +1,15 @@
-from .providers import DatabaseProvider, RedisProvider
+from .container import get_dishka_container
+from .providers import (
+    DatabaseProvider,
+    HTTPXClientProvider,
+    RedisProvider,
+    RepositoriesProvide,
+)
 
 __all__ = [
-    'DatabaseProvider', 'RedisProvider'
+    'DatabaseProvider',
+    'HTTPXClientProvider',
+    'RedisProvider',
+    'RepositoriesProvide',
+    'get_dishka_container'
 ]

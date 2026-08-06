@@ -1,8 +1,13 @@
 from itertools import chain
 
-from service_parser.application.ports import GroupRepository, CabinetRepository, ScheduleRepository, ScheduleProvider
-from service_parser.domain.entities import Group, DaySchedule
-from service_parser.domain.exceptions.parser_exceptions import ScheduleUnchangedError
+from service_parser.application.ports import (
+    CabinetRepository,
+    GroupRepository,
+    ScheduleProvider,
+    ScheduleRepository,
+)
+from service_parser.domain.entities import DaySchedule, Group
+from service_parser.domain.exceptions import ScheduleUnchangedError
 
 
 class ScheduleParserUseCase:

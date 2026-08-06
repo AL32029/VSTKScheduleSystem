@@ -3,8 +3,11 @@ from itertools import chain
 
 import pytest
 
-from service_parser.domain.entities import Cabinet, Lesson, DaySchedule, Group
-from service_parser.domain.exceptions.parser_exceptions import GroupNotFound, DayScheduleNotFound
+from service_parser.domain.entities import Cabinet, DaySchedule, Group, Lesson
+from service_parser.domain.exceptions import (
+    DayScheduleNotFound,
+    GroupNotFound,
+)
 
 # ===================== [СУЩНОСТИ ДЛЯ ТЕСТОВ] =====================
 _GROUP_NUMBER = 'ЖБИ-21'
@@ -101,7 +104,7 @@ async def test_get_by_group_error_day_schedule_not_found(sqlalchemy_group_repo, 
     with pytest.raises(DayScheduleNotFound) as exc_info:
         await sqlalchemy_schedule_repo.get_by_group(_GROUP_ITEM, _SCHEDULE_DATE)
 
-    assert exc_info.value.args[0] == f'Day schedule at {str(_SCHEDULE_DATE)} for group {str(_GROUP_ITEM)!r} not found'
+    assert exc_info.value.args[0] == f'Day schedule at {_SCHEDULE_DATE!s} for group {str(_GROUP_ITEM)!r} not found'
 
 
 # ===================== [ТЕСТЫ МЕТОДА GET_MANY_BY_GROUP] =====================

@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 
-from service_parser.domain.entities import Group
-from service_parser.domain.entities.lesson import DaySchedule
+from service_parser.domain.entities import DaySchedule, Group
 
 
 class ScheduleProvider(ABC):

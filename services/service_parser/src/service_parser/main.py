@@ -3,10 +3,14 @@ import asyncio
 from httpx import AsyncClient
 from redis.asyncio import Redis
 
-from service_parser.application.ports import GroupRepository, CabinetRepository, ScheduleRepository
+from service_parser.application.ports import (
+    CabinetRepository,
+    GroupRepository,
+    ScheduleRepository,
+)
 from service_parser.application.services import ScheduleParserUseCase
 from service_parser.infrastructure.clients import HTTPXScheduleProvider
-from service_parser.infrastructure.di.container import get_dishka_container
+from service_parser.infrastructure.di import get_dishka_container
 
 container = get_dishka_container()
 

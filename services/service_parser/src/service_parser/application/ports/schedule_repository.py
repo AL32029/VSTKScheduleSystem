@@ -1,9 +1,8 @@
 import datetime
 from abc import ABC, abstractmethod
-from typing import Iterable
+from collections.abc import Iterable
 
-from service_parser.domain.entities import Group
-from service_parser.domain.entities.lesson import DaySchedule
+from service_parser.domain.entities import DaySchedule, Group
 
 
 class ScheduleRepository(ABC):

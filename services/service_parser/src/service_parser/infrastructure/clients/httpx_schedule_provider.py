@@ -2,28 +2,43 @@ import datetime
 import hashlib
 import re
 from collections import defaultdict
-from typing import Any, Literal
+from re import Pattern
+from typing import Any, ClassVar, Literal
 
 import numpy
 from bs4 import BeautifulSoup
 from httpx import AsyncClient
-from numpy import vectorize, argwhere, ndarray, dtype
+from numpy import argwhere, dtype, ndarray, vectorize
 from redis.asyncio import Redis
 
-from service_parser.application.ports.schedule_provider import ScheduleProvider
-from service_parser.domain.entities import DaySchedule, Group, GroupParser, Lesson, Cabinet
-from service_parser.domain.exceptions.parser_exceptions import FetchingTableError, ParsingMatrixError, ParsingDateError, \
-    ParsingLessonTimesError, ParsingGroupsError, ParsingDayScheduleError, ScheduleUnchangedError
+from service_parser.application.ports import ScheduleProvider
+from service_parser.domain.entities import (
+    Cabinet,
+    DaySchedule,
+    Group,
+    GroupParser,
+    Lesson,
+)
+from service_parser.domain.exceptions import (
+    FetchingTableError,
+    ParsingDateError,
+    ParsingDayScheduleError,
+    ParsingGroupsError,
+    ParsingLessonTimesError,
+    ParsingMatrixError,
+    ScheduleUnchangedError,
+)
 from service_parser.domain.shared.patterns import CABINET_NUMBER
 
 
 class HTTPXScheduleProvider(ScheduleProvider):
-    _DATE_WORD_PATTERN = re.compile(r'((\d{2})\s*+([а-я]+)\s*+(\d{4}))')
-    _DATE_NUMBERED_PATTERN = re.compile(r'((\d{2}).(\d{2}).(\d{4}))')
-    _LESSONS_TIME_PATTERN = re.compile(r'^(\d{1,2})[.:](\d{1,2})\s*[—\-–−-]\s*(\d{1,2})[.:](\d{1,2})$')
-    _SCHEDULE_SITE_URL = 'https://vgtk.by/schedule/lessons/day-{schedule_type}.php'
+    _DATE_WORD_PATTERN: ClassVar[Pattern] = re.compile(r'((\d{2})\s*+([а-я]+)\s*+(\d{4}))')
+    _DATE_NUMBERED_PATTERN: ClassVar[Pattern] = re.compile(r'((\d{2}).(\d{2}).(\d{4}))')
+    _LESSONS_TIME_PATTERN: ClassVar[Pattern] = re.compile(r'^(\d{1,2})[.:](\d{1,2})\s*[—\-–−-]'
+                                                          r'\s*(\d{1,2})[.:](\d{1,2})$')
+    _SCHEDULE_SITE_URL: ClassVar[str] = 'https://vgtk.by/schedule/lessons/day-{schedule_type}.php'
 
-    _MONTH_TO_NUMBER = {
+    _MONTH_TO_NUMBER: ClassVar[dict] = {
         'января': 1,
         'февраля': 2,
         'марта': 3,
@@ -114,8 +129,7 @@ class HTTPXScheduleProvider(ScheduleProvider):
                 row_data.append((text, rowspan, colspan))
                 row_cols += colspan
             rows.append(row_data)
-            if row_cols > max_cols:
-                max_cols = row_cols
+            max_cols = max(max_cols, row_cols)
 
         if max_cols == 0:
             raise ParsingMatrixError('The schedule table does not contain any columns')
@@ -157,14 +171,14 @@ class HTTPXScheduleProvider(ScheduleProvider):
                 for d in date:
                     date_list.append(datetime.date(day=int(d[1]), month=int(d[2]), year=int(d[3])))
 
-        date_list = list(sorted(date_list, key=lambda x: x))
+        date_list = sorted(date_list, key=lambda x: x)
 
         date_full_list = [
             date_list[0] + datetime.timedelta(days=i)
             for i in range((date_list[-1] - date_list[0]).days + 1)
         ]
 
-        today = datetime.date.today()
+        today = datetime.datetime.now().date()
 
         date_list = list(filter(
             lambda x: x and ((x == today) if self.schedule_type == 'today' else (x > today)),
@@ -213,20 +227,20 @@ class HTTPXScheduleProvider(ScheduleProvider):
         if not (matrix_mask := matrix[mask]).any():
             raise ParsingGroupsError('The schedule table does not contain groups with a predefined format')
 
-        groups = list(GroupParser(group=g, pos_x=int(x), pos_y=int(y))
-                      for g, (y, x) in zip(matrix_mask, argwhere(mask)))
+        groups = [GroupParser(group=g, pos_x=int(x), pos_y=int(y))
+                      for g, (y, x) in zip(matrix_mask, argwhere(mask))]
 
         return tuple(sorted(groups, key=lambda x: x.group.index))
 
     def _extract_lessons(self, matrix: ndarray[tuple[int, int], dtype[Any]], date_list: tuple[datetime.date, ...],
                          lessons_time: tuple[tuple[datetime.time, datetime.time], ...],
                          groups: tuple['GroupParser', ...]) -> dict['Group', list['DaySchedule']]:
-        group_lessons: dict['Group', list['DaySchedule']] = defaultdict(list['DaySchedule'])
+        group_lessons: dict[Group, list[DaySchedule]] = defaultdict(list['DaySchedule'])
 
         lessons_count = len(lessons_time)
 
         for group in groups:
-            lessons: list['Lesson'] = []
+            lessons: list[Lesson] = []
             for l_idx, (lesson, cabinets) in enumerate(
                     matrix[group.pos_y + 1:group.pos_y + lessons_count, group.pos_x:group.pos_x + 2]
             ):
@@ -242,7 +256,7 @@ class HTTPXScheduleProvider(ScheduleProvider):
                 if not self._LESSONS_TIME_PATTERN.match(matrix[group.pos_y + 1 + l_idx, 1]):
                     break
 
-                cabinets = tuple(cabinets.split('/')) if cabinets else tuple()
+                cabinets = tuple(cabinets.split('/')) if cabinets else ()
 
                 lessons.append(Lesson(
                     start=lessons_time[l_idx][0],

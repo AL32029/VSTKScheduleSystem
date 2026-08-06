@@ -1,14 +1,17 @@
-from typing import Iterable
+from collections.abc import Iterable
 
-from schedule_db_models.models import GroupORM
+from schedule_db_models import GroupORM
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from service_parser.application.ports import GroupRepository
 from service_parser.domain.entities import Group
-from service_parser.domain.exceptions.parser_exceptions import GroupNotFound
-from service_parser.infrastructure.db.mappers import group_domain_to_orm, group_orm_to_domain
+from service_parser.domain.exceptions import GroupNotFound
+from service_parser.infrastructure.domain_mappers import (
+    group_domain_to_orm,
+    group_orm_to_domain,
+)
 
 
 class SQLAlchemyGroupRepository(GroupRepository):
@@ -39,7 +42,7 @@ class SQLAlchemyGroupRepository(GroupRepository):
         await self.session.commit()
 
     async def get_by_index(self, group_index: str) -> 'Group | None':
-        group_orm: 'GroupORM | None' = await self.session.get(GroupORM, group_index)
+        group_orm: GroupORM | None = await self.session.get(GroupORM, group_index)
 
         if group_orm is None:
             raise GroupNotFound(f'Group with index {group_index!r} not found')

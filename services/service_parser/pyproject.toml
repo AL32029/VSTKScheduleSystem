@@ -1,6 +1,6 @@
 [project]
 name = "service-parser"
-version = "0.0.1dev"
+version = "0.0.2dev"
 description = "Microservice \"Parser Service\""
 authors = [
     { name = "Nikita Bondarev", email = "nikitabondarevvitebsk@gmail.com" }
@@ -26,10 +26,11 @@ cryptography = "^49.0.0"
 pytest = "^9.1.1"
 pytest-asyncio = "^1.4.0"
 pytest-httpx = "^0.36.2"
-ruff = "^0.15.22"
 alembic = "^1.18.5"
 pytest-cov = "^7.1.0"
 testcontainers = "^4.14.2"
+ruff = "^0.16.1"
+aiofiles = "^25.1.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

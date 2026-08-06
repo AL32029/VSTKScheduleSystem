@@ -1,7 +1,11 @@
 import pytest
 from dishka import Scope
 
-from service_parser.application.ports import GroupRepository, CabinetRepository, ScheduleRepository
+from service_parser.application.ports import (
+    CabinetRepository,
+    GroupRepository,
+    ScheduleRepository,
+)
 
 
 # ===================== [ФИКСТУРЫ ДЛЯ РЕПОЗИТОРИЕВ =====================

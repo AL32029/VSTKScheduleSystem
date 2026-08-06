@@ -1,29 +1,29 @@
-.git/
-.gitignore
+**/.git/
+**/.gitignore
 
-.venv/
-venv/
-__pycache__/
-*.pyc
-*.pyo
+**/.venv/
+**/venv/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
 
 **/tests/
 **/test_*.py
 **/conftest.py
-.pytest_cache/
-.coverage
-htmlcov/
+**/migrations/
+**/.pytest_cache/
+**/.coverage
+**/htmlcov/
 
 **/*.env
-**/*.html
 *.pem
 *.key
-secrets/
+**/secrets/
 
 *.log
 *.tmp
 *.pid
 
-.vscode/
-.idea/
+**/.vscode/
+**/.idea/
 *.swp
