@@ -1,0 +1,24 @@
+{% macro render_lesson(lesson, show_group=false) %}
+<b>🕓 {{ lesson.start.strftime("%H:%M") }} - {{ lesson.end.strftime("%H:%M") }}</b>
+{% if show_group %} [{{ lesson.group }}]{% endif %}
+{{ lesson.name -}}
+{%- if lesson.cabinets %} ({{ lesson.cabinets | map('string') | join(', ') }}){%- endif %}
+
+
+{% endmacro %}
+
+<b>{% if schedule_to == 'group' %}
+Расписание для группы {{ day_schedule.schedule_item | string }}
+{% else %}
+Расписание для кабинета {{ day_schedule.schedule_item | string }}
+{% endif %}
+🗓 На {{ day_schedule.date | ru_date("%d %B %Y года (%A)") }}</b>
+
+{% for lesson in day_schedule.lessons %}
+{{ render_lesson(lesson, show_group=(schedule_to == 'cabinet')) }}
+{%- endfor %}
+<b>Всего пар:</b> {{ day_schedule.pairs_count }}
+
+{% if updated_time %}
+<b>Обновлено {{ updated_time.strftime("%d.%m.%Y %H:%M:%S") }}</b>
+{% endif %}

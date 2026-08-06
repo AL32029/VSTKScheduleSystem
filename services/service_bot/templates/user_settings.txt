@@ -1,0 +1,5 @@
+<b>⚙ Настройки профиля</b>
+
+<b>🔔 Уведомления</b>: {% if user.notifications_enabled %}✔ Включены{% else %}❌ Отключены{% endif %}
+
+<b>📱 Тип профиля:</b>: {% if user.user_type == 'student' %}👨‍🎓 Учащийся{% else %}👨‍🏫 Преподаватель{% endif %}
