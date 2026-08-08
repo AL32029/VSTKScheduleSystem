@@ -1,6 +1,6 @@
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 
-from service_bot.infrastructure.template_filters import format_ru_date
+from .filters import format_ru_date
 
 
 class TemplateMessageRenderer:

@@ -1,7 +1,13 @@
 import datetime
 import random
 
-from service_bot.domain.entities import Group
+from service_bot.domain.entities import (
+    Cabinet,
+    CabinetLesson,
+    DaySchedule,
+    Group,
+    Lesson,
+)
 
 # ====================== [ВАЛИДНЫЕ ЗНАЧЕНИЯ] ======================
 _GROUP_NUMBERS = [('жби21', 'ЖБИ-21'), ('ос21', 'ОС-21'), ('пэс215', 'ПЭС-215')]
@@ -21,3 +27,14 @@ _LESSON_VALUES = [
 _CABINET_LESSON_VALUES = [(start, end, Group(_GROUP_NUMBERS[0][0], _GROUP_NUMBERS[0][1]), name, cabinets)
                           for (start, end, name, cabinets) in _LESSON_VALUES]
 _SCHEDULE_DATE = datetime.date(2099, 12, 31)
+_USER_ID = 319201832
+
+# ====================== [ДОМЕННЫЕ СУЩНОСТИ] ======================
+_GROUP_ITEMS = [Group(index, number) for index, number in _GROUP_NUMBERS]
+_CABINET_ITEMS = [Cabinet(index, number) for index, number in _CABINET_NUMBERS]
+_LESSON_ITEMS = [Lesson(start, end, name, (Cabinet(index, number) for index, number in cabinets))
+                 for start, end, name, cabinets in _LESSON_VALUES]
+_CABINET_LESSON_ITEMS = [CabinetLesson(start, end, name, (Cabinet(index, number) for index, number in cabinets), group)
+                         for start, end, group, name, cabinets in _CABINET_LESSON_VALUES]
+_GROUP_DAY_SCHEDULE = DaySchedule(_SCHEDULE_DATE, _GROUP_ITEMS[0], _LESSON_ITEMS)
+_CABINET_DAY_SCHEDULE = DaySchedule(_SCHEDULE_DATE, _CABINET_ITEMS[0], _CABINET_LESSON_ITEMS)

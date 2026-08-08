@@ -1,7 +1,8 @@
 import json
 
 from service_bot.domain.entities import User
-from service_bot.infrastructure.db import (
+
+from .models import (
     CabinetSubscribesORM,
     GroupSubscribesORM,
     UserMetadataORM,

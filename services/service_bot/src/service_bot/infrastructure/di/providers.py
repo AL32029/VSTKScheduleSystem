@@ -1,4 +1,7 @@
+import os
 from collections.abc import AsyncGenerator, AsyncIterable
+from typing import cast
+from zoneinfo import ZoneInfo
 
 from aiogram import Bot
 from aiogram.client.default import DefaultBotProperties
@@ -6,11 +9,14 @@ from aiogram.enums import ParseMode
 from dishka import Provider, Scope, provide
 from httpx import AsyncClient
 from redis.asyncio import Redis
+from service_bot.infrastructure.template_system import (
+    TemplateKeyboardRenderer,
+    TemplateMessageRenderer,
+)
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
     async_sessionmaker,
-    create_async_engine,
 )
 
 from service_bot.application.ports import (
@@ -32,20 +38,26 @@ from service_bot.application.services import (
     UnsubscribeCabinetUseCase,
     UnsubscribeGroupUseCase,
 )
-from service_bot.infrastructure.config import BotSettings
+from service_bot.infrastructure.config import (
+    APISettings,
+    BaseSystemSettings,
+    BotSettings,
+    DatabaseSettings,
+    RedisSettings,
+)
+from service_bot.infrastructure.managers import (
+    DatabaseEngineManager,
+    RedisClientManager,
+)
 from service_bot.infrastructure.repositories import (
     HTTPXCabinetRepository,
     HTTPXGroupRepository,
     HTTPXScheduleRepository,
     SQLAlchemyUserRepository,
 )
-from service_bot.infrastructure.template_system import (
-    TemplateKeyboardRenderer,
-    TemplateMessageRenderer,
-)
 
 
-class BotProvider(Provider):
+class SystemProvider(Provider):
     """Провайдер чат-бота"""
     scope = Scope.APP
 
@@ -54,16 +66,45 @@ class BotProvider(Provider):
         """Зависимость получения класса чат-бота aiogram.Bot"""
         return Bot(token=bot_settings.TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
+    @provide
+    def time_zone(self, base_settings: BaseSystemSettings) -> ZoneInfo:
+        return base_settings.TZ
+
 
 class ClientProvider(Provider):
     """Провайдер клиентов для взаимодействия с внешними зависимостями"""
     scope = Scope.APP
 
     @provide
-    async def httpx_client(self) -> AsyncGenerator['AsyncClient']:
+    async def httpx_client(self, settings: 'APISettings') -> AsyncGenerator['AsyncClient']:
         """Зависимость получения класса httpx.AsyncClient"""
-        async with AsyncClient() as client:
+        async with AsyncClient(base_url=settings.SCHEDULE_URL) as client:
             yield client
+
+
+class DatabaseProvider(Provider):
+    """Провайдер базы данных"""
+    scope = Scope.APP
+
+    @provide
+    def database_engine_manager(self, settings: 'DatabaseSettings') -> 'DatabaseEngineManager':
+        return DatabaseEngineManager(settings)
+
+    @provide(scope=Scope.REQUEST)
+    async def provide_session_maker(self, manager: 'DatabaseEngineManager') -> async_sessionmaker[AsyncSession]:
+        return async_sessionmaker(
+            cast(AsyncEngine, cast(object, await manager.get_engine())),
+            expire_on_commit=False,
+            class_=AsyncSession,
+            autoflush=False
+        )
+
+    @provide(scope=Scope.REQUEST)
+    async def provide_session(self, session_maker: async_sessionmaker[AsyncSession]) -> AsyncIterable[AsyncSession]:
+        async with session_maker() as session:
+            yield session
+
+            await session.commit()
 
 
 class RedisProvider(Provider):
@@ -71,47 +112,12 @@ class RedisProvider(Provider):
     scope = Scope.APP
 
     @provide
-    def redis_client(self) -> Redis:
-        """Зависимость получения клиента redis.asyncio.Redis"""
-        # TODO: Заменить на конфигурацию для продакшена
-        return Redis(
-            host='localhost',
-            port=9999,
-            db=2
-        )
-
-
-class DatabaseProvider(Provider):
-    """Провайдер базы данных"""
-    scope = Scope.REQUEST
-
-    @provide(scope=Scope.APP)
-    def database_engine(self) -> AsyncEngine:
-        """Зависимость получения движка SQLAlchemy"""
-        # TODO: Заменить на конфигурацию для продакшена
-        return create_async_engine(
-            'postgresql+asyncpg://development:development@localhost:5432/schedule_bot',
-            pool_size=5,
-            max_overflow=10,
-            pool_pre_ping=True
-        )
+    def redis_client_manager(self, settings: 'RedisSettings') -> 'RedisClientManager':
+        return RedisClientManager(settings)
 
     @provide
-    def session_maker(self, engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
-        """Зависимость получения session maker SQLAlchemy"""
-        return async_sessionmaker(
-            engine,
-            class_=AsyncSession,
-            expire_on_commit=False
-        )
-
-    @provide
-    async def session(self, session_maker: async_sessionmaker[AsyncSession]) -> AsyncIterable[AsyncSession]:
-        """Зависимость получения сессии SQLAlchemy"""
-        async with session_maker() as session:
-            yield session
-
-            await session.commit()
+    async def provide_redis_client(self, manager: 'RedisClientManager') -> Redis:
+        return await manager.get_client()
 
 
 class RepositoriesProvider(Provider):
@@ -206,7 +212,7 @@ class TemplatesProvider(Provider):
     @provide
     def template_message_render(self) -> 'TemplateMessageRenderer':
         """Зависимость получения шаблонизатора сообщений TemplateMessageRenderer"""
-        return TemplateMessageRenderer()
+        return TemplateMessageRenderer(os.getenv('TEMPLATES_FOLDER_PATH', '/app/templates'))
 
     @provide
     def template_keyboard_render(self) -> 'TemplateKeyboardRenderer':

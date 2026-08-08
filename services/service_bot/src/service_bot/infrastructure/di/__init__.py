@@ -1,20 +1,20 @@
 from .container import get_dishka_container
 from .providers import (
-    BotProvider,
     ClientProvider,
     DatabaseProvider,
     RedisProvider,
     RepositoriesProvider,
+    SystemProvider,
     TemplatesProvider,
     UseCasesProvider,
 )
 
 __all__ = [
-    'BotProvider',
     'ClientProvider',
     'DatabaseProvider',
     'RedisProvider',
     'RepositoriesProvider',
+    'SystemProvider',
     'TemplatesProvider',
     'UseCasesProvider',
     'get_dishka_container',

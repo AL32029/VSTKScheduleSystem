@@ -1,18 +1,22 @@
-from .bot_exceptions import (
+from .data_saving_exceptions import (
     CabinetAlreadyInsertedError,
-    CabinetNotFound,
-    CabinetUnsubscribeNotFound,
     GroupAlreadyInsertedError,
-    GroupNotFound,
-    GroupUnsubscribeNotFound,
+)
+from .data_validation_exceptions import (
     InvalidDayScheduleLessonType,
     InvalidUserMetadataKey,
     InvalidUserMetadataType,
     NotPositiveIntegerValueError,
+    UserMetadataMissingError,
+)
+from .request_data_exceptions import (
+    CabinetNotFound,
+    CabinetUnsubscribeNotFound,
+    GroupNotFound,
+    GroupUnsubscribeNotFound,
     ScheduleDateNotFound,
     ScheduleForCabinetNotFound,
     ScheduleForGroupNotFound,
-    UserMetadataMissingError,
     UserNotFound,
 )
 

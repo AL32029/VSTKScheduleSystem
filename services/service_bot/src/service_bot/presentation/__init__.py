@@ -1,7 +1,9 @@
-from .callbacks.callbacks_router import router as callback_router
-from .messages.main_menu_router import router as main_menu_router
+from .callback_endpoints import router as callback_router
+from .message_endpoints import router as message_router
+from .user_states import UserStates
 
 __all__ = [
+    'UserStates',
     'callback_router',
-    'main_menu_router'
+    'message_router'
 ]

@@ -1,5 +1,7 @@
 import datetime
-from typing import Literal
+import logging
+from typing import Literal, cast
+from zoneinfo import ZoneInfo
 
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
@@ -14,7 +16,7 @@ from service_bot.application.services import (
     UnsubscribeCabinetUseCase,
     UnsubscribeGroupUseCase,
 )
-from service_bot.domain.entities import DaySchedule, User
+from service_bot.domain.entities import User
 from service_bot.domain.exceptions import (
     CabinetNotFound,
     CabinetUnsubscribeNotFound,
@@ -23,16 +25,19 @@ from service_bot.domain.exceptions import (
     ScheduleForCabinetNotFound,
     ScheduleForGroupNotFound,
 )
-from service_bot.infrastructure.states import BotStates
-from service_bot.infrastructure.template_system import (
+from service_bot.infrastructure.template_engine_items import (
     TemplateKeyboardRenderer,
     TemplateMessageRenderer,
 )
-from service_bot.presentation.schemas import (
+
+from .callback_patterns import (
     DAY_SCHEDULE_PANEL_COMPILE,
     OPEN_DAY_SCHEDULE_COMPILE,
     USER_SETTINGS_COMPILE,
 )
+from .user_states import UserStates
+
+logger = logging.getLogger(__name__)
 
 router = Router()
 
@@ -56,9 +61,16 @@ async def callback_open_main_menu(callback: CallbackQuery, state: FSMContext, us
     rendered_text = message_templater.render('main_menu', user_tg=callback.from_user)
     rendered_keyboard = keyboard_templater.main_menu(user, schedule_items)
 
-    await state.set_state(BotStates.main_menu)
+    user_state = UserStates.main_menu
 
-    return await callback.message.edit_text(text=rendered_text, reply_markup=rendered_keyboard)
+    logger.info('Changing the user status to %s', user_state.state)
+    await state.set_state(user_state)
+    logger.info('The user status has been changed to %s', user_state.state)
+
+    logger.info('Changing the message to the main menu')
+    await callback.message.edit_text(text=rendered_text, reply_markup=rendered_keyboard)
+    logger.info('The message has been changed to the main menu')
+
 
 
 @router.callback_query(F.data == 'add_schedule_item')
@@ -70,9 +82,16 @@ async def callback_add_schedule_item(callback: CallbackQuery, state: FSMContext,
     rendered_text = message_templater.render('add_schedule_item', user=user)
     rendered_keyboard = keyboard_templater.to_main_menu()
 
-    await state.set_state(BotStates.add_schedule_item)
+    user_state = UserStates.add_schedule_item
 
-    return await callback.message.edit_text(text=rendered_text, reply_markup=rendered_keyboard)
+    logger.info('Changing the user status to %s', user_state.state)
+    await state.set_state(user_state)
+    logger.info('The user status has been changed to %s', user_state.state)
+
+    logger.info('Changing the message to the add schedule item page')
+    await callback.message.edit_text(text=rendered_text, reply_markup=rendered_keyboard)
+    logger.info('The message has been changed to the add schedule item page')
+
 
 
 @router.callback_query(F.data == 'open_settings')
@@ -84,7 +103,10 @@ async def callback_open_settings(callback: CallbackQuery, user: 'User',
     rendered_text = message_templater.render('user_settings', user=user)
     rendered_keyboard = keyboard_templater.user_settings(user)
 
-    return await callback.message.edit_text(text=rendered_text, reply_markup=rendered_keyboard)
+    logger.info('Changing the message to the settings page')
+    await callback.message.edit_text(text=rendered_text, reply_markup=rendered_keyboard)
+    logger.info('The message has been changed to the settings page')
+
 
 
 @router.callback_query(F.data.regexp(USER_SETTINGS_COMPILE))
@@ -103,7 +125,10 @@ async def callback_user_settings(callback: CallbackQuery, user: 'User',
     rendered_text = message_templater.render('user_settings', user=user)
     rendered_keyboard = keyboard_templater.user_settings(user)
 
-    return await callback.message.edit_text(text=rendered_text, reply_markup=rendered_keyboard)
+    logger.info('Updating the message with the settings page')
+    await callback.message.edit_text(text=rendered_text, reply_markup=rendered_keyboard)
+    logger.info('The message with the settings page has been updated')
+
 
 
 @router.callback_query(F.data.regexp(OPEN_DAY_SCHEDULE_COMPILE))
@@ -114,27 +139,38 @@ async def callback_open_schedule(callback: CallbackQuery, message_templater: Fro
     """Callback обработчик открытия расписания"""
     schedule_for, schedule_item = OPEN_DAY_SCHEDULE_COMPILE.match(callback.data).groups()
 
-    try:
-        schedule_to: Literal['today', 'tomorrow'] = 'tomorrow'
-        day_schedule = await use_case.execute(schedule_item, schedule_to, schedule_for)
-    except (GroupNotFound, CabinetNotFound) as e:
-        return await callback.answer(f'⚠ {e!s}')
-    except (ScheduleForGroupNotFound, ScheduleForCabinetNotFound):
-        schedule_to: Literal['today', 'tomorrow'] = 'today'
+    schedule_to: Literal['today', 'tomorrow'] | None = None
+    error = None
+
+    for s_to in ('tomorrow', 'today'):
         try:
+            schedule_to: Literal['today', 'tomorrow'] = cast(Literal['today', 'tomorrow'], s_to)
             day_schedule = await use_case.execute(schedule_item, schedule_to, schedule_for)
-        except (ScheduleForGroupNotFound, ScheduleForCabinetNotFound) as e:
+            break
+        except (GroupNotFound, CabinetNotFound) as e:
+            logger.warning('The %s %s was not found', schedule_for, schedule_item)
             return await callback.answer(f'⚠ {e!s}')
+        except (ScheduleForGroupNotFound, ScheduleForCabinetNotFound) as e:
+            logger.warning('The schedule for %s %s for %s is unavailable', schedule_for, schedule_item, schedule_to)
+            error = e
+    else:
+        logger.warning('The schedule for %s %s has not been found', schedule_for, schedule_item)
+        return await callback.answer(f'⚠ {error!s}')
 
     rendered_text = message_templater.render('day_schedule', schedule_to=schedule_for, day_schedule=day_schedule)
     rendered_keyboard = keyboard_templater.day_schedule(schedule_item, schedule_for, schedule_to)
 
-    return await callback.message.edit_text(text=rendered_text, reply_markup=rendered_keyboard)
+    logger.info('Changing the message to the schedule for %s', schedule_to)
+    await callback.message.edit_text(text=rendered_text, reply_markup=rendered_keyboard)
+    logger.info('The message has been changed to the schedule for %s', schedule_to)
+
+    return None
 
 
 @router.callback_query(F.data.regexp(DAY_SCHEDULE_PANEL_COMPILE))
 @inject
-async def callback_day_schedule(callback: CallbackQuery, user: 'User',
+async def callback_day_schedule(callback: CallbackQuery, state: FSMContext, user: 'User',
+                                time_zone: FromDishka[ZoneInfo],
                                 message_templater: FromDishka['TemplateMessageRenderer'],
                                 keyboard_templater: FromDishka['TemplateKeyboardRenderer'],
                                 day_schedule_use_case: FromDishka['GetDayScheduleUseCase'],
@@ -149,22 +185,26 @@ async def callback_day_schedule(callback: CallbackQuery, user: 'User',
         updated_time = None
 
         if update:
-            updated_time = datetime.datetime.now()
-
-        day_schedule: DaySchedule | None = None
+            updated_time = datetime.datetime.now(time_zone)
 
         try:
             day_schedule = await day_schedule_use_case.execute(schedule_item, schedule_action, schedule_for)
         except (GroupNotFound, CabinetNotFound) as e:
+            logger.warning('The %s %s was not found', schedule_for, schedule_item)
             return await callback.answer(f'⚠ {e!s}')
         except (ScheduleForGroupNotFound, ScheduleForCabinetNotFound) as e:
-            await callback.answer(f'⚠ {e!s}')
+            logger.warning('The schedule for %s %s for %s is unavailable', schedule_for, schedule_item, schedule_action)
+            return await callback.answer(f'⚠ {e!s}')
 
         rendered_text = message_templater.render('day_schedule', schedule_to=schedule_for,
                                                  day_schedule=day_schedule, updated_time=updated_time)
         rendered_keyboard = keyboard_templater.day_schedule(schedule_item, schedule_for, schedule_action)
 
-        return await callback.message.edit_text(text=rendered_text, reply_markup=rendered_keyboard)
+        logger.info('Updating the message with the schedule page')
+        await callback.message.edit_text(text=rendered_text, reply_markup=rendered_keyboard)
+        logger.info('The message with the schedule page has been updated')
+
+        return None
     elif schedule_action == 'delete':
         try:
             if schedule_for == 'group':
@@ -184,10 +224,20 @@ async def callback_day_schedule(callback: CallbackQuery, user: 'User',
             else []
         )
 
+        user_state = UserStates.main_menu
+
+        logger.info('Changing the user status to %s', user_state.state)
+        await state.set_state(user_state)
+        logger.info('The user status has been changed to %s', user_state.state)
+
         rendered_text = message_templater.render('main_menu', user_tg=callback.from_user)
         rendered_keyboard = keyboard_templater.main_menu(user, schedule_items)
 
-        return await callback.message.edit_text(text=rendered_text, reply_markup=rendered_keyboard)
+        logger.info('Changing the message to the main menu')
+        await callback.message.edit_text(text=rendered_text, reply_markup=rendered_keyboard)
+        logger.info('The message has been changed to the main menu')
+
+        return None
 
     return None
 
@@ -196,4 +246,5 @@ async def callback_day_schedule(callback: CallbackQuery, user: 'User',
 @inject
 async def invalid_callback(callback: CallbackQuery):
     """Callback обработчик нереализованных кнопок"""
+    logger.warning('The button has no useful functionality')
     return await callback.answer('⚠ На данный момент данная кнопка не выполняет обработку')

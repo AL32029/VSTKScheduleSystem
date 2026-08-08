@@ -1,6 +1,5 @@
 from service_bot.application.ports import UserRepository
 from service_bot.domain.entities import User
-from service_bot.domain.exceptions.bot_exceptions import UserNotFound
 
 
 class GetUserProfileUseCase:
@@ -9,9 +8,6 @@ class GetUserProfileUseCase:
         self.repo = repo
 
     async def execute(self, user_id: int) -> 'User':
-        try:
-            user = await self.repo.get_by_id(user_id)
-        except UserNotFound:
-            raise
+        user = await self.repo.get_by_id(user_id)
 
         return user
