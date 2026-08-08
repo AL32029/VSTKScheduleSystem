@@ -8,7 +8,7 @@ from service_parser.application.ports import (
 )
 
 
-# ===================== [ФИКСТУРЫ ДЛЯ РЕПОЗИТОРИЕВ =====================
+# ===================== [ФИКСТУРЫ ДЛЯ РЕПОЗИТОРИЕВ] =====================
 @pytest.fixture(scope='function')
 async def sqlalchemy_group_repo(test_container) -> GroupRepository:
     """Репозиторий GroupRepository"""

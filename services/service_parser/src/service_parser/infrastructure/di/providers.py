@@ -68,18 +68,6 @@ class DatabaseProvider(Provider):
             connect_args={"ssl": ssl_context}
         )
 
-    # @provide
-    # def provide_engine(self) -> 'AsyncEngine':
-    #     settings = DatabaseSettings()
-    #
-    #     return create_async_engine(
-    #         settings.DSN.unicode_string(),
-    #         echo=False,
-    #         pool_pre_ping=True,
-    #         pool_size=10,
-    #         max_overflow=20,
-    #     )
-
     @provide
     def provide_session_maker(self, engine: 'AsyncEngine') -> async_sessionmaker['AsyncSession']:
         return async_sessionmaker(
@@ -115,20 +103,6 @@ class RedisProvider(Provider):
         )
         yield client
         await client.aclose()
-
-    # @provide
-    # async def redis_engine(self) -> AsyncIterable['Redis']:
-    #     settings = RedisSettings()
-    #
-    #     client = Redis(
-    #         host=settings.HOST,
-    #         port=settings.PORT,
-    #         username=settings.USERNAME,
-    #         password=settings.PASSWORD,
-    #         db=settings.DB_NUMBER,
-    #     )
-    #     yield client
-    #     await client.aclose()
 
 
 class RepositoriesProvide(Provider):
