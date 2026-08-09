@@ -44,9 +44,9 @@ def postgres_container() -> Generator[PostgresContainer, Any, None]:
         os.environ["MIGRATION_DATABASE_URL"] = db_url
         project_root = pathlib.Path(__file__).parent.parent.parent.parent
         subprocess.run(
-            ["alembic", "-c", str(project_root / "schedule_alembic.ini"), "upgrade", "head"],
+            [sys.executable, "-m", "alembic", "-c", str(project_root / "alembic.ini"), "upgrade", "head"],
             check=True,
-            env=os.environ,
+            env=os.environ
         )
         yield postgres
 
