@@ -12,6 +12,7 @@ from service_bot.domain.exceptions import (
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class User:
     """Сущность пользователя бота"""

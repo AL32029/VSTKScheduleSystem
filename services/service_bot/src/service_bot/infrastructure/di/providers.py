@@ -9,10 +9,6 @@ from aiogram.enums import ParseMode
 from dishka import Provider, Scope, provide
 from httpx import AsyncClient
 from redis.asyncio import Redis
-from service_bot.infrastructure.template_system import (
-    TemplateKeyboardRenderer,
-    TemplateMessageRenderer,
-)
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -54,6 +50,10 @@ from service_bot.infrastructure.repositories import (
     HTTPXGroupRepository,
     HTTPXScheduleRepository,
     SQLAlchemyUserRepository,
+)
+from service_bot.infrastructure.template_engine_items import (
+    TemplateKeyboardRenderer,
+    TemplateMessageRenderer,
 )
 
 

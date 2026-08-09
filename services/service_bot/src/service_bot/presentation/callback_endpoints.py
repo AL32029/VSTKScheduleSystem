@@ -72,7 +72,6 @@ async def callback_open_main_menu(callback: CallbackQuery, state: FSMContext, us
     logger.info('The message has been changed to the main menu')
 
 
-
 @router.callback_query(F.data == 'add_schedule_item')
 @inject
 async def callback_add_schedule_item(callback: CallbackQuery, state: FSMContext, user: 'User',
@@ -93,7 +92,6 @@ async def callback_add_schedule_item(callback: CallbackQuery, state: FSMContext,
     logger.info('The message has been changed to the add schedule item page')
 
 
-
 @router.callback_query(F.data == 'open_settings')
 @inject
 async def callback_open_settings(callback: CallbackQuery, user: 'User',
@@ -106,7 +104,6 @@ async def callback_open_settings(callback: CallbackQuery, user: 'User',
     logger.info('Changing the message to the settings page')
     await callback.message.edit_text(text=rendered_text, reply_markup=rendered_keyboard)
     logger.info('The message has been changed to the settings page')
-
 
 
 @router.callback_query(F.data.regexp(USER_SETTINGS_COMPILE))
@@ -128,7 +125,6 @@ async def callback_user_settings(callback: CallbackQuery, user: 'User',
     logger.info('Updating the message with the settings page')
     await callback.message.edit_text(text=rendered_text, reply_markup=rendered_keyboard)
     logger.info('The message with the settings page has been updated')
-
 
 
 @router.callback_query(F.data.regexp(OPEN_DAY_SCHEDULE_COMPILE))

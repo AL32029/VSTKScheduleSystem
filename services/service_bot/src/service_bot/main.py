@@ -3,7 +3,6 @@ import functools
 import logging.config
 from asyncio import Task
 from pathlib import Path
-from typing import cast
 
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.redis import RedisStorage
@@ -78,7 +77,7 @@ async def on_startup(dispatcher: Dispatcher, container: AsyncContainer) -> None:
 
 
 async def on_shutdown(dispatcher: Dispatcher, container: AsyncContainer) -> None:
-    watch_loop_task: Task | None = cast('Task | None', dispatcher.get('watch_loop_task'))
+    watch_loop_task: Task | None = dispatcher.get('watch_loop_task')
 
     db_manager = await container.get(DatabaseEngineManager)
     redis_client = await container.get(RedisClientManager)

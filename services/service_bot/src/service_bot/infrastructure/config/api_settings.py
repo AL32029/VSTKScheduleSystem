@@ -3,7 +3,6 @@ import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-# TODO: Реализовать конфигурацию для продакшена
 class APISettings(BaseSettings):
     """Конфигурация ссылок для API"""
     model_config = SettingsConfigDict(

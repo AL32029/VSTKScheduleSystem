@@ -1,5 +1,6 @@
 import datetime
 import random
+from itertools import chain
 
 from service_bot.domain.entities import (
     Cabinet,
@@ -31,7 +32,9 @@ _USER_ID = 319201832
 
 # ====================== [ДОМЕННЫЕ СУЩНОСТИ] ======================
 _GROUP_ITEMS = [Group(index, number) for index, number in _GROUP_NUMBERS]
+_GROUP_ITEM = next(chain(_GROUP_ITEMS), None)
 _CABINET_ITEMS = [Cabinet(index, number) for index, number in _CABINET_NUMBERS]
+_CABINET_ITEM = next(chain(_CABINET_ITEMS), None)
 _LESSON_ITEMS = [Lesson(start, end, name, (Cabinet(index, number) for index, number in cabinets))
                  for start, end, name, cabinets in _LESSON_VALUES]
 _CABINET_LESSON_ITEMS = [CabinetLesson(start, end, name, (Cabinet(index, number) for index, number in cabinets), group)

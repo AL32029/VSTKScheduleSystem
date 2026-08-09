@@ -1,6 +1,6 @@
 [project]
 name = "service-bot"
-version = "0.0.2dev"
+version = "0.0.3dev"
 description = "Microservice \"Bot Service\""
 authors = [
     {name = "Nikita Bondarev",email = "nikitabondarevvitebsk@gmail.com"}
@@ -36,7 +36,8 @@ dev = [
     "pytest-httpx (>=0.36.2,<0.37.0)",
     "alembic (>=1.18.5,<2.0.0)",
     "pytest-cov (>=7.1.0,<8.0.0)",
-    "testcontainers (>=4.15.0,<5.0.0)"
+    "testcontainers (>=4.15.0,<5.0.0)",
+    "aiogram-test-framework (>=1.0.4,<2.0.0)"
 ]
 
 [tool.pytest.ini_options]

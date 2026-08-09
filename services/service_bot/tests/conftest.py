@@ -10,6 +10,7 @@ import pytest
 from dishka import make_async_container
 from httpx import AsyncClient
 from redis.asyncio import Redis
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -25,6 +26,7 @@ from service_bot.application.ports import (
     ScheduleRepository,
     UserRepository,
 )
+from service_bot.infrastructure.di import TemplatesProvider, UseCasesProvider
 from service_bot.infrastructure.repositories import (
     HTTPXCabinetRepository,
     HTTPXGroupRepository,
@@ -42,11 +44,11 @@ def postgres_container() -> Generator[PostgresContainer, Any, None]:
     with PostgresContainer('postgres:17') as postgres:
         db_url = postgres.get_connection_url(driver='asyncpg')
         os.environ["MIGRATION_DATABASE_URL"] = db_url
-        project_root = pathlib.Path(__file__).parent.parent.parent
+        project_root = pathlib.Path(__file__).parent.parent
         subprocess.run(
-            ["alembic", "-c", str(project_root / "alembic.ini"), "upgrade", "head"],
+            [sys.executable, "-m", "alembic", "-c", str(project_root / "alembic.ini"), "upgrade", "head"],
             check=True,
-            env=os.environ,
+            env=os.environ
         )
         yield postgres
 
@@ -73,20 +75,8 @@ async def session_maker(async_engine) -> async_sessionmaker[AsyncSession]:
 
 
 @pytest.fixture(scope='function')
-async def session_with_test_data(session_maker):
-    # groups_orm = (GroupO for x in {*_GROUP_ITEMS})
-    # cabinets_orm = (cabinet_domain_to_orm(x) for x in {*_CABINET_ITEMS})
-
+async def session_with_test_data(session_maker) -> AsyncIterable[AsyncSession]:
     async with session_maker() as session:
-        # session.add_all([
-        #     *groups_orm, *cabinets_orm,
-        #     *[LessonORM(group_index=_GROUP_ITEM.index, date=_GROUP_DAY_SCHEDULE_ITEM.date, start=lesson.start,
-        #                 end=lesson.end, name=lesson.name, cabinet_relationships=[
-        #             LessonCabinetORM(cabinet_id=cabinet.index, cabinet_index=idx)
-        #             for idx, cabinet in enumerate(lesson.cabinets)
-        #         ])
-        #       for lesson in _GROUP_DAY_SCHEDULE_ITEM.lessons]
-        # ])
         yield session
         await session.rollback()
 
@@ -100,7 +90,7 @@ def redis_container() -> Generator[RedisContainer, Any, None]:
 
 # ====================== [ФИКСТУРА С ПРОВАЙДЕРАМИ] ======================
 @pytest.fixture(scope="function")
-async def test_container(request, session_with_test_data, redis_container):
+async def test_container(request, session_with_test_data, redis_container, async_engine):
     from dishka import Provider, Scope, provide
 
     # ====================== [ПРОВАЙДЕР БД] ======================
@@ -155,6 +145,8 @@ async def test_container(request, session_with_test_data, redis_container):
 
     container = make_async_container(
         ClientProvider(),
+        UseCasesProvider(),
+        TemplatesProvider(),
         TestRedisProvider(),
         TestDatabaseProvider(),
         TestRepositoriesProvider()
@@ -162,16 +154,16 @@ async def test_container(request, session_with_test_data, redis_container):
     await container.get(AsyncClient)
     yield container
 
-    # async with async_engine.connect() as conn:
-    #     await conn.execute(text("SET session_replication_role = 'replica';"))
-    #     result = await conn.execute(text(
-    #         "SELECT tablename FROM pg_tables WHERE schemaname = 'public' "
-    #         "AND tablename != 'alembic_version';"
-    #     ))
-    #     tables = [row[0] for row in result]
-    #     for table in tables:
-    #         await conn.execute(text(f'DELETE FROM "{table}";'))
-    #     await conn.execute(text("SET session_replication_role = 'origin';"))
-    #     await conn.commit()
-    #
-    # await container.close()
+    async with async_engine.connect() as conn:
+        await conn.execute(text("SET session_replication_role = 'replica';"))
+        result = await conn.execute(text(
+            "SELECT tablename FROM pg_tables WHERE schemaname = 'public' "
+            "AND tablename != 'alembic_version';"
+        ))
+        tables = [row[0] for row in result]
+        for table in tables:
+            await conn.execute(text(f'DELETE FROM "{table}";'))
+        await conn.execute(text("SET session_replication_role = 'origin';"))
+        await conn.commit()
+
+    await container.close()

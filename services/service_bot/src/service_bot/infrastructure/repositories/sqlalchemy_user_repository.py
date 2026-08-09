@@ -131,7 +131,7 @@ class SQLAlchemyUserRepository(UserRepository):
 
         if inserted is None:
             logger.warning('The database already contains a record of the subscription to the cabinet')
-            raise CabinetAlreadyInsertedError(f'User already subscribed at cabinet with index {cabinet.index!r}')
+            raise CabinetAlreadyInsertedError(cabinet.number)
 
         logger.info('The record of the subscription to the cabinet has been saved in the database')
 
