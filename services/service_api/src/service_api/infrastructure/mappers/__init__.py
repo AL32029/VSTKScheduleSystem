@@ -1,4 +1,4 @@
-from pydantic_mappers import (
+from .pydantic_mappers import (
     cabinet_day_schedule_to_schema,
     group_day_schedule_to_schema,
     schedule_domain_to_schema,
