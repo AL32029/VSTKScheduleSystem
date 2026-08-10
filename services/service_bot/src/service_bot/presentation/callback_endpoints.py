@@ -205,10 +205,10 @@ async def callback_day_schedule(callback: CallbackQuery, state: FSMContext, user
         try:
             if schedule_for == 'group':
                 await unsubscribe_group_use_case.execute(user, schedule_item)
-                await callback.answer('✔ Вы успешно отписались от группы')
+                await callback.answer('✔ Вы успешно удалили группу')
             elif schedule_for == 'cabinet':
                 await unsubscribe_cabinet_use_case.execute(user, schedule_item)
-                await callback.answer('✔ Вы успешно отписались от кабинета')
+                await callback.answer('✔ Вы успешно удалили кабинет')
         except (GroupUnsubscribeNotFound, CabinetUnsubscribeNotFound) as e:
             await callback.answer(f'⚠ {e!s}')
 

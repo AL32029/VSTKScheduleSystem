@@ -26,14 +26,14 @@ class GroupUnsubscribeNotFound(DataRequestError):
     """Ошибка отсутствия группы при отписке"""
 
     def __init__(self):
-        super().__init__('Вы не подписаны на данную группу')
+        super().__init__('Вы не отслеживаете расписание для данной группы')
 
 
 class CabinetUnsubscribeNotFound(DataRequestError):
     """Ошибка отсутствия кабинета при отписке"""
 
     def __init__(self):
-        super().__init__('Вы не подписаны на данный кабинет')
+        super().__init__('Вы не отслеживаете расписание для данного кабинета')
 
 
 class ScheduleDateNotFound(DataRequestError):

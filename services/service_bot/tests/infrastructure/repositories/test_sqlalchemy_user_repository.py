@@ -95,7 +95,7 @@ async def test_user_unsubscribe_group_error_subscribe_not_found(sqlalchemy_user_
     with pytest.raises(GroupUnsubscribeNotFound) as exc_info:
         await sqlalchemy_user_repo.unsubscribe_group(saved_user, _GROUP_ITEM)
 
-    assert exc_info.value.args[0] == 'Вы не подписаны на данную группу'
+    assert exc_info.value.args[0] == 'Вы не отслеживаете расписание для данной группы'
 
 
 async def test_user_unsubscribe_cabinet(sqlalchemy_user_repo, saved_user_with_subscribed_cabinet):
@@ -108,4 +108,4 @@ async def test_user_unsubscribe_cabinet_error_subscribe_not_found(sqlalchemy_use
     with pytest.raises(CabinetUnsubscribeNotFound) as exc_info:
         await sqlalchemy_user_repo.unsubscribe_cabinet(saved_user, _CABINET_ITEM)
 
-    assert exc_info.value.args[0] == 'Вы не подписаны на данный кабинет'
+    assert exc_info.value.args[0] == 'Вы не отслеживаете расписание для данного кабинета'
