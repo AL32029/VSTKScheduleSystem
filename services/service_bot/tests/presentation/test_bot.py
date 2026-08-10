@@ -418,11 +418,48 @@ class TestBot(AsyncBotTestMixin):
         # Открытие расписания для группы
         await client.click_button(f'open_group_{_GROUP_DAY_SCHEDULE.schedule_item.index}', message=main_menu_message)
 
-        user_settings_message = cast(Message, self.client.capture.get_last_request().response)
+        day_schedule_message = cast(Message, self.client.capture.get_last_request().response)
 
         user_settings_text = templater.render('day_schedule', schedule_to='group', day_schedule=_GROUP_DAY_SCHEDULE)
 
-        assert user_settings_message.text == user_settings_text
+        assert day_schedule_message.text == user_settings_text
+
+    async def test_get_group_day_schedule_error_group_not_found(self, test_container, httpx_mock):
+        async with test_container(scope=Scope.REQUEST) as container:
+            templater = await container.get(TemplateMessageRenderer)
+            user_repo: 'SQLAlchemyUserRepository' = await container.get(UserRepository)
+            httpx_client = await container.get(AsyncClient)
+
+        # Создание моков
+        httpx_mock.add_response(
+            method='GET',
+            url=f'{httpx_client.base_url}/schedule/group',
+            match_params={
+                'group_number': _GROUP_DAY_SCHEDULE.schedule_item.index,
+                'schedule_to': 'tomorrow'
+            },
+            status_code=404,
+            content=f'Group with number {_GROUP_DAY_SCHEDULE.schedule_item.index!r} not found'
+        )
+
+        client = self.client.create_user()
+
+        # Предварительная подписка на группу
+        user = await user_repo.save(client.user_id)
+
+        await user_repo.subscribe_group(user, _GROUP_DAY_SCHEDULE.schedule_item)
+
+        # Открытие главного меню
+        await client.send_command('start')
+
+        main_menu_message = client.get_last_message().response
+
+        # Открытие расписания для группы
+        await client.click_button(f'open_group_{_GROUP_DAY_SCHEDULE.schedule_item.index}', message=main_menu_message)
+
+        day_schedule_error_message = self.client.capture.get_last_request().text
+
+        assert day_schedule_error_message == f'⚠ {GroupNotFound(_GROUP_DAY_SCHEDULE.schedule_item.index)!s}'
 
     def _get_fsm_context(self, user) -> FSMContext:
         return self.client.dispatcher.fsm.get_context(
