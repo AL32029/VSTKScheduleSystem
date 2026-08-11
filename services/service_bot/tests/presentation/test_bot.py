@@ -16,7 +16,9 @@ from httpx import AsyncClient
 from service_bot.application.ports import UserRepository
 from service_bot.domain.exceptions import (
     CabinetNotFound,
+    CabinetUnsubscribeNotFound,
     GroupNotFound,
+    GroupUnsubscribeNotFound,
     ScheduleForCabinetNotFound,
     ScheduleForGroupNotFound,
 )
@@ -1036,9 +1038,154 @@ class TestBot(AsyncBotTestMixin):
 
             assert success_deletion_group_callback == '✔ Вы перестали отслеживать кабинет'
 
-    # TODO: Сделать тест обработки ошибки GroupUnsubscribeNotFound
-    # TODO: Сделать тест обработки ошибки CabinetUnsubscribeNotFound
-    # TODO: Сделать тест обработки нажатия на необслуживаемую кнопку
+    async def test_get_group_day_schedule_with_deletion_error_not_found(self, test_container, httpx_mock):
+        async with test_container(scope=Scope.REQUEST) as container:
+            text_templater = await container.get(TemplateMessageRenderer)
+            user_repo: SQLAlchemyUserRepository = await container.get(UserRepository)
+            httpx_client = await container.get(AsyncClient)
+
+            # Создание моков
+            httpx_mock.add_response(
+                method='GET',
+                url=f'{httpx_client.base_url}/schedule/group',
+                match_params={
+                    'group_number': _GROUP_DAY_SCHEDULE.schedule_item.index,
+                    'schedule_to': 'tomorrow'
+                },
+                json={
+                    'success': True,
+                    'data': DayScheduleItem(
+                        date=_GROUP_DAY_SCHEDULE.date,
+                        group=ScheduleItem(**asdict(_GROUP_DAY_SCHEDULE.schedule_item)),
+                        lessons=[
+                            LessonItem(start=lesson.start, end=lesson.end, name=lesson.name,
+                                       cabinets=[ScheduleItem(**asdict(cabinet)) for cabinet in lesson.cabinets])
+                            for lesson in _GROUP_DAY_SCHEDULE.lessons
+                        ]
+                    ).model_dump(mode='json')
+                }
+            )
+
+            client = self.client.create_user()
+
+            # Предварительная подписка на группу
+            user = await user_repo.save(client.user_id)
+
+            await user_repo.subscribe_group(user, _GROUP_DAY_SCHEDULE.schedule_item)
+
+            user_repo.session.expire_all()
+
+            # Открытие главного меню
+            await client.send_command('start')
+
+            main_menu_message = client.get_last_message().response
+
+            # Открытие расписания для группы
+            await client.click_button(f'open_group_{_GROUP_DAY_SCHEDULE.schedule_item.index}',
+                                      message=main_menu_message)
+
+            day_schedule_message = cast(Message, self.client.capture.get_last_request().response)
+
+            day_schedule_text = text_templater.render('day_schedule', schedule_to='group',
+                                                      day_schedule=_GROUP_DAY_SCHEDULE)
+
+            assert day_schedule_message.text == day_schedule_text
+
+            # Прекращение отслеживания группы
+            await user_repo.unsubscribe_group(user, _GROUP_DAY_SCHEDULE.schedule_item.index)
+
+            user_repo.session.expire_all()
+
+            # Удаление группы
+            await client.click_button(f'schedule_group_{_GROUP_DAY_SCHEDULE.schedule_item.index}_delete',
+                                      message=main_menu_message)
+
+            error_callback_text = self.client.capture.get_callback_answers()[-1].text
+
+            assert error_callback_text == f'⚠ {GroupUnsubscribeNotFound()!s}'
+
+    async def test_get_cabinet_day_schedule_with_deletion_error_not_found(self, test_container, httpx_mock):
+        async with test_container(scope=Scope.REQUEST) as container:
+            text_templater = await container.get(TemplateMessageRenderer)
+            user_repo: SQLAlchemyUserRepository = await container.get(UserRepository)
+            httpx_client = await container.get(AsyncClient)
+
+            # Создание моков
+            httpx_mock.add_response(
+                method='GET',
+                url=f'{httpx_client.base_url}/schedule/cabinet',
+                match_params={
+                    'cabinet_number': _CABINET_DAY_SCHEDULE.schedule_item.index,
+                    'schedule_to': 'tomorrow'
+                },
+                json={
+                    'success': True,
+                    'data': DayScheduleItem(
+                        date=_CABINET_DAY_SCHEDULE.date,
+                        cabinet=ScheduleItem(**asdict(_CABINET_DAY_SCHEDULE.schedule_item)),
+                        lessons=[
+                            LessonItem(start=lesson.start, end=lesson.end, group=ScheduleItem(**asdict(lesson.group)),
+                                       name=lesson.name, cabinets=[ScheduleItem(**asdict(cabinet))
+                                                                   for cabinet in lesson.cabinets])
+                            for lesson in _CABINET_DAY_SCHEDULE.lessons
+                        ]
+                    ).model_dump(mode='json')
+                }
+            )
+
+            client = self.client.create_user()
+
+            # Предварительное изменение типа профиля и подписка на кабинет
+            user = await user_repo.save(client.user_id)
+
+            await user_repo.update_metadata(user, 'user_type', 'teacher')
+
+            await user_repo.subscribe_cabinet(user, _CABINET_DAY_SCHEDULE.schedule_item)
+
+            user_repo.session.expire_all()
+
+            # Открытие главного меню
+            await client.send_command('start')
+
+            main_menu_message = client.get_last_message().response
+
+            # Открытие расписания для группы
+            await client.click_button(f'open_cabinet_{_CABINET_DAY_SCHEDULE.schedule_item.index}',
+                                      message=main_menu_message)
+
+            day_schedule_message = cast(Message, self.client.capture.get_last_request().response)
+
+            day_schedule_text = text_templater.render('day_schedule', schedule_to='cabinet',
+                                                      day_schedule=_CABINET_DAY_SCHEDULE)
+
+            assert day_schedule_message.text == day_schedule_text
+
+            # Прекращение отслеживания группы
+            await user_repo.unsubscribe_cabinet(user, _CABINET_DAY_SCHEDULE.schedule_item.index)
+
+            user_repo.session.expire_all()
+
+            # Удаление кабинета
+            await client.click_button(f'schedule_cabinet_{_CABINET_DAY_SCHEDULE.schedule_item.index}_delete',
+                                      message=main_menu_message)
+
+            error_callback_text = self.client.capture.get_callback_answers()[-1].text
+
+            assert error_callback_text == f'⚠ {CabinetUnsubscribeNotFound()!s}'
+
+    async def test_click_maintenance_free_button(self):
+        client = self.client.create_user()
+
+        # Открытие главного меню
+        await client.send_command('start')
+
+        main_menu_message = client.get_last_message().response
+
+        await client.click_button('maintenance_free_button', message=main_menu_message)
+
+        error_callback_text = self.client.capture.get_callback_answers()[-1].text
+
+        assert error_callback_text == '⚠ На данный момент данная кнопка не выполняет обработку'
 
     def _get_fsm_context(self, user) -> FSMContext:
         return self.client.dispatcher.fsm.get_context(
