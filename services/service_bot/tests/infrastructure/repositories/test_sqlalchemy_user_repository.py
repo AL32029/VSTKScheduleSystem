@@ -69,7 +69,7 @@ async def test_user_subscribe_group_error_already_inserted(sqlalchemy_user_repo,
     with pytest.raises(GroupAlreadyInsertedError) as exc_info:
         await sqlalchemy_user_repo.subscribe_group(saved_user_with_subscribed_group, _GROUP_ITEM)
 
-    assert exc_info.value.args[0] == f"У вас уже добавлена группа {_GROUP_ITEM!s}"
+    assert exc_info.value.args[0] == str(GroupAlreadyInsertedError(_GROUP_ITEM.number))
 
 
 async def test_user_subscribe_cabinet(sqlalchemy_user_repo, saved_user):
@@ -82,7 +82,7 @@ async def test_user_subscribe_cabinet_error_already_inserted(sqlalchemy_user_rep
     with pytest.raises(CabinetAlreadyInsertedError) as exc_info:
         await sqlalchemy_user_repo.subscribe_cabinet(saved_user_with_subscribed_cabinet, _CABINET_ITEM)
 
-    assert exc_info.value.args[0] == f"У вас уже добавлен кабинет {_CABINET_ITEM!s}"
+    assert exc_info.value.args[0] == str(CabinetAlreadyInsertedError(_CABINET_ITEM.number))
 
 
 async def test_user_unsubscribe_group(sqlalchemy_user_repo, saved_user_with_subscribed_group):
@@ -95,7 +95,7 @@ async def test_user_unsubscribe_group_error_subscribe_not_found(sqlalchemy_user_
     with pytest.raises(GroupUnsubscribeNotFound) as exc_info:
         await sqlalchemy_user_repo.unsubscribe_group(saved_user, _GROUP_ITEM)
 
-    assert exc_info.value.args[0] == 'Вы не отслеживаете расписание для данной группы'
+    assert exc_info.value.args[0] == str(GroupUnsubscribeNotFound())
 
 
 async def test_user_unsubscribe_cabinet(sqlalchemy_user_repo, saved_user_with_subscribed_cabinet):
@@ -108,4 +108,4 @@ async def test_user_unsubscribe_cabinet_error_subscribe_not_found(sqlalchemy_use
     with pytest.raises(CabinetUnsubscribeNotFound) as exc_info:
         await sqlalchemy_user_repo.unsubscribe_cabinet(saved_user, _CABINET_ITEM)
 
-    assert exc_info.value.args[0] == 'Вы не отслеживаете расписание для данного кабинета'
+    assert exc_info.value.args[0] == str(CabinetUnsubscribeNotFound())
