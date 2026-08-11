@@ -1,7 +1,7 @@
 import pytest
 
 from service_api.domain.entities import Group
-from service_api.domain.exceptions.api_exceptions import GroupNotFound
+from service_api.domain.exceptions import GroupNotFound
 from tests.test_contains import _GROUP_ITEM, _GROUP_ITEM_NOT_SAVED, _GROUP_ITEMS
 
 

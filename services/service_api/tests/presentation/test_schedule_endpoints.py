@@ -1,3 +1,5 @@
+
+from service_api.domain.entities import CabinetDaySchedule, GroupDaySchedule
 from service_api.infrastructure.pydantic_schemas import (
     CabinetDayScheduleSchema,
     GroupDayScheduleSchema,
@@ -15,7 +17,11 @@ async def test_get_group_day_schedule_endpoint(client):
 
     assert resp.status_code == 200
 
-    assert GroupDayScheduleSchema.model_validate(resp.json()).to_domain() == _GROUP_DAY_SCHEDULE_ITEM
+    response_data: dict = resp.json()
+
+    day_schedule: GroupDaySchedule = GroupDayScheduleSchema.model_validate(response_data.get('data')).to_domain()
+
+    assert day_schedule == _GROUP_DAY_SCHEDULE_ITEM
 
 
 async def test_get_cabinet_day_schedule_endpoint(client):
@@ -27,4 +33,8 @@ async def test_get_cabinet_day_schedule_endpoint(client):
 
     assert resp.status_code == 200
 
-    assert CabinetDayScheduleSchema.model_validate(resp.json()).to_domain() == _CABINET_DAY_SCHEDULE_ITEM
+    response_data: dict = resp.json()
+
+    day_schedule: CabinetDaySchedule = CabinetDayScheduleSchema.model_validate(response_data.get('data')).to_domain()
+
+    assert day_schedule == _CABINET_DAY_SCHEDULE_ITEM

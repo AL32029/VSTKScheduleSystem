@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from service_api.application.ports import CabinetRepository
 from service_api.domain.entities import Cabinet
-from service_api.domain.exceptions.api_exceptions import CabinetNotFound
+from service_api.domain.exceptions import CabinetNotFound
 from service_api.domain.shared.patterns import ITEM_INDEX
 from service_api.infrastructure.mappers import cabinet_orm_to_domain
 
@@ -17,7 +17,7 @@ class SQLAlchemyCabinetRepository(CabinetRepository):
         cabinet = await self.session.get(CabinetORM, ITEM_INDEX.sub('', number.lower()))
 
         if cabinet is None:
-            raise CabinetNotFound(f'Cabinet with number {number!r} not found')
+            raise CabinetNotFound(number)
 
         return cabinet_orm_to_domain(cabinet)
 

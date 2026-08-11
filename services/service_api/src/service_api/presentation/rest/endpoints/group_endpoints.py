@@ -3,25 +3,28 @@ from dishka.integrations.fastapi import inject
 from fastapi import APIRouter
 
 from service_api.application.services import GetAllGroupsUseCase, GetGroupUseCase
-from service_api.infrastructure.mappers import schedule_domain_to_schema
+from service_api.infrastructure.mappers import (
+    schedule_domain_to_schema,
+    schedule_item_schema_to_response,
+)
 from service_api.infrastructure.pydantic_schemas import (
-    ScheduleItemSchema,
+    ResponseSchema,
 )
 
 group_router = APIRouter(prefix='/groups', tags=['Group Items'])
 
 
-@group_router.get('/{group_number}', response_model='ScheduleItemSchema')
+@group_router.get('/{group_number}', response_model=ResponseSchema)
 @inject
-async def get_group_by_number(group_number: str, repo: FromDishka['GetGroupUseCase']) -> 'ScheduleItemSchema':
-    group_item = await repo.execute(group_number)
+async def get_group_by_number(group_number: str, repo: FromDishka['GetGroupUseCase']) -> 'ResponseSchema':
+    schema = schedule_domain_to_schema(await repo.execute(group_number))
 
-    return schedule_domain_to_schema(group_item)
+    return schedule_item_schema_to_response(schema)
 
 
-@group_router.get('/', response_model=list['ScheduleItemSchema'])
+@group_router.get('/', response_model=ResponseSchema)
 @inject
-async def get_all_groups(repo: FromDishka['GetAllGroupsUseCase']) -> list['ScheduleItemSchema']:
-    group_items = await repo.execute()
+async def get_all_groups(repo: FromDishka['GetAllGroupsUseCase']) -> 'ResponseSchema':
+    schemas = [schedule_domain_to_schema(group) for group in await repo.execute()]
 
-    return [schedule_domain_to_schema(group) for group in group_items]
+    return schedule_item_schema_to_response(schemas)

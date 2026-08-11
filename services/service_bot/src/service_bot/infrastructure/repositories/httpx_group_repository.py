@@ -24,9 +24,20 @@ class HTTPXGroupRepository(GroupRepository):
         logger.info('Sending an HTTP request GET %s', request)
         resp = await self.client.get(request)
 
-        if resp.status_code == 404 and resp.text == f'Group with number {group_number!r} not found':
-            logger.warning('The group %s was not found', group_number)
-            raise GroupNotFound(group_number)
+        response_json: dict = resp.json()
+
+        is_success: bool = cast(bool, response_json.get('success'))
+
+        if not is_success and (error := cast(dict, response_json.get('error'))):
+            code: str = cast(str, error.get('code'))
+
+            if code is not None and code == 'GROUP_NOT_FOUND':
+                extra = error.get('extra')
+
+                number = extra.get('input_number', group_number) if extra is not None else group_number
+
+                logger.warning('The group %s was not found', number)
+                raise GroupNotFound(number)
 
         try:
             resp.raise_for_status()
@@ -34,9 +45,11 @@ class HTTPXGroupRepository(GroupRepository):
             logger.exception('Error when sending an HTTP request GET %s', request)
             raise
 
+        group_json = response_json.get('data')
+
         logger.info('A successful response has been received (status: %s)', resp.status_code)
 
-        return cast('Group', ScheduleItem.model_validate(resp.json()).to_domain('group'))
+        return cast('Group', ScheduleItem.model_validate(group_json).to_domain('group'))
 
     async def get_all(self) -> list['Group']:
         """Получение списка всех кабинетов"""
@@ -44,13 +57,17 @@ class HTTPXGroupRepository(GroupRepository):
         logger.info('Sending an HTTP request GET %s', request)
         resp = await self.client.get(request)
 
+        response_json: dict = resp.json()
+
         try:
             resp.raise_for_status()
         except HTTPStatusError:
             logger.exception('Error when sending an HTTP request GET %s', request)
             raise
 
+        groups_list = cast(list[dict], response_json.get('data'))
+
         logger.info('A successful response has been received (status: %s)', resp.status_code)
 
         return [cast('Group', ScheduleItem.model_validate(group).to_domain('group'))
-                for group in resp.json()]
+                for group in groups_list]

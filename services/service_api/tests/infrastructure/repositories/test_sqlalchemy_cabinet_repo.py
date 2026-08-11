@@ -1,7 +1,7 @@
 import pytest
 
 from service_api.domain.entities import Cabinet
-from service_api.domain.exceptions.api_exceptions import CabinetNotFound
+from service_api.domain.exceptions import CabinetNotFound
 from tests.test_contains import _CABINET_ITEM, _CABINET_ITEM_NOT_SAVED, _CABINET_ITEMS
 
 

@@ -15,7 +15,17 @@ from service_api.domain.entities import (
 )
 
 
-class ScheduleItemSchema(BaseModel):
+class APISchemas(BaseModel):
+    """Базовая модель схем API"""
+
+
+class ResponseSchema[T: 'APISchemas'](BaseModel):
+    """Модель схемы успешного ответа API"""
+    success: bool = True
+    data: T | Iterable[T]
+
+
+class ScheduleItemSchema(APISchemas):
     index: str
     number: str
 
@@ -29,7 +39,7 @@ class ScheduleItemSchema(BaseModel):
         return hash(self.index)
 
 
-class GroupLessonSchema(BaseModel):
+class GroupLessonSchema(APISchemas):
     start: datetime.time
     end: datetime.time
 
@@ -49,7 +59,7 @@ class GroupLessonSchema(BaseModel):
         return hash((self.start, self.end, self.name, tuple(self.cabinets)))
 
 
-class CabinetLessonSchema(BaseModel):
+class CabinetLessonSchema(APISchemas):
     start: datetime.time
     end: datetime.time
 
@@ -72,7 +82,7 @@ class CabinetLessonSchema(BaseModel):
         return hash((self.start, self.end, self.group, self.name, tuple(self.cabinets)))
 
 
-class GroupDayScheduleSchema(BaseModel):
+class GroupDayScheduleSchema(APISchemas):
     group: 'ScheduleItemSchema'
 
     date: datetime.date
@@ -102,7 +112,7 @@ class GroupDayScheduleSchema(BaseModel):
         return hash((self.group, self.date, tuple(self.lessons), self.lessons_count, self.pairs_count))
 
 
-class CabinetDayScheduleSchema(BaseModel):
+class CabinetDayScheduleSchema(APISchemas):
     cabinet: 'ScheduleItemSchema'
 
     date: datetime.date

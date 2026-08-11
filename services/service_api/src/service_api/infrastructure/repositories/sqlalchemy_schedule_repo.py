@@ -42,12 +42,12 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
         date: datetime.date | None = await self.session.scalar(stmt)
 
         if date is None:
-            raise ScheduleDateNotFound(f'The database does not contain a schedule date for {schedule_type}')
+            raise ScheduleDateNotFound(schedule_type)
 
         return date
 
-    async def get_by_group(self, group: 'Group', schedule_date: datetime.date,
-                           redirect: bool = True) -> 'GroupDaySchedule':
+    async def get_by_group(self, group: 'Group', schedule_type: Literal['today', 'tomorrow'],
+                           schedule_date: datetime.date, redirect: bool = True) -> 'GroupDaySchedule':
         stmt = (
             select(LessonORM).
             where(LessonORM.group_index == group.index, LessonORM.date == schedule_date).
@@ -57,13 +57,12 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
         lessons: Iterable[LessonORM] = (await self.session.scalars(stmt)).all()
 
         if not lessons:
-            raise GroupDayScheduleNotFound(f'The database does not contain a '
-                                           f'schedule for {group.number} for {schedule_date!s}')
+            raise GroupDayScheduleNotFound(group, schedule_type, schedule_date)
 
         return lessons_orm_to_group_day_schedule_domain(lessons, redirect)
 
-    async def get_by_cabinet(self, cabinet: 'Cabinet', schedule_date: datetime.date,
-                             redirect: bool = True) -> 'CabinetDaySchedule':
+    async def get_by_cabinet(self, cabinet: 'Cabinet', schedule_type: Literal['today', 'tomorrow'],
+                             schedule_date: datetime.date, redirect: bool = True) -> 'CabinetDaySchedule':
         stmt = (
             select(LessonORM).
             join(LessonCabinetORM).
@@ -77,7 +76,6 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
         lessons: Iterable[LessonORM] = (await self.session.scalars(stmt)).all()
 
         if not lessons:
-            raise CabinetDayScheduleNotFound(f'The database does not contain a '
-                                             f'schedule for {cabinet.number} for {schedule_date!s}')
+            raise CabinetDayScheduleNotFound(cabinet, schedule_type, schedule_date)
 
         return lessons_orm_to_cabinet_day_schedule_domain(cabinet, lessons, redirect)

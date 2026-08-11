@@ -22,6 +22,7 @@ from service_bot.domain.exceptions import (
     CabinetUnsubscribeNotFound,
     GroupNotFound,
     GroupUnsubscribeNotFound,
+    ScheduleDateNotFound,
     ScheduleForCabinetNotFound,
     ScheduleForGroupNotFound,
 )
@@ -146,6 +147,9 @@ async def callback_open_schedule(callback: CallbackQuery, message_templater: Fro
         except (GroupNotFound, CabinetNotFound) as e:
             logger.warning('The %s %s was not found', schedule_for, schedule_item)
             return await callback.answer(f'⚠ {e!s}')
+        except ScheduleDateNotFound as e:
+            logger.warning('The schedule for %s has not been published', schedule_to)
+            error = e
         except (ScheduleForGroupNotFound, ScheduleForCabinetNotFound) as e:
             logger.warning('The schedule for %s %s for %s is unavailable', schedule_for, schedule_item, schedule_to)
             error = e
@@ -187,6 +191,9 @@ async def callback_day_schedule(callback: CallbackQuery, state: FSMContext, user
             day_schedule = await day_schedule_use_case.execute(schedule_item, schedule_action, schedule_for)
         except (GroupNotFound, CabinetNotFound) as e:
             logger.warning('The %s %s was not found', schedule_for, schedule_item)
+            return await callback.answer(f'⚠ {e!s}')
+        except ScheduleDateNotFound as e:
+            logger.warning('The schedule for %s has not been published', schedule_action)
             return await callback.answer(f'⚠ {e!s}')
         except (ScheduleForGroupNotFound, ScheduleForCabinetNotFound) as e:
             logger.warning('The schedule for %s %s for %s is unavailable', schedule_for, schedule_item, schedule_action)

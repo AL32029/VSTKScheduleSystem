@@ -24,7 +24,7 @@ class GetGroupDayScheduleUseCase:
 
             schedule_date = await self.schedule_repo.get_schedule_date(schedule_to)
 
-            day_schedule = await self.schedule_repo.get_by_group(group_item, schedule_date)
+            day_schedule = await self.schedule_repo.get_by_group(group_item, schedule_to, schedule_date)
 
             await self.cache_repo.set_group_day_schedule(schedule_to, day_schedule)
 

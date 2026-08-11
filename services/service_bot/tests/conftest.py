@@ -5,6 +5,7 @@ import subprocess
 import sys
 from collections.abc import AsyncGenerator, AsyncIterable, Generator
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pytest
 from dishka import make_async_container
@@ -93,13 +94,20 @@ def redis_container() -> Generator[RedisContainer, Any, None]:
 async def test_container(request, session_with_test_data, redis_container, async_engine):
     from dishka import Provider, Scope, provide
 
+    # ====================== [ПРОВАЙДЕР СИСТЕМА] ======================
+    class TestSystemProvider(Provider):
+        scope = Scope.APP
+
+        @provide
+        def time_zone(self) -> ZoneInfo:
+            return ZoneInfo('Europe/Minsk')
+
     # ====================== [ПРОВАЙДЕР БД] ======================
     class TestDatabaseProvider(Provider):
         scope = Scope.REQUEST
 
         @provide
         async def provide_session(self) -> AsyncIterable[AsyncSession]:
-            """Database session"""
             yield session_with_test_data
 
             await session_with_test_data.rollback()
@@ -147,6 +155,7 @@ async def test_container(request, session_with_test_data, redis_container, async
         ClientProvider(),
         UseCasesProvider(),
         TemplatesProvider(),
+        TestSystemProvider(),
         TestRedisProvider(),
         TestDatabaseProvider(),
         TestRepositoriesProvider()

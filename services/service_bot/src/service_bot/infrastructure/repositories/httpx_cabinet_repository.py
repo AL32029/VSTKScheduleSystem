@@ -24,9 +24,20 @@ class HTTPXCabinetRepository(CabinetRepository):
         logger.info('Sending an HTTP request GET %s', request)
         resp = await self.client.get(request)
 
-        if resp.status_code == 404 and resp.text == f'Cabinet with number {cabinet_number!r} not found':
-            logger.warning('The cabinet %s was not found', cabinet_number)
-            raise CabinetNotFound(cabinet_number)
+        response_json: dict = resp.json()
+
+        is_success: bool = cast(bool, response_json.get('success'))
+
+        if not is_success and (error := cast(dict, response_json.get('error'))):
+            code: str = cast(str, error.get('code'))
+
+            if code is not None and code == 'CABINET_NOT_FOUND':
+                extra = error.get('extra')
+
+                number = extra.get('input_number', cabinet_number) if extra is not None else cabinet_number
+
+                logger.warning('The cabinet %s was not found', number)
+                raise CabinetNotFound(number)
 
         try:
             resp.raise_for_status()
@@ -34,9 +45,11 @@ class HTTPXCabinetRepository(CabinetRepository):
             logger.exception('Error when sending an HTTP request GET %s', request)
             raise
 
+        cabinet_json = response_json.get('data')
+
         logger.info('A successful response has been received (status: %s)', resp.status_code)
 
-        return cast('Cabinet', ScheduleItem.model_validate(resp.json()).to_domain('cabinet'))
+        return cast('Cabinet', ScheduleItem.model_validate(cabinet_json).to_domain('cabinet'))
 
     async def get_all(self) -> list['Cabinet']:
         """Получение списка всех кабинетов"""
@@ -44,13 +57,17 @@ class HTTPXCabinetRepository(CabinetRepository):
         logger.info('Sending an HTTP request GET %s', request)
         resp = await self.client.get(request)
 
+        response_json: dict = resp.json()
+
         try:
             resp.raise_for_status()
         except HTTPStatusError:
             logger.exception('Error when sending an HTTP request GET %s', request)
             raise
 
+        cabinets_list = cast(list[dict], response_json.get('data'))
+
         logger.info('A successful response has been received (status: %s)', resp.status_code)
 
         return [cast('Cabinet', ScheduleItem.model_validate(cabinet).to_domain('cabinet'))
-                for cabinet in resp.json()]
+                for cabinet in cabinets_list]

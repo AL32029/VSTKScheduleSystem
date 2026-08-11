@@ -1,3 +1,7 @@
+from collections.abc import Iterable
+from typing import cast
+
+from service_api.domain.entities import Group
 from service_api.infrastructure.pydantic_schemas import ScheduleItemSchema
 from tests.test_contains import _GROUP_ITEM, _GROUP_ITEMS
 
@@ -9,10 +13,14 @@ async def test_get_group_by_number_endpoint(client):
 
     assert resp.status_code == 200
 
-    group = ScheduleItemSchema.model_validate(resp.json())
+    response_data: dict = resp.json()
 
-    assert group.index == _GROUP_ITEM.index
-    assert group.number == _GROUP_ITEM.number
+    group: Group = cast(
+        'Group',
+        ScheduleItemSchema.model_validate(response_data.get('data')).to_domain('group')
+    )
+
+    assert group == _GROUP_ITEM
 
 
 async def test_get_all_groups_endpoint(client):
@@ -21,7 +29,13 @@ async def test_get_all_groups_endpoint(client):
 
     assert resp.status_code == 200
 
-    groups = {ScheduleItemSchema.model_validate(group)
-              for group in resp.json()}
+    response_data: dict = resp.json()
+
+    schemas_list: list[dict] = cast(list[dict], response_data.get('data'))
+
+    groups: Iterable[Group] = [
+        cast('Group', ScheduleItemSchema.model_validate(group).to_domain('cabinet'))
+        for group in schemas_list
+    ]
 
     assert len(list(groups)) == len(_GROUP_ITEMS)

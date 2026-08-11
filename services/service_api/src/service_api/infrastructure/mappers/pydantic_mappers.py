@@ -1,3 +1,5 @@
+from collections.abc import Iterable
+
 from service_api.domain.entities import (
     Cabinet,
     CabinetDaySchedule,
@@ -5,10 +7,12 @@ from service_api.domain.entities import (
     GroupDaySchedule,
 )
 from service_api.infrastructure.pydantic_schemas import (
+    APISchemas,
     CabinetDayScheduleSchema,
     CabinetLessonSchema,
     GroupDayScheduleSchema,
     GroupLessonSchema,
+    ResponseSchema,
     ScheduleItemSchema,
 )
 
@@ -41,3 +45,6 @@ def cabinet_day_schedule_to_schema(day_schedule: 'CabinetDaySchedule') -> 'Cabin
                                                for cabinet in lesson.cabinets])
                  for lesson in day_schedule.lessons]
     )
+
+def schedule_item_schema_to_response(data: 'APISchemas | Iterable[APISchemas]') -> 'ResponseSchema':
+    return ResponseSchema(data=data)

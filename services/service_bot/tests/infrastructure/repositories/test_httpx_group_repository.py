@@ -12,7 +12,10 @@ async def test_get_by_number(httpx_mock, client, httpx_group_repository, group):
     httpx_mock.add_response(
         method='GET',
         url=f'{client.base_url}/groups/{group.number}',
-        json=asdict(group)
+        json={
+            'success': True,
+            'data': asdict(group)
+        }
     )
 
     group_item = await httpx_group_repository.get_by_number(group.number)
@@ -29,7 +32,16 @@ async def test_get_by_number_not_found(httpx_mock, client, httpx_group_repositor
         method='GET',
         url=f'{client.base_url}/groups/{group_number}',
         status_code=404,
-        content=f'Group with number {group_number!r} not found'
+        json={
+            'success': False,
+            'error': {
+                'code': 'GROUP_NOT_FOUND',
+                'detail': f'Group with number {group_number!r} not found',
+                'extra': {
+                    'input_number': group_number
+                }
+            }
+        }
     )
 
     with pytest.raises(GroupNotFound) as exc_info:
@@ -42,7 +54,10 @@ async def test_get_all(httpx_mock, client, httpx_group_repository):
     httpx_mock.add_response(
         method='GET',
         url=f'{client.base_url}/groups/',
-        json=[asdict(group) for group in sorted(_GROUP_ITEMS, key=lambda x: x.index)]
+        json={
+            'success': True,
+            'data': [asdict(group) for group in sorted(_GROUP_ITEMS, key=lambda x: x.index)]
+        }
     )
 
     group_items = await httpx_group_repository.get_all()

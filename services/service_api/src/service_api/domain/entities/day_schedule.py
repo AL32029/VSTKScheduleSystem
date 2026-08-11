@@ -36,7 +36,7 @@ class GroupDaySchedule:
         if not isinstance(other, GroupDaySchedule):
             raise NotImplementedError
 
-        return (self.group, self.date, self.lessons) == (other.group, other.date, tuple(other.lessons))
+        return (self.group, self.date, tuple(self.lessons)) == (other.group, other.date, tuple(other.lessons))
 
 
 @dataclass(frozen=True)
@@ -64,4 +64,4 @@ class CabinetDaySchedule:
         if not isinstance(other, CabinetDaySchedule):
             raise NotImplementedError
 
-        return (self.cabinet, self.date, self.lessons) == (other.cabinet, other.date, tuple(other.lessons))
+        return (self.cabinet, self.date, tuple(self.lessons)) == (other.cabinet, other.date, tuple(other.lessons))

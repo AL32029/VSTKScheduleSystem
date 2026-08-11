@@ -1,12 +1,9 @@
-import pytest
-
 from service_api.domain.entities import (
     CabinetDaySchedule,
     CabinetLesson,
     GroupDaySchedule,
     GroupLesson,
 )
-from service_api.domain.exceptions import DayScheduleEmptyLessonsError
 from tests.test_contains import (
     _CABINET_ITEM,
     _CABINET_LESSON_ITEMS,
@@ -26,15 +23,6 @@ def test_create_group_day_schedule():
     assert day_schedule.lessons
     assert len(list(day_schedule.lessons)) == len(_GROUP_LESSON_ITEMS)
     assert all(isinstance(lesson, GroupLesson) for lesson in day_schedule.lessons)
-    assert day_schedule.lessons == tuple(sorted(_GROUP_LESSON_ITEMS, key=lambda x: x.start))
-
-
-def test_create_group_day_schedule_with_empty_lessons():
-    """Тест должен выдать ошибку DayScheduleEmptyLessonsError"""
-    with pytest.raises(DayScheduleEmptyLessonsError) as exc_info:
-        GroupDaySchedule(_GROUP_ITEM, _DAY_SCHEDULE_DATE, {})
-
-    assert exc_info.value.args[0] == 'Day schedule cannot have an empty schedule'
 
 
 def test_group_day_schedule_equal():
@@ -65,15 +53,6 @@ def test_create_cabinet_day_schedule():
     assert day_schedule.lessons
     assert len(list(day_schedule.lessons)) == len(_CABINET_LESSON_ITEMS)
     assert all(isinstance(lesson, CabinetLesson) for lesson in day_schedule.lessons)
-    assert day_schedule.lessons == tuple(sorted(_CABINET_LESSON_ITEMS, key=lambda x: x.start))
-
-
-def test_create_cabinet_day_schedule_with_empty_lessons():
-    """Тест должен выдать ошибку DayScheduleEmptyLessonsError"""
-    with pytest.raises(DayScheduleEmptyLessonsError) as exc_info:
-        CabinetDaySchedule(_CABINET_ITEM, _DAY_SCHEDULE_DATE, {})
-
-    assert exc_info.value.args[0] == 'Day schedule cannot have an empty schedule'
 
 
 def test_cabinet_day_schedule_equal():

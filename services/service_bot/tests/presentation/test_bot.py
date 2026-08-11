@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 from dataclasses import asdict
 from typing import cast
 
@@ -13,19 +14,32 @@ from dishka.integrations.aiogram import setup_dishka
 from httpx import AsyncClient
 
 from service_bot.application.ports import UserRepository
-from service_bot.domain.exceptions import GroupNotFound, CabinetNotFound
-from service_bot.infrastructure.repositories import SQLAlchemyUserRepository, ScheduleItem
-from service_bot.infrastructure.repositories.schemas import DayScheduleItem, LessonItem
-from service_bot.infrastructure.template_engine_items import TemplateMessageRenderer
-from service_bot.presentation import UserStates
-from src.service_bot.infrastructure.middlewares import (
+from service_bot.domain.exceptions import (
+    CabinetNotFound,
+    GroupNotFound,
+    ScheduleForGroupNotFound,
+)
+from service_bot.infrastructure.middlewares import (
     CheckMessagePanelMiddleware,
     DeleteMessageMiddleware,
     InitRequestMiddleware,
     InitUserDatabaseMiddleware,
 )
-from src.service_bot.presentation import callback_router, message_router
-from tests.test_contains import _CABINET_ITEM, _CABINET_ITEMS, _GROUP_ITEM, _GROUP_ITEMS, _GROUP_DAY_SCHEDULE
+from service_bot.infrastructure.repositories import (
+    ScheduleItem,
+    SQLAlchemyUserRepository,
+)
+from service_bot.infrastructure.repositories.schemas import DayScheduleItem, LessonItem
+from service_bot.infrastructure.template_engine_items import TemplateMessageRenderer
+from service_bot.presentation import UserStates, callback_router, message_router
+from tests.test_contains import (
+    _CABINET_DAY_SCHEDULE,
+    _CABINET_ITEM,
+    _CABINET_ITEMS,
+    _GROUP_DAY_SCHEDULE,
+    _GROUP_ITEM,
+    _GROUP_ITEMS,
+)
 
 
 def create_app(container: AsyncContainer, bot: Bot, dispatcher: Dispatcher) -> None:
@@ -85,13 +99,19 @@ class TestBot(AsyncBotTestMixin):
         httpx_mock.add_response(
             method='GET',
             url=f'{httpx_client.base_url}/groups/',
-            json=[asdict(group) for group in sorted(_GROUP_ITEMS, key=lambda x: x.index)]
+            json={
+                'success': True,
+                'data': [asdict(group) for group in sorted(_GROUP_ITEMS, key=lambda x: x.index)]
+            }
         )
 
         httpx_mock.add_response(
             method='GET',
             url=f'{httpx_client.base_url}/groups/{_GROUP_ITEM.number}',
-            json=asdict(_GROUP_ITEM)
+            json={
+                'success': True,
+                'data': asdict(_GROUP_ITEM)
+            }
         )
 
         client = self.client.create_user()
@@ -147,7 +167,16 @@ class TestBot(AsyncBotTestMixin):
             method='GET',
             url=f'{httpx_client.base_url}/groups/{_GROUP_ITEM.number}',
             status_code=404,
-            content=f'Group with number {_GROUP_ITEM.number!r} not found'
+            json={
+                'success': False,
+                'error': {
+                    'code': 'GROUP_NOT_FOUND',
+                    'detail': f'Group with number {_GROUP_ITEM.number!r} not found',
+                    'extra': {
+                        'input_number': _GROUP_ITEM.number
+                    }
+                }
+            }
         )
 
         client = self.client.create_user()
@@ -188,13 +217,19 @@ class TestBot(AsyncBotTestMixin):
         httpx_mock.add_response(
             method='GET',
             url=f'{httpx_client.base_url}/cabinets/',
-            json=[asdict(cabinet) for cabinet in sorted(_CABINET_ITEMS, key=lambda x: x.index)]
+            json={
+                'success': True,
+                'data': [asdict(cabinet) for cabinet in sorted(_CABINET_ITEMS, key=lambda x: x.index)]
+            }
         )
 
         httpx_mock.add_response(
             method='GET',
             url=f'{httpx_client.base_url}/cabinets/{_CABINET_ITEM.number}',
-            json=asdict(_CABINET_ITEM)
+            json={
+                'success': True,
+                'data': asdict(_CABINET_ITEM)
+            }
         )
 
         client = self.client.create_user()
@@ -258,7 +293,16 @@ class TestBot(AsyncBotTestMixin):
             method='GET',
             url=f'{httpx_client.base_url}/cabinets/{_CABINET_ITEM.number}',
             status_code=404,
-            content=f'Cabinet with number {_CABINET_ITEM.number!r} not found'
+            json={
+                'success': False,
+                'error': {
+                    'code': 'CABINET_NOT_FOUND',
+                    'detailt': f'Cabinet with number {_CABINET_ITEM.number!r} not found',
+                    'extra': {
+                        'input_number': _CABINET_ITEM.number
+                    }
+                }
+            }
         )
 
         client = self.client.create_user()
@@ -335,7 +379,7 @@ class TestBot(AsyncBotTestMixin):
     async def test_update_settings(self, test_container):
         async with test_container(scope=Scope.REQUEST) as container:
             templater = await container.get(TemplateMessageRenderer)
-            user_repo: 'SQLAlchemyUserRepository' = await container.get(UserRepository)
+            user_repo: SQLAlchemyUserRepository = await container.get(UserRepository)
 
         client = self.client.create_user()
 
@@ -381,7 +425,7 @@ class TestBot(AsyncBotTestMixin):
     async def test_get_group_day_schedule(self, test_container, httpx_mock):
         async with test_container(scope=Scope.REQUEST) as container:
             templater = await container.get(TemplateMessageRenderer)
-            user_repo: 'SQLAlchemyUserRepository' = await container.get(UserRepository)
+            user_repo: SQLAlchemyUserRepository = await container.get(UserRepository)
             httpx_client = await container.get(AsyncClient)
 
         # Создание моков
@@ -392,15 +436,18 @@ class TestBot(AsyncBotTestMixin):
                 'group_number': _GROUP_DAY_SCHEDULE.schedule_item.index,
                 'schedule_to': 'tomorrow'
             },
-            json=DayScheduleItem(
-                date=_GROUP_DAY_SCHEDULE.date,
-                group=ScheduleItem(**asdict(_GROUP_DAY_SCHEDULE.schedule_item)),
-                lessons=[
-                    LessonItem(start=lesson.start, end=lesson.end, name=lesson.name,
-                               cabinets=[ScheduleItem(**asdict(cabinet)) for cabinet in lesson.cabinets])
-                    for lesson in _GROUP_DAY_SCHEDULE.lessons
-                ]
-            ).model_dump(mode='json')
+            json={
+                'success': True,
+                'data': DayScheduleItem(
+                    date=_GROUP_DAY_SCHEDULE.date,
+                    group=ScheduleItem(**asdict(_GROUP_DAY_SCHEDULE.schedule_item)),
+                    lessons=[
+                        LessonItem(start=lesson.start, end=lesson.end, name=lesson.name,
+                                   cabinets=[ScheduleItem(**asdict(cabinet)) for cabinet in lesson.cabinets])
+                        for lesson in _GROUP_DAY_SCHEDULE.lessons
+                    ]
+                ).model_dump(mode='json')
+            }
         )
 
         client = self.client.create_user()
@@ -426,8 +473,7 @@ class TestBot(AsyncBotTestMixin):
 
     async def test_get_group_day_schedule_error_group_not_found(self, test_container, httpx_mock):
         async with test_container(scope=Scope.REQUEST) as container:
-            templater = await container.get(TemplateMessageRenderer)
-            user_repo: 'SQLAlchemyUserRepository' = await container.get(UserRepository)
+            user_repo: SQLAlchemyUserRepository = await container.get(UserRepository)
             httpx_client = await container.get(AsyncClient)
 
         # Создание моков
@@ -439,7 +485,16 @@ class TestBot(AsyncBotTestMixin):
                 'schedule_to': 'tomorrow'
             },
             status_code=404,
-            content=f'Group with number {_GROUP_DAY_SCHEDULE.schedule_item.index!r} not found'
+            json={
+                'success': False,
+                'error': {
+                    'code': 'GROUP_NOT_FOUND',
+                    'detail': f'Group with number {_GROUP_DAY_SCHEDULE.schedule_item.index!r} not found',
+                    'extra': {
+                        'input_number': _GROUP_DAY_SCHEDULE.schedule_item.index
+                    }
+                }
+            }
         )
 
         client = self.client.create_user()
@@ -460,6 +515,143 @@ class TestBot(AsyncBotTestMixin):
         day_schedule_error_message = self.client.capture.get_last_request().text
 
         assert day_schedule_error_message == f'⚠ {GroupNotFound(_GROUP_DAY_SCHEDULE.schedule_item.index)!s}'
+
+    # TODO: Сделать тест обработки ошибки CabinetNotFound
+    async def test_get_cabinet_day_schedule_error_cabinet_not_found(self, test_container, httpx_mock):
+        async with test_container(scope=Scope.REQUEST) as container:
+            user_repo: SQLAlchemyUserRepository = await container.get(UserRepository)
+            httpx_client = await container.get(AsyncClient)
+
+        # Создание моков
+        httpx_mock.add_response(
+            method='GET',
+            url=f'{httpx_client.base_url}/schedule/cabinet',
+            match_params={
+                'cabinet_number': _CABINET_DAY_SCHEDULE.schedule_item.index,
+                'schedule_to': 'tomorrow'
+            },
+            status_code=404,
+            json={
+                'success': False,
+                'error': {
+                    'code': 'CABINET_NOT_FOUND',
+                    'detail': f'Cabinet with number {_CABINET_DAY_SCHEDULE.schedule_item.index!r} not found',
+                    'extra': {
+                        'input_number': _CABINET_DAY_SCHEDULE.schedule_item.index
+                    }
+                }
+            }
+        )
+
+        client = self.client.create_user()
+
+        # Предварительное изменение типа профиля и подписка на кабинет
+        user = await user_repo.save(client.user_id)
+
+        await user_repo.update_metadata(user, 'user_type', 'teacher')
+
+        await user_repo.subscribe_cabinet(user, _CABINET_DAY_SCHEDULE.schedule_item)
+
+        # Открытие главного меню
+        await client.send_command('start')
+
+        main_menu_message = client.get_last_message().response
+
+        # Открытие расписания для кабинета
+        await client.click_button(f'open_cabinet_{_CABINET_DAY_SCHEDULE.schedule_item.index}',
+                                  message=main_menu_message)
+
+        day_schedule_error_message = self.client.capture.get_last_request().text
+
+        assert day_schedule_error_message == f'⚠ {CabinetNotFound(_CABINET_DAY_SCHEDULE.schedule_item.index)!s}'
+
+    # TODO: Сделать тест обработки ошибки ScheduleForGroupNotFound
+    async def test_get_group_day_schedule_error_schedule_not_found(self, test_container, httpx_mock):
+        async with test_container(scope=Scope.REQUEST) as container:
+            user_repo: SQLAlchemyUserRepository = await container.get(UserRepository)
+            httpx_client = await container.get(AsyncClient)
+
+        # Создание моков
+        httpx_mock.add_response(
+            method='GET',
+            url=f'{httpx_client.base_url}/schedule/group',
+            match_params={
+                'group_number': _GROUP_DAY_SCHEDULE.schedule_item.index,
+                'schedule_to': 'tomorrow'
+            },
+            status_code=404,
+            json={
+                'success': False,
+                'error': {
+                    'code': 'SCHEDULE_FOR_GROUP_NOT_FOUND',
+                    'detail': f'For the {_GROUP_DAY_SCHEDULE.schedule_item!s} group, there are no lessons scheduled '
+                              f'for tomorrow (2099-12-31)',
+                    'extra': {
+                        'item': asdict(_GROUP_DAY_SCHEDULE.schedule_item),
+                        'schedule_to': 'tomorrow',
+                        'schedule_date': '2099-12-31'
+                    }
+                }
+            },
+            is_reusable=True
+        )
+        httpx_mock.add_response(
+            method='GET',
+            url=f'{httpx_client.base_url}/schedule/group',
+            match_params={
+                'group_number': _GROUP_DAY_SCHEDULE.schedule_item.index,
+                'schedule_to': 'today'
+            },
+            json={
+                'success': True,
+                'data': DayScheduleItem(
+                    date=_GROUP_DAY_SCHEDULE.date,
+                    group=ScheduleItem(**asdict(_GROUP_DAY_SCHEDULE.schedule_item)),
+                    lessons=[
+                        LessonItem(start=lesson.start, end=lesson.end, name=lesson.name,
+                                   cabinets=[ScheduleItem(**asdict(cabinet)) for cabinet in lesson.cabinets])
+                        for lesson in _GROUP_DAY_SCHEDULE.lessons
+                    ]
+                ).model_dump(mode='json')
+            }
+        )
+
+        client = self.client.create_user()
+
+        # Предварительное подписка на группу
+        user = await user_repo.save(client.user_id)
+
+        await user_repo.subscribe_group(user, _GROUP_DAY_SCHEDULE.schedule_item)
+
+        # Открытие главного меню
+        await client.send_command('start')
+
+        main_menu_message = client.get_last_message().response
+
+        # Открытие расписания для группы
+        await client.click_button(f'open_group_{_GROUP_DAY_SCHEDULE.schedule_item.index}',
+                                  message=main_menu_message)
+
+        await client.click_button(f'schedule_group_{_GROUP_DAY_SCHEDULE.schedule_item.index}_tomorrow',
+                                  message=main_menu_message)
+
+        day_schedule_error_message = self.client.capture.get_last_request().text
+
+        assert day_schedule_error_message == f'⚠ {ScheduleForGroupNotFound(
+            _GROUP_DAY_SCHEDULE.schedule_item, 'tomorrow', datetime.date(2099, 12, 31)
+        )!s}'
+
+    # TODO: Сделать тест обработки ошибки ScheduleForCabinetNotFound
+    # TODO: Сделать тест переключения расписания на сегодня/завтра
+    # TODO: Сделать тест обработки ошибки GroupNotFound
+    # TODO: Сделать тест обработки ошибки CabinetNotFound
+    # TODO: Сделать тест обработки ошибки ScheduleForGroupNotFound
+    # TODO: Сделать тест обработки ошибки ScheduleForCabinetNotFound
+    # TODO: Сделать тест удаления группы
+    # TODO: Сделать тест удаления кабинета
+    # TODO: Сделать тест обработки ошибки GroupUnsubscribeNotFound
+    # TODO: Сделать тест обработки ошибки CabinetUnsubscribeNotFound
+    # TODO: Сделать тест обработки нажатия на необслуживаемую кнопку
 
     def _get_fsm_context(self, user) -> FSMContext:
         return self.client.dispatcher.fsm.get_context(

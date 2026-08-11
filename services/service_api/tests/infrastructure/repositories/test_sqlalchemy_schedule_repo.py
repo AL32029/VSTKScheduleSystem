@@ -33,12 +33,13 @@ async def test_get_schedule_date_not_found(sqlalchemy_schedule_repo):
     with pytest.raises(ScheduleDateNotFound) as exc_info:
         await sqlalchemy_schedule_repo.get_schedule_date('today')
 
-    assert exc_info.value.args[0] == 'The database does not contain a schedule date for today'
+    assert exc_info.value.args[0] == str(ScheduleDateNotFound('today'))
 
 
 async def test_get_by_group(sqlalchemy_schedule_repo):
     """Тест должен получить сущность GroupDaySchedule из базы данных"""
-    day_schedule = await sqlalchemy_schedule_repo.get_by_group(_GROUP_ITEM, _DAY_SCHEDULE_DATE, redirect=False)
+    day_schedule = await sqlalchemy_schedule_repo.get_by_group(_GROUP_ITEM, 'today',
+                                                               _DAY_SCHEDULE_DATE, redirect=False)
 
     assert day_schedule is not None
     assert isinstance(day_schedule, GroupDaySchedule)
@@ -49,15 +50,16 @@ async def test_get_by_group_not_found(sqlalchemy_schedule_repo):
     """Тест должен выдать ошибку GroupDayScheduleNotFound"""
     invalid_schedule_date = _DAY_SCHEDULE_DATE + datetime.timedelta(days=1)
     with pytest.raises(GroupDayScheduleNotFound) as exc_info:
-        await sqlalchemy_schedule_repo.get_by_group(_GROUP_ITEM, invalid_schedule_date, redirect=False)
+        await sqlalchemy_schedule_repo.get_by_group(_GROUP_ITEM, 'today',
+                                                    invalid_schedule_date, redirect=False)
 
-    assert exc_info.value.args[0] == (f'The database does not contain a schedule '
-                                      f'for {_GROUP_ITEM.number} for {invalid_schedule_date!s}')
+    assert exc_info.value.args[0] == str(GroupDayScheduleNotFound(_GROUP_ITEM, 'today', invalid_schedule_date))
 
 
 async def test_get_by_cabinet(sqlalchemy_schedule_repo):
     """Тест должен получить сущность CabinetDaySchedule из базы данных"""
-    day_schedule = await sqlalchemy_schedule_repo.get_by_cabinet(_CABINET_ITEM, _DAY_SCHEDULE_DATE, redirect=False)
+    day_schedule = await sqlalchemy_schedule_repo.get_by_cabinet(_CABINET_ITEM, 'today',
+                                                                 _DAY_SCHEDULE_DATE, redirect=False)
 
     assert day_schedule is not None
     assert isinstance(day_schedule, CabinetDaySchedule)
@@ -68,7 +70,8 @@ async def test_get_by_cabinet_not_found(sqlalchemy_schedule_repo):
     """Тест должен выдать ошибку CabinetDayScheduleNotFound"""
     invalid_schedule_date = _DAY_SCHEDULE_DATE + datetime.timedelta(days=1)
     with pytest.raises(CabinetDayScheduleNotFound) as exc_info:
-        await sqlalchemy_schedule_repo.get_by_cabinet(_CABINET_ITEM_NOT_SAVED, invalid_schedule_date, redirect=False)
+        await sqlalchemy_schedule_repo.get_by_cabinet(_CABINET_ITEM_NOT_SAVED, 'today',
+                                                      invalid_schedule_date, redirect=False)
 
-    assert exc_info.value.args[0] == (f'The database does not contain a schedule '
-                                      f'for {_CABINET_ITEM_NOT_SAVED.number} for {invalid_schedule_date!s}')
+    assert exc_info.value.args[0] == str(CabinetDayScheduleNotFound(_CABINET_ITEM_NOT_SAVED, 'today',
+                                                                    invalid_schedule_date))

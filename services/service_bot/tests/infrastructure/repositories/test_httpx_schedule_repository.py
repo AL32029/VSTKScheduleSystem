@@ -1,3 +1,4 @@
+import datetime
 from dataclasses import asdict
 
 import pytest
@@ -22,19 +23,22 @@ async def test_get_group_day_schedule(httpx_mock, client, httpx_schedule_reposit
 
         },
         json={
-            "group": asdict(_GROUP_DAY_SCHEDULE.schedule_item),
-            "date": _GROUP_DAY_SCHEDULE.date.isoformat(),
-            "lessons": [
-                {
-                    "start": lesson.start.isoformat(),
-                    "end": lesson.end.isoformat(),
-                    "name": lesson.name,
-                    "cabinets": [asdict(cabinet) for cabinet in lesson.cabinets]
-                }
-                for lesson in sorted(_GROUP_DAY_SCHEDULE.lessons, key=lambda x: x.start)
-            ],
-            "lessons_count": _GROUP_DAY_SCHEDULE.lessons_count,
-            "pairs_count": _GROUP_DAY_SCHEDULE.pairs_count
+            'success': True,
+            'data': {
+                "group": asdict(_GROUP_DAY_SCHEDULE.schedule_item),
+                "date": _GROUP_DAY_SCHEDULE.date.isoformat(),
+                "lessons": [
+                    {
+                        "start": lesson.start.isoformat(),
+                        "end": lesson.end.isoformat(),
+                        "name": lesson.name,
+                        "cabinets": [asdict(cabinet) for cabinet in lesson.cabinets]
+                    }
+                    for lesson in sorted(_GROUP_DAY_SCHEDULE.lessons, key=lambda x: x.start)
+                ],
+                "lessons_count": _GROUP_DAY_SCHEDULE.lessons_count,
+                "pairs_count": _GROUP_DAY_SCHEDULE.pairs_count
+            }
         }
     )
 
@@ -54,14 +58,23 @@ async def test_get_group_day_schedule_error_group_not_found(httpx_mock, client, 
 
         },
         status_code=404,
-        content=f'Group with number {_GROUP_DAY_SCHEDULE.schedule_item.number!r} not found'
+        json={
+            'success': False,
+            'error': {
+                'code': 'GROUP_NOT_FOUND',
+                'detail': f'Group with number {_GROUP_DAY_SCHEDULE.schedule_item.number!r} not found',
+                'extra': {
+                    'input_number': _GROUP_DAY_SCHEDULE.schedule_item.number
+                }
+            }
+        }
     )
 
     with pytest.raises(GroupNotFound) as exc_info:
         await httpx_schedule_repository.get_day_schedule(_GROUP_DAY_SCHEDULE.schedule_item.number,
                                                          'tomorrow', 'group')
 
-    assert exc_info.value.args[0] == f'Группа {_GROUP_DAY_SCHEDULE.schedule_item.number} не найдена'
+    assert exc_info.value.args[0] == str(GroupNotFound(_GROUP_DAY_SCHEDULE.schedule_item.number))
 
 
 async def test_get_cabinet_day_schedule_error_cabinet_not_found(httpx_mock, client, httpx_schedule_repository):
@@ -74,14 +87,23 @@ async def test_get_cabinet_day_schedule_error_cabinet_not_found(httpx_mock, clie
 
         },
         status_code=404,
-        content=f'Cabinet with number {_CABINET_DAY_SCHEDULE.schedule_item.number!r} not found'
+        json={
+            'success': False,
+            'error': {
+                'code': 'CABINET_NOT_FOUND',
+                'detail': f'Cabinet with number {_CABINET_DAY_SCHEDULE.schedule_item.number!r} not found',
+                'extra': {
+                    'input_number': _CABINET_DAY_SCHEDULE.schedule_item.number
+                }
+            }
+        }
     )
 
     with pytest.raises(CabinetNotFound) as exc_info:
         await httpx_schedule_repository.get_day_schedule(_CABINET_DAY_SCHEDULE.schedule_item.number,
                                                          'tomorrow', 'cabinet')
 
-    assert exc_info.value.args[0] == f'Кабинет {_CABINET_DAY_SCHEDULE.schedule_item.number} не найден'
+    assert exc_info.value.args[0] == str(CabinetNotFound(_CABINET_DAY_SCHEDULE.schedule_item.number))
 
 
 async def test_get_day_schedule_error_schedule_date_not_found(httpx_mock, client, httpx_schedule_repository):
@@ -94,14 +116,24 @@ async def test_get_day_schedule_error_schedule_date_not_found(httpx_mock, client
 
         },
         status_code=404,
-        content='The database does not contain a schedule date for tomorrow'
+        json={
+            'success': False,
+            'error': {
+                'code': 'SCHEDULE_DATE_NOT_FOUND',
+                'detail': 'The schedule for tomorrow has not been published',
+                'extra': {
+                    'schedule_to': 'tomorrow'
+                }
+            }
+        }
     )
 
     with pytest.raises(ScheduleDateNotFound) as exc_info:
         await httpx_schedule_repository.get_day_schedule(_GROUP_DAY_SCHEDULE.schedule_item.number,
                                                          'tomorrow', 'group')
 
-    assert exc_info.value.args[0] == 'Расписание на завтра еще не было опубликовано'
+    assert exc_info.value.args[0] == str(ScheduleDateNotFound('tomorrow'))
+
 
 async def test_get_group_day_schedule_error_schedule_date_not_found(httpx_mock, client, httpx_schedule_repository):
     httpx_mock.add_response(
@@ -113,15 +145,29 @@ async def test_get_group_day_schedule_error_schedule_date_not_found(httpx_mock, 
 
         },
         status_code=404,
-        content=f'The database does not contain a schedule date for '
-                f'{_GROUP_DAY_SCHEDULE.schedule_item.number} for tomorrow'
+        json={
+            'success': False,
+            'error': {
+                'code': 'SCHEDULE_FOR_GROUP_NOT_FOUND',
+                'detail': f'For the {_GROUP_DAY_SCHEDULE.schedule_item!s} group, there are no lessons scheduled for '
+                          f'tomorrow (2099-12-31)',
+                'extra': {
+                    'item': asdict(_GROUP_DAY_SCHEDULE.schedule_item),
+                    'schedule_to': 'tomorrow',
+                    'schedule_date': '2099-12-31'
+                }
+            }
+        }
     )
 
     with pytest.raises(ScheduleForGroupNotFound) as exc_info:
         await httpx_schedule_repository.get_day_schedule(_GROUP_DAY_SCHEDULE.schedule_item.number,
                                                          'tomorrow', 'group')
 
-    assert exc_info.value.args[0] == 'У группы нет пар на завтра'
+    assert exc_info.value.args[0] == str(ScheduleForGroupNotFound(
+        _GROUP_DAY_SCHEDULE.schedule_item, 'tomorrow', datetime.date(2099, 12, 31)
+    ))
+
 
 async def test_get_cabinet_day_schedule_error_schedule_date_not_found(httpx_mock, client, httpx_schedule_repository):
     httpx_mock.add_response(
@@ -133,12 +179,25 @@ async def test_get_cabinet_day_schedule_error_schedule_date_not_found(httpx_mock
 
         },
         status_code=404,
-        content=f'The database does not contain a schedule date for '
-                f'{_CABINET_DAY_SCHEDULE.schedule_item.number} for tomorrow'
+        json={
+            'success': False,
+            'error': {
+                'code': 'SCHEDULE_FOR_CABINET_NOT_FOUND',
+                'detail': f'For the {_CABINET_DAY_SCHEDULE.schedule_item!s} cabinet, there are no lessons scheduled for '
+                          f'tomorrow (2099-12-31)',
+                'extra': {
+                    'item': asdict(_CABINET_DAY_SCHEDULE.schedule_item),
+                    'schedule_to': 'tomorrow',
+                    'schedule_date': '2099-12-31'
+                }
+            }
+        }
     )
 
     with pytest.raises(ScheduleForCabinetNotFound) as exc_info:
         await httpx_schedule_repository.get_day_schedule(_CABINET_DAY_SCHEDULE.schedule_item.number,
                                                          'tomorrow', 'cabinet')
 
-    assert exc_info.value.args[0] == 'В кабинете отсутствуют пары на завтра'
+    assert exc_info.value.args[0] == str(ScheduleForCabinetNotFound(
+        _CABINET_DAY_SCHEDULE.schedule_item, 'tomorrow', datetime.date(2099, 12, 31)
+    ))

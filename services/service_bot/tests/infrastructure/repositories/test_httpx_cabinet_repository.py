@@ -12,7 +12,10 @@ async def test_get_by_number(httpx_mock, client, httpx_cabinet_repository, cabin
     httpx_mock.add_response(
         method='GET',
         url=f'{client.base_url}/cabinets/{cabinet.number}',
-        json=asdict(cabinet)
+        json={
+            'success': True,
+            'data': asdict(cabinet)
+        }
     )
 
     cabinet_item = await httpx_cabinet_repository.get_by_number(cabinet.number)
@@ -29,7 +32,16 @@ async def test_get_by_number_not_found(httpx_mock, client, httpx_cabinet_reposit
         method='GET',
         url=f'{client.base_url}/cabinets/{cabinet_number}',
         status_code=404,
-        content=f'Cabinet with number {cabinet_number!r} not found'
+        json={
+            'success': False,
+            'error': {
+                'code': 'CABINET_NOT_FOUND',
+                'detail': f'Cabinet with number {cabinet_number!r} not found',
+                'extra': {
+                    'input_number': cabinet_number
+                }
+            }
+        }
     )
 
     with pytest.raises(CabinetNotFound) as exc_info:
@@ -42,7 +54,10 @@ async def test_get_all(httpx_mock, client, httpx_cabinet_repository):
     httpx_mock.add_response(
         method='GET',
         url=f'{client.base_url}/cabinets/',
-        json=[asdict(group) for group in sorted(_CABINET_ITEMS, key=lambda x: x.index)]
+        json={
+            'success': True,
+            'data': [asdict(group) for group in sorted(_CABINET_ITEMS, key=lambda x: x.index)]
+        }
     )
 
     cabinet_items = await httpx_cabinet_repository.get_all()

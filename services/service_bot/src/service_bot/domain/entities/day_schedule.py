@@ -1,7 +1,8 @@
 import datetime
 from dataclasses import dataclass
 
-from ..exceptions import InvalidDayScheduleLessonType
+from service_bot.domain.exceptions import InvalidDayScheduleLessonType
+
 from .cabinet import Cabinet
 from .group import Group
 from .lesson import CabinetLesson, Lesson

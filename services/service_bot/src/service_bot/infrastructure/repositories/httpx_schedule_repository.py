@@ -1,10 +1,11 @@
+import datetime
 import logging
-from typing import Literal
+from typing import Literal, cast
 
 from httpx import AsyncClient, HTTPStatusError
 
 from service_bot.application.ports import ScheduleRepository
-from service_bot.domain.entities import DaySchedule
+from service_bot.domain.entities import Cabinet, DaySchedule, Group
 from service_bot.domain.exceptions import (
     CabinetNotFound,
     GroupNotFound,
@@ -32,22 +33,41 @@ class HTTPXScheduleRepository(ScheduleRepository):
             'schedule_to': schedule_to
         })
 
-        if resp.status_code == 404:
-            if schedule_for == 'group' and resp.text == f'Group with number {schedule_item!r} not found':
-                logger.warning('The group %s was not found', schedule_item)
-                raise GroupNotFound(schedule_item)
-            elif schedule_for == 'cabinet' and resp.text == f'Cabinet with number {schedule_item!r} not found':
-                logger.warning('The cabinet %s was not found', schedule_item)
-                raise CabinetNotFound(schedule_item)
-            elif f'database does not contain a schedule date for {schedule_item} for' in resp.text:
-                logger.warning('There are no lessons scheduled for the %s %s for tomorrow',
-                               schedule_item, schedule_for)
+        response_json: dict = resp.json()
+
+        is_success: bool = cast(bool, response_json.get('success'))
+
+        if (not is_success
+                and (error := cast(dict, response_json.get('error')))
+                and (code := cast(str, error.get('code')))):
+            extra = error.get('extra')
+            if code in ['GROUP_NOT_FOUND', 'CABINET_NOT_FOUND']:
+                number = extra.get('input_number', schedule_item) if extra is not None else schedule_item
+
+                logger.warning('The %s %s was not found',
+                               'group' if code == 'GROUP_NOT_FOUND' else 'CABINET_NOT_FOUND', number)
+
+                raise (GroupNotFound if code == 'GROUP_NOT_FOUND' else CabinetNotFound)(number)
+
+            elif code == 'SCHEDULE_DATE_NOT_FOUND':
+                schedule_at = extra.get('schedule_to', schedule_to) if extra is not None else schedule_to
+
+                logger.warning('The schedule for %s has not been published', schedule_at)
+
+                raise ScheduleDateNotFound(schedule_to)
+
+            elif code in ['SCHEDULE_FOR_GROUP_NOT_FOUND', 'SCHEDULE_FOR_CABINET_NOT_FOUND']:
+                schedule_item_type = 'group' if code == 'SCHEDULE_FOR_GROUP_NOT_FOUND' else 'cabinet'
+                item = (Group if schedule_item_type == 'group' else Cabinet)(**extra['item'])
+                schedule_at = extra.get('schedule_to', schedule_to) if extra is not None else schedule_to
+                schedule_date = datetime.date.fromisoformat(extra['schedule_date'])
+
+                logger.warning('For the %s %s, there are no lessons scheduled for %s (%s)',
+                               str(item), schedule_item_type, schedule_at, schedule_date)
+
                 raise (ScheduleForGroupNotFound
-                       if schedule_for == 'group'
-                       else ScheduleForCabinetNotFound)(schedule_to)
-            elif f'database does not contain a schedule date for {schedule_to}' in resp.text:
-                logger.warning('The schedule date for %s has not been found', schedule_to)
-                raise ScheduleDateNotFound(schedule_item, schedule_to)
+                       if schedule_item_type == 'group'
+                       else ScheduleForCabinetNotFound)(item, schedule_at, schedule_date)
 
         try:
             resp.raise_for_status()
@@ -55,8 +75,8 @@ class HTTPXScheduleRepository(ScheduleRepository):
             logger.exception('Error when sending an HTTP request GET %s', request)
             raise
 
+        day_schedule_json = response_json.get('data')
+
         logger.info('A successful response has been received (status: %s)', resp.status_code)
 
-        day_schedule = DayScheduleItem.model_validate(resp.json())
-
-        return day_schedule.to_domain(schedule_for)
+        return DayScheduleItem.model_validate(day_schedule_json).to_domain(schedule_for)

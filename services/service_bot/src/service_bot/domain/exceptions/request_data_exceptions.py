@@ -1,3 +1,4 @@
+import datetime
 from typing import Literal
 
 from .base_exceptions import DataRequestError
@@ -39,23 +40,28 @@ class CabinetUnsubscribeNotFound(DataRequestError):
 class ScheduleDateNotFound(DataRequestError):
     """Ошибка получения даты расписания"""
 
-    def __init__(self, schedule_number: str, schedule_to: Literal['today', 'tomorrow']):
-        self.schedule_number = schedule_number
+    def __init__(self, schedule_to: Literal['today', 'tomorrow']):
         self.schedule_to = schedule_to
         super().__init__(f'Расписание на {'сегодня' if schedule_to == 'today' else 'завтра'} еще не было опубликовано')
 
 
 class ScheduleForGroupNotFound(DataRequestError):
     """Ошибка получения расписания для группы"""
-
-    def __init__(self, schedule_to: Literal['today', 'tomorrow']):
+    def __init__(self, group, schedule_to: Literal['today', 'tomorrow'], schedule_date: datetime.date):
+        self.group = group
         self.schedule_to = schedule_to
-        super().__init__(f'У группы нет пар на {'сегодня' if schedule_to == 'today' else 'завтра'}')
+        self.schedule_date = schedule_date
+        super().__init__(f'Для кабинета {group!s} отсутствуют пары на '
+                         f'{'сегодня' if schedule_to == 'today' else 'завтра'} '
+                         f'({schedule_date.strftime('%d.%m.%Y г.')})')
 
 
 class ScheduleForCabinetNotFound(DataRequestError):
     """Ошибка получения расписания для кабинета"""
-
-    def __init__(self, schedule_to: Literal['today', 'tomorrow']):
+    def __init__(self, cabinet, schedule_to: Literal['today', 'tomorrow'], schedule_date: datetime.date):
+        self.cabinet = cabinet
         self.schedule_to = schedule_to
-        super().__init__(f'В кабинете отсутствуют пары на {'сегодня' if schedule_to == 'today' else 'завтра'}')
+        self.schedule_date = schedule_date
+        super().__init__(f'Для кабинета {cabinet!s} отсутствуют пары на '
+                         f'{'сегодня' if schedule_to == 'today' else 'завтра'} '
+                         f'({schedule_date.strftime('%d.%m.%Y г.')})')
