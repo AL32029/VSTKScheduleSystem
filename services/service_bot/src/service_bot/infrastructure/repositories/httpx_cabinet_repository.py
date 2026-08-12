@@ -21,7 +21,7 @@ class HTTPXCabinetRepository(CabinetRepository):
     async def get_by_number(self, cabinet_number: str) -> 'Cabinet':
         """Получение кабинета по его номеру"""
         request = f'/cabinets/{cabinet_number}'
-        logger.info('Sending an HTTP request GET %s', request)
+        logger.debug('Requesting cabinet by number %s from API', cabinet_number)
         resp = await self.client.get(request)
 
         response_json: dict = resp.json()
@@ -33,28 +33,25 @@ class HTTPXCabinetRepository(CabinetRepository):
 
             if code is not None and code == 'CABINET_NOT_FOUND':
                 extra = error.get('extra')
-
                 number = extra.get('input_number', cabinet_number) if extra is not None else cabinet_number
-
-                logger.warning('The cabinet %s was not found', number)
+                logger.warning('Cabinet %s not found in API', number)
                 raise CabinetNotFound(number)
 
         try:
             resp.raise_for_status()
         except HTTPStatusError:
-            logger.exception('Error when sending an HTTP request GET %s', request)
+            logger.exception('API request failed: GET %s', request)
             raise
 
         cabinet_json = response_json.get('data')
-
-        logger.info('A successful response has been received (status: %s)', resp.status_code)
-
-        return cast('Cabinet', ScheduleItem.model_validate(cabinet_json).to_domain('cabinet'))
+        cabinet = cast('Cabinet', ScheduleItem.model_validate(cabinet_json).to_domain('cabinet'))
+        logger.info('Cabinet %s retrieved from API', cabinet.number)
+        return cabinet
 
     async def get_all(self) -> list['Cabinet']:
         """Получение списка всех кабинетов"""
         request = '/cabinets/'
-        logger.info('Sending an HTTP request GET %s', request)
+        logger.debug('Requesting all cabinets from API')
         resp = await self.client.get(request)
 
         response_json: dict = resp.json()
@@ -62,12 +59,11 @@ class HTTPXCabinetRepository(CabinetRepository):
         try:
             resp.raise_for_status()
         except HTTPStatusError:
-            logger.exception('Error when sending an HTTP request GET %s', request)
+            logger.exception('API request failed: GET %s', request)
             raise
 
         cabinets_list = cast(list[dict], response_json.get('data'))
-
-        logger.info('A successful response has been received (status: %s)', resp.status_code)
-
-        return [cast('Cabinet', ScheduleItem.model_validate(cabinet).to_domain('cabinet'))
-                for cabinet in cabinets_list]
+        cabinets = [cast('Cabinet', ScheduleItem.model_validate(cabinet).to_domain('cabinet'))
+                    for cabinet in cabinets_list]
+        logger.info('Retrieved %d cabinets from API', len(cabinets))
+        return cabinets

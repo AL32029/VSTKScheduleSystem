@@ -17,15 +17,17 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
-from testcontainers.postgres import PostgresContainer
-from testcontainers.redis import RedisContainer
+from testcontainers.community.postgres import PostgresContainer
+from testcontainers.community.redis import RedisContainer
 
 from service_parser.application.ports import (
     CabinetRepository,
     GroupRepository,
     ScheduleRepository,
 )
+from service_parser.infrastructure.config import BaseSystemSettings
 from service_parser.infrastructure.di import HTTPXClientProvider
+from service_parser.infrastructure.di.providers import SystemProvider
 from service_parser.infrastructure.repositories import (
     SQLAlchemyCabinetRepository,
     SQLAlchemyGroupRepository,
@@ -116,11 +118,17 @@ async def test_container(request, async_engine, redis_container):
         async def sqlalchemy_schedule_repository(self, session: AsyncSession) -> ScheduleRepository:
             return SQLAlchemyScheduleRepository(session)
 
+    base_settings = BaseSystemSettings()
+
     container = make_async_container(
+        SystemProvider(),
         HTTPXClientProvider(),
         TestRedisProvider(),
         TestDatabaseProvider(),
-        TestRepositoriesProvide()
+        TestRepositoriesProvide(),
+        context={
+            BaseSystemSettings: base_settings
+        }
     )
     await container.get(AsyncClient)
     yield container

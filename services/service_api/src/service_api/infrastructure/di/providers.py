@@ -1,3 +1,4 @@
+import logging
 from collections.abc import AsyncIterable
 from typing import cast
 
@@ -35,17 +36,20 @@ from service_api.infrastructure.repositories import (
     SQLAlchemyScheduleRepository,
 )
 
+logger = logging.getLogger(__name__)
 
 class DatabaseProvider(Provider):
     scope = Scope.APP
 
     @provide
     def database_engine_manager(self) -> 'DatabaseEngineManager':
+        logger.debug('Creating DatabaseEngineManager')
         settings = DatabaseSettings()
         return DatabaseEngineManager(settings)
 
     @provide(scope=Scope.REQUEST)
     async def provide_session_maker(self, manager: 'DatabaseEngineManager') -> async_sessionmaker[AsyncSession]:
+        logger.debug('Creating database session maker')
         return async_sessionmaker(
             cast(AsyncEngine, cast(object, await manager.get_engine())),
             expire_on_commit=False,
@@ -55,6 +59,7 @@ class DatabaseProvider(Provider):
 
     @provide(scope=Scope.REQUEST)
     async def provide_session(self, session_maker: async_sessionmaker[AsyncSession]) -> AsyncIterable[AsyncSession]:
+        logger.debug('Creating database session')
         async with session_maker() as session:
             yield session
 
@@ -64,11 +69,13 @@ class RedisProvider(Provider):
 
     @provide
     def redis_client_manager(self) -> 'RedisClientManager':
+        logger.debug('Creating RedisClientManager')
         settings = RedisSettings()
         return RedisClientManager(settings)
 
     @provide(scope=Scope.REQUEST)
     async def provide_redis_client(self, manager: 'RedisClientManager') -> Redis:
+        logger.debug('Obtaining Redis client')
         return await manager.get_client()
 
 

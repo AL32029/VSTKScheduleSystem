@@ -1,6 +1,6 @@
 [project]
 name = "service-parser"
-version = "0.0.2dev"
+version = "0.0.3dev"
 description = "Microservice \"Parser Service\""
 authors = [
     { name = "Nikita Bondarev", email = "nikitabondarevvitebsk@gmail.com" }
@@ -21,6 +21,7 @@ schedule-db-models = { path = "../../libs/schedule_db_models" }
 dishka = "^1.10.1"
 redis = "^8.0.1"
 cryptography = "^49.0.0"
+tzdata = "^2026.3"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.1.1"

@@ -1,17 +1,22 @@
 import asyncio
+import logging
+import logging.config
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from dishka.integrations.fastapi import setup_dishka
 from fastapi import FastAPI
 from watchfiles import Change, awatch
+from watchfiles._rust_notify import WatchfilesRustInternalError
 
 from service_api.domain.exceptions import APIServiceException
+from service_api.infrastructure.config import LoggingSettings
 from service_api.infrastructure.di.container import get_dishka_container
 from service_api.infrastructure.managers import (
     DatabaseEngineManager,
     RedisClientManager,
 )
+from service_api.infrastructure.middlewares import InitRequestMiddleware
 from service_api.presentation.rest.endpoints import (
     cabinet_router,
     group_router,
@@ -21,9 +26,13 @@ from service_api.presentation.rest.exception_responses import (
     api_exception_handler,
 )
 
+logging.config.dictConfig(LoggingSettings().model_dump(mode='json'))
+
+logger = logging.getLogger('service_bot')
+
 
 async def watch_loop(db_manager: 'DatabaseEngineManager', redis_client: 'RedisClientManager'):
-    print('Watch loop initialized')
+    logger.info('Launching tracking of changes in secrets')
 
     db_paths = {db_manager.settings.SSL_CERT_FILE, db_manager.settings.SSL_KEY_FILE,
                 db_manager.settings.SSL_CA_CERT_FILE}
@@ -38,22 +47,22 @@ async def watch_loop(db_manager: 'DatabaseEngineManager', redis_client: 'RedisCl
 
     try:
         async for changes in awatch(*watch_dirs, watch_filter=relevant_change, debounce=2000):
-            print('New changes view: ', changes)
+            logger.info('Changes have been detected in the tracked secrets')
             certs_changes = {p for _, p in changes}
 
             tasks_run = []
             if db_paths & certs_changes:
-                print('Rotate db engine')
+                logger.info('Initialization of database secret rotation')
                 tasks_run.append(asyncio.create_task(db_manager.rotate()))
             if redis_paths & certs_changes:
-                print('Rotate redis client')
+                logger.info('Initialization of redis secret rotation')
                 tasks_run.append(asyncio.create_task(redis_client.rotate()))
 
             await asyncio.gather(*tasks_run, return_exceptions=True)
-    except Exception as e:
-        print(f"Error in watch_loop: {e}")
+    except (WatchfilesRustInternalError, PermissionError, OSError, RuntimeError):
+        logger.exception('Error while tracking changes in secrets')
 
-    print('Watch loop end')
+    logger.info('Tracking of changes in secrets has been discontinued')
 
 
 @asynccontextmanager
@@ -92,5 +101,7 @@ def create_app(container=None) -> 'FastAPI':
     app.include_router(schedule_router)
 
     app.add_exception_handler(APIServiceException, api_exception_handler)
+
+    app.add_middleware(InitRequestMiddleware)
 
     return app

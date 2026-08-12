@@ -98,7 +98,7 @@ class User:
         logger.info('Updating metadata with the key %s', key)
 
         if key not in self.metadata:
-            raise logger.warning('Unknown user metadata key %s', key)
+            logger.warning('Unknown user metadata key %s', key)
             raise InvalidUserMetadataKey(key)
 
         if self.metadata[key] is not None and type(self.metadata[key]) != type(value):

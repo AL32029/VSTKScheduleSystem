@@ -1,72 +1,76 @@
 import asyncio
+import logging
 import ssl
 from ssl import SSLContext
 from typing import cast
 
+import aiofiles
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from sqlalchemy import URL, text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from service_api.infrastructure.config import DatabaseSettings
 
+logger = logging.getLogger(__name__)
+
 
 class DatabaseEngineManager:
     def __init__(self, settings: 'DatabaseSettings') -> None:
-        print('DatabaseEngineManager initializing...')
+        logger.info('Initialization of the database manager has begun')
         self.settings = settings
         self._engine: AsyncEngine | None = None
         self._lock = asyncio.Lock()
-        print('DatabaseEngineManager initialized')
+        logger.info('The database manager has been successfully initialized')
 
     async def get_engine(self) -> AsyncEngine:
-        print('Getting database engine...')
+        logger.info('Obtaining the database engine')
         if self._engine is None:
             async with self._lock:
                 if self._engine is None:
-                    print('Database engine is missing, building...')
-                    self._engine = self._build_engine()
+                    logger.warning('The database engine is missing; create a new engine')
+                    self._engine = await self._build_engine()
 
-        print('Database engine retrieved')
+        logger.info('The database engine has been obtained')
         return cast(AsyncEngine, self._engine)
 
     async def rotate(self) -> bool:
-        print('Rotating of database engine is started')
+        logger.info('The rotation of database secrets has begun')
         async with self._lock:
-            print('Set old engine in old_engine var')
             old_engine = self._engine
-
             try:
-                print('Build new database engine and set in new_engine var')
-                new_engine = self._build_engine()
+                logger.info('Initialization of the new database engine assembly')
+                new_engine = await self._build_engine()
+                logger.info('The assembly of the new database engine has been successfully completed')
 
-                print('Check new database engine connection with SELECT 1')
+                logger.info('Checking the database connection status via the new engine')
                 async with new_engine.connect() as conn:
                     await conn.execute(text('SELECT 1'))
-                print('Connection check successful')
+                logger.info('The check of the database connection status via the new engine was successful')
 
-                print('Set new engine in self._engine var')
                 self._engine = new_engine
 
                 if old_engine is not None:
-                    print('Start dispose old engine task')
+                    logger.info('Adding a task to disconnect connections to the database via the old engine')
                     asyncio.create_task(self._dispose_engine(old_engine))
+                    logger.info('The task to disconnect from the database via the old '
+                                'engine has been successfully added')
 
-                print('Database engine rotation completed successfully')
+                logger.info('The database secret rotation has been completed successfully')
                 return True
-            except Exception as e:
-                print(f'Error at building new database engine: {e!r}')
-                print('Database engine rotation failed')
+            except (SQLAlchemyError, TimeoutError, ConnectionError):
+                logger.exception('An error occurred during the rotation of database secrets')
                 return False
 
     async def dispose(self, delay: float = 15.0) -> None:
         if self._engine is not None:
             await self._dispose_engine(self._engine, delay)
 
-    def _build_engine(self):
-        print('Building new database engine...')
+    async def _build_engine(self):
+        logger.info('The database engine has begun to be assembled')
         ssl_context = self._load_ssl_context()
-        engine_url = self._build_engine_url()
+        engine_url = await self._build_engine_url()
         engine = create_async_engine(
             engine_url,
             pool_pre_ping=True,
@@ -74,30 +78,30 @@ class DatabaseEngineManager:
             max_overflow=10,
             connect_args={'ssl': ssl_context}
         )
-        print('New database engine built')
+        logger.info('The database engine has been successfully created')
         return engine
 
     async def _dispose_engine(self, engine: AsyncEngine, delay: float = 30.0) -> None:
-        print(f'Disposing old database engine, wait {delay} sec...')
+        logger.info('The connections through the old database engine will be terminated in %s seconds', delay)
         await asyncio.sleep(delay)
-        print('Disposing database engine...')
+        logger.info('Disruption of connections via the old database engine')
         await engine.dispose()
-        print('Database engine disposed')
+        logger.info('Connections through the old database engine have been successfully terminated')
 
     def _load_ssl_context(self) -> SSLContext:
-        print('Loading SSL context...')
+        logger.info('The SSL context has been initialized')
         ssl_context = ssl.create_default_context(cafile=self.settings.SSL_CA_CERT_FILE)
         ssl_context.load_cert_chain(
             certfile=self.settings.SSL_CERT_FILE,
             keyfile=self.settings.SSL_KEY_FILE
         )
-        print('SSL context loaded')
+        logger.info('The SSL context has been successfully established')
         return ssl_context
 
-    def _build_engine_url(self) -> URL:
-        print('Building engine URL...')
-        with open(self.settings.SSL_CERT_FILE, 'rb') as f:
-            cert_data = f.read()
+    async def _build_engine_url(self) -> URL:
+        logger.info('The generation of the database connection URL has begun')
+        async with aiofiles.open(self.settings.SSL_CERT_FILE, 'rb') as f:
+            cert_data = await f.read()
 
         cert = x509.load_pem_x509_certificate(cert_data, default_backend())
 
@@ -110,5 +114,5 @@ class DatabaseEngineManager:
             port=self.settings.PORT,
             database=self.settings.BASE
         )
-        print('Engine URL built')
+        logger.info('The database connection URL has been successfully generated')
         return url

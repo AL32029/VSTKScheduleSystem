@@ -1,7 +1,10 @@
+import logging
 
 from service_api.application.ports import CacheRepository, GroupRepository
 from service_api.domain.entities import Group
 from service_api.domain.exceptions import CacheItemNotFound
+
+logger = logging.getLogger(__name__)
 
 
 class GetGroupUseCase:
@@ -11,10 +14,18 @@ class GetGroupUseCase:
 
     async def execute(self, group_number: str) -> 'Group':
         try:
+            logger.info('Obtaining group %s from the cache', group_number)
             group = await self.cache_repo.get_group_cache(group_number)
+            logger.info('Group %s has been retrieved from the cache', group.number)
         except CacheItemNotFound:
-            group = await self.group_repo.get_by_number(group_number)
+            logger.warning('Group %s is not found in the cache', group_number)
 
+            logger.info('Obtaining group %s from the database', group_number)
+            group = await self.group_repo.get_by_number(group_number)
+            logger.info('Group %s was retrieved from the database', group.number)
+
+            logger.info('Saving group %s to the cache', group.number)
             await self.cache_repo.set_group_cache(group)
+            logger.info('Group %s has been saved to the cache', group.number)
 
         return group

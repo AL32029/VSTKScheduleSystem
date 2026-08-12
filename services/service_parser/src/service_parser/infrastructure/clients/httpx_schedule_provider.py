@@ -4,6 +4,7 @@ import re
 from collections import defaultdict
 from re import Pattern
 from typing import Any, ClassVar, Literal
+from zoneinfo import ZoneInfo
 
 import numpy
 from bs4 import BeautifulSoup
@@ -53,9 +54,11 @@ class HTTPXScheduleProvider(ScheduleProvider):
         'декабря': 12
     }
 
-    def __init__(self, client: AsyncClient, redis_client: Redis, schedule_type: Literal['today', 'tomorrow']):
+    def __init__(self, client: AsyncClient, redis_client: Redis, timezone: ZoneInfo,
+                 schedule_type: Literal['today', 'tomorrow']):
         self.client = client
         self.redis_client = redis_client
+        self.timezone = timezone
         self.schedule_type = schedule_type
 
     async def get_schedule_for_groups(self) -> dict['Group', list['DaySchedule']]:
@@ -178,7 +181,7 @@ class HTTPXScheduleProvider(ScheduleProvider):
             for i in range((date_list[-1] - date_list[0]).days + 1)
         ]
 
-        today = datetime.datetime.now().date()
+        today = datetime.datetime.now(self.timezone).date()
 
         date_list = list(filter(
             lambda x: x and ((x == today) if self.schedule_type == 'today' else (x > today)),

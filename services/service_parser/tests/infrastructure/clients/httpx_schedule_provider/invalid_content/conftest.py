@@ -10,7 +10,7 @@ async def _html_invalid_scenario(schedule_provider, httpx_mock, file_name) -> st
         httpx_mock.add_response(
             method='GET',
             url='https://vgtk.by/schedule/lessons/day-tomorrow.php',
-            content=f.read()
+            content=await f.read()
         )
     return await schedule_provider._fetch_html('https://vgtk.by/schedule/lessons/day-tomorrow.php')
 

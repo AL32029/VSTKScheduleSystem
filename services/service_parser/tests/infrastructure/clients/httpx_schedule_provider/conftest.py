@@ -1,3 +1,5 @@
+from zoneinfo import ZoneInfo
+
 import pytest
 from dishka import Scope
 from httpx import AsyncClient
@@ -20,7 +22,14 @@ async def redis_client(test_container):
         yield await container.get(Redis)
 
 
+@pytest.fixture(scope='function')
+async def timezone(test_container):
+    """Timezone container"""
+    async with test_container(scope=Scope.REQUEST) as container:
+        yield await container.get(ZoneInfo)
+
+
 @pytest.fixture
-def schedule_provider(client, redis_client):
+def schedule_provider(client, redis_client, timezone):
     """HTTPX Schedule Provider"""
-    yield HTTPXScheduleProvider(client, redis_client=redis_client, schedule_type='tomorrow')
+    yield HTTPXScheduleProvider(client, redis_client=redis_client, schedule_type='tomorrow', timezone=timezone)

@@ -302,8 +302,8 @@ poetry run pytest tests/presentation/
 ```
 VSTKScheduleSystem/
 ├── libs/
-│   └── schedule_db_models/      # Общая библиотека ORM-моделей (переиспользуется парсером и API)
-├── schedule_alembic/            # Миграции Alembic (общая схема БД для парсера и API)
+│   └── schedule_db_models/      # Общая библиотека ORM-моделей (переиспользуется всеми сервисами)
+├── schedule_alembic/            # Миграции Alembic (общая схема БД)
 ├── schedule_alembic.ini
 └── services/
     ├── service_parser/          # Микросервис: парсер расписания

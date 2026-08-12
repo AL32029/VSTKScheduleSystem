@@ -1,6 +1,6 @@
 [project]
 name = "service-api"
-version = "0.0.2dev"
+version = "0.0.3dev"
 description = "Microservice \"API Service\""
 authors = [
     { name = "Nikita Bondarev", email = "nikitabondarevvitebsk@gmail.com" }
@@ -20,6 +20,7 @@ redis = "^8.1.0"
 schedule-db-models = {path = "../../libs/schedule_db_models"}
 tzdata = "^2026.3"
 watchfiles = "^1.2.0"
+aiofiles = "^25.1.0"
 
 
 [tool.poetry.group.dev.dependencies]

@@ -28,6 +28,7 @@ class HTTPXScheduleRepository(ScheduleRepository):
                                schedule_for: Literal['group', 'cabinet']) -> 'DaySchedule':
         """Получение расписания на конкретную дату"""
         request = f'/schedule/{schedule_for}'
+        logger.debug('Requesting %s schedule for %s (%s) from API', schedule_for, schedule_item, schedule_to)
         resp = await self.client.get(request, params={
             f'{schedule_for}_number': schedule_item,
             'schedule_to': schedule_to
@@ -43,17 +44,13 @@ class HTTPXScheduleRepository(ScheduleRepository):
             extra = error.get('extra')
             if code in ['GROUP_NOT_FOUND', 'CABINET_NOT_FOUND']:
                 number = extra.get('input_number', schedule_item) if extra is not None else schedule_item
-
-                logger.warning('The %s %s was not found',
-                               'group' if code == 'GROUP_NOT_FOUND' else 'CABINET_NOT_FOUND', number)
-
+                logger.warning('%s %s not found in API',
+                               'Group' if code == 'GROUP_NOT_FOUND' else 'Cabinet', number)
                 raise (GroupNotFound if code == 'GROUP_NOT_FOUND' else CabinetNotFound)(number)
 
             elif code == 'SCHEDULE_DATE_NOT_FOUND':
                 schedule_at = extra.get('schedule_to', schedule_to) if extra is not None else schedule_to
-
-                logger.warning('The schedule for %s has not been published', schedule_at)
-
+                logger.warning('Schedule date for %s not published yet', schedule_at)
                 raise ScheduleDateNotFound(schedule_to)
 
             elif code in ['SCHEDULE_FOR_GROUP_NOT_FOUND', 'SCHEDULE_FOR_CABINET_NOT_FOUND']:
@@ -61,10 +58,8 @@ class HTTPXScheduleRepository(ScheduleRepository):
                 item = (Group if schedule_item_type == 'group' else Cabinet)(**extra['item'])
                 schedule_at = extra.get('schedule_to', schedule_to) if extra is not None else schedule_to
                 schedule_date = datetime.date.fromisoformat(extra['schedule_date'])
-
-                logger.warning('For the %s %s, there are no lessons scheduled for %s (%s)',
-                               str(item), schedule_item_type, schedule_at, schedule_date)
-
+                logger.warning('No lessons found for %s %s on %s (%s)',
+                               schedule_item_type.capitalize(), item.number, schedule_at, schedule_date)
                 raise (ScheduleForGroupNotFound
                        if schedule_item_type == 'group'
                        else ScheduleForCabinetNotFound)(item, schedule_at, schedule_date)
@@ -72,11 +67,11 @@ class HTTPXScheduleRepository(ScheduleRepository):
         try:
             resp.raise_for_status()
         except HTTPStatusError:
-            logger.exception('Error when sending an HTTP request GET %s', request)
+            logger.exception('API request failed: GET %s', request)
             raise
 
         day_schedule_json = response_json.get('data')
-
-        logger.info('A successful response has been received (status: %s)', resp.status_code)
-
-        return DayScheduleItem.model_validate(day_schedule_json).to_domain(schedule_for)
+        day_schedule = DayScheduleItem.model_validate(day_schedule_json).to_domain(schedule_for)
+        logger.info('Retrieved schedule for %s %s (%s) from API',
+                    schedule_for, schedule_item, schedule_to)
+        return day_schedule

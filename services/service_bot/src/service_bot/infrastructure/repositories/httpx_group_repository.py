@@ -21,7 +21,7 @@ class HTTPXGroupRepository(GroupRepository):
     async def get_by_number(self, group_number: str) -> 'Group':
         """Получение группы по его номеру"""
         request = f'/groups/{group_number}'
-        logger.info('Sending an HTTP request GET %s', request)
+        logger.debug('Requesting group by number %s from API', group_number)
         resp = await self.client.get(request)
 
         response_json: dict = resp.json()
@@ -33,28 +33,25 @@ class HTTPXGroupRepository(GroupRepository):
 
             if code is not None and code == 'GROUP_NOT_FOUND':
                 extra = error.get('extra')
-
                 number = extra.get('input_number', group_number) if extra is not None else group_number
-
-                logger.warning('The group %s was not found', number)
+                logger.warning('Group %s not found in API', number)
                 raise GroupNotFound(number)
 
         try:
             resp.raise_for_status()
         except HTTPStatusError:
-            logger.exception('Error when sending an HTTP request GET %s', request)
+            logger.exception('API request failed: GET %s', request)
             raise
 
         group_json = response_json.get('data')
-
-        logger.info('A successful response has been received (status: %s)', resp.status_code)
-
-        return cast('Group', ScheduleItem.model_validate(group_json).to_domain('group'))
+        group = cast('Group', ScheduleItem.model_validate(group_json).to_domain('group'))
+        logger.info('Group %s retrieved from API', group.number)
+        return group
 
     async def get_all(self) -> list['Group']:
         """Получение списка всех кабинетов"""
         request = '/groups/'
-        logger.info('Sending an HTTP request GET %s', request)
+        logger.debug('Requesting all groups from API')
         resp = await self.client.get(request)
 
         response_json: dict = resp.json()
@@ -62,12 +59,11 @@ class HTTPXGroupRepository(GroupRepository):
         try:
             resp.raise_for_status()
         except HTTPStatusError:
-            logger.exception('Error when sending an HTTP request GET %s', request)
+            logger.exception('API request failed: GET %s', request)
             raise
 
         groups_list = cast(list[dict], response_json.get('data'))
-
-        logger.info('A successful response has been received (status: %s)', resp.status_code)
-
-        return [cast('Group', ScheduleItem.model_validate(group).to_domain('group'))
-                for group in groups_list]
+        groups = [cast('Group', ScheduleItem.model_validate(group).to_domain('group'))
+                  for group in groups_list]
+        logger.info('Retrieved %d groups from API', len(groups))
+        return groups

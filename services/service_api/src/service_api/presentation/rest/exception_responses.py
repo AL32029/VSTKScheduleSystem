@@ -4,7 +4,10 @@ from fastapi.responses import JSONResponse
 from service_api.domain.exceptions import APIServiceException
 
 
-async def api_exception_handler(request: Request, exc: APIServiceException) -> JSONResponse:
+async def api_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    if not isinstance(exc, APIServiceException):
+        raise exc
+
     return JSONResponse(
         status_code=exc.status_code,
         content={

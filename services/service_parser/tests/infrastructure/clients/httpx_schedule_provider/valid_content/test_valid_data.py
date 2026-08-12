@@ -66,7 +66,7 @@ async def test_get_schedule_for_groups(schedule_provider, httpx_mock):
         httpx_mock.add_response(
             method='GET',
             url='https://vgtk.by/schedule/lessons/day-tomorrow.php',
-            content=f.read()
+            content=await f.read()
         )
 
     schedule = await schedule_provider.get_schedule_for_groups()

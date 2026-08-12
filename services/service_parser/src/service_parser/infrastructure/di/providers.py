@@ -1,6 +1,8 @@
+import logging
 import ssl
 from collections.abc import AsyncGenerator, AsyncIterable
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import httpx
 from cryptography import x509
@@ -21,12 +23,26 @@ from service_parser.application.ports import (
     GroupRepository,
     ScheduleRepository,
 )
-from service_parser.infrastructure.config import DatabaseSettings, RedisSettings
+from service_parser.infrastructure.config import (
+    BaseSystemSettings,
+    DatabaseSettings,
+    RedisSettings,
+)
 from service_parser.infrastructure.repositories import (
     SQLAlchemyCabinetRepository,
     SQLAlchemyGroupRepository,
     SQLAlchemyScheduleRepository,
 )
+
+logger = logging.getLogger(__name__)
+
+
+class SystemProvider(Provider):
+    scope = Scope.APP
+
+    @provide
+    def time_zone(self, base_settings: 'BaseSystemSettings') -> ZoneInfo:
+        return base_settings.TZ
 
 
 class DatabaseProvider(Provider):
@@ -34,6 +50,7 @@ class DatabaseProvider(Provider):
 
     @provide
     def provide_engine(self) -> 'AsyncEngine':
+        logger.debug('Creating database engine')
         settings = DatabaseSettings()
 
         with open(settings.SSL_CERT_FILE, 'rb') as f:
@@ -59,6 +76,8 @@ class DatabaseProvider(Provider):
             database=settings.BASE,
         )
 
+        logger.debug('Database engine created for %s@%s:%s/%s',
+                     common_name, settings.HOST, settings.PORT, settings.BASE)
         return create_async_engine(
             connection_url,
             echo=False,
@@ -70,6 +89,7 @@ class DatabaseProvider(Provider):
 
     @provide
     def provide_session_maker(self, engine: 'AsyncEngine') -> async_sessionmaker['AsyncSession']:
+        logger.debug('Creating session maker')
         return async_sessionmaker(
             bind=engine,
             expire_on_commit=False,
@@ -79,6 +99,7 @@ class DatabaseProvider(Provider):
 
     @provide
     async def provide_session(self, session_maker: async_sessionmaker['AsyncSession']) -> AsyncIterable['AsyncSession']:
+        logger.debug('Creating database session')
         async with session_maker() as session:
             yield session
 
@@ -89,6 +110,7 @@ class RedisProvider(Provider):
     @provide
     async def redis_engine(self) -> AsyncIterable['Redis']:
         settings = RedisSettings()
+        logger.debug('Connecting to Redis at %s:%s (db=%s)', settings.HOST, settings.PORT, settings.DB_NUMBER)
 
         client = Redis(
             host=settings.HOST,
@@ -101,11 +123,13 @@ class RedisProvider(Provider):
             ssl_cert_reqs=settings.SSL_CERT_REQS,
             ssl_check_hostname=settings.SSL_CHECK_HOSTNAME
         )
+        logger.debug('Redis client created')
         yield client
+        logger.debug('Closing Redis connection')
         await client.aclose()
 
 
-class RepositoriesProvide(Provider):
+class RepositoriesProvider(Provider):
     scope = Scope.REQUEST
 
     @provide
@@ -126,5 +150,6 @@ class HTTPXClientProvider(Provider):
 
     @provide
     async def provide_client(self) -> AsyncGenerator['AsyncClient', Any]:
+        logger.debug('Creating HTTPX client')
         async with httpx.AsyncClient() as client:
             yield client

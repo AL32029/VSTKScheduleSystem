@@ -16,7 +16,7 @@ async def html_content(schedule_provider, httpx_mock) -> str:
         httpx_mock.add_response(
             method='GET',
             url='https://vgtk.by/schedule/lessons/day-tomorrow.php',
-            content=f.read()
+            content=await f.read()
         )
 
     return await schedule_provider._fetch_html('https://vgtk.by/schedule/lessons/day-tomorrow.php')
