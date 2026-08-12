@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 
+from patterns import GROUP_NUMBER, ITEM_INDEX
+
 from service_parser.domain.exceptions import (
     GroupNumberFormatError,
     GroupParserPositionError,
 )
-from service_parser.domain.shared.patterns import GROUP_NUMBER, ITEM_INDEX
 
 
 @dataclass(frozen=True)

@@ -32,7 +32,7 @@ class GetGroupDayScheduleUseCase:
 
             logger.info('Retrieving group %s from the database', group_number)
             group_item = await self.group_repo.get_by_number(group_number)
-            logger.info('Cabinet %s was obtained from the database', group_item.number)
+            logger.info('Group %s was obtained from the database', group_item.number)
 
             logger.info('Obtaining the date of the lesson schedule for %s', schedule_to)
             schedule_date = await self.schedule_repo.get_schedule_date(schedule_to)

@@ -1,6 +1,6 @@
 [project]
 name = "service-parser"
-version = "0.0.3dev"
+version = "0.0.4dev"
 description = "Microservice \"Parser Service\""
 authors = [
     { name = "Nikita Bondarev", email = "nikitabondarevvitebsk@gmail.com" }
@@ -18,6 +18,7 @@ pydantic = "^2.13.4"
 pydantic-settings = "^2.14.2"
 httpx = "^0.28.1"
 schedule-db-models = { path = "../../libs/schedule_db_models" }
+patterns = { path = "../../libs/patterns" }
 dishka = "^1.10.1"
 redis = "^8.0.1"
 cryptography = "^49.0.0"

@@ -1,11 +1,11 @@
 import pytest
+from patterns import ITEM_INDEX
 
 from service_parser.domain.entities import Group, GroupParser
 from service_parser.domain.exceptions import (
     GroupNumberFormatError,
     GroupParserPositionError,
 )
-from service_parser.domain.shared.patterns import ITEM_INDEX
 
 # ====================== [ВАЛИДНЫЕ ЗНАЧЕНИЯ] ======================
 _VALID_GROUP_NUMBERS = ['ЖБИ-21', 'ОС-21', 'ПЭС-215']

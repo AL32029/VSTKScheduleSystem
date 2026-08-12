@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from service_parser.domain.shared.patterns import ITEM_INDEX
+from patterns import ITEM_INDEX
 
 
 @dataclass(frozen=True)

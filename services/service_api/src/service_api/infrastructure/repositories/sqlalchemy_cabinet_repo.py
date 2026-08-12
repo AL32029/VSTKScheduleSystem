@@ -1,5 +1,6 @@
 import logging
 
+from patterns import ITEM_INDEX
 from schedule_db_models import CabinetORM
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from service_api.application.ports import CabinetRepository
 from service_api.domain.entities import Cabinet
 from service_api.domain.exceptions import CabinetNotFound
-from service_api.domain.shared.patterns import ITEM_INDEX
 from service_api.infrastructure.mappers import cabinet_orm_to_domain
 
 logger = logging.getLogger(__name__)

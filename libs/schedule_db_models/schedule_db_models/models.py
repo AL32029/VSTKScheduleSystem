@@ -1,7 +1,15 @@
 import datetime
-from typing import Iterable
 
-from sqlalchemy import String, Integer, Date, Time, ForeignKey, BigInteger, SmallInteger, Index
+from sqlalchemy import (
+    BigInteger,
+    Date,
+    ForeignKey,
+    Index,
+    Integer,
+    SmallInteger,
+    String,
+    Time,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 

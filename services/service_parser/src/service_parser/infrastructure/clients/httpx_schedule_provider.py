@@ -10,6 +10,7 @@ import numpy
 from bs4 import BeautifulSoup
 from httpx import AsyncClient
 from numpy import argwhere, dtype, ndarray, vectorize
+from patterns import CABINET_NUMBER
 from redis.asyncio import Redis
 
 from service_parser.application.ports import ScheduleProvider
@@ -29,7 +30,6 @@ from service_parser.domain.exceptions import (
     ParsingMatrixError,
     ScheduleUnchangedError,
 )
-from service_parser.domain.shared.patterns import CABINET_NUMBER
 
 
 class HTTPXScheduleProvider(ScheduleProvider):

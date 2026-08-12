@@ -1,10 +1,10 @@
 from collections.abc import Iterable
 
 import pytest
+from patterns import ITEM_INDEX
 
 from service_parser.domain.entities import Cabinet
 from service_parser.domain.exceptions import CabinetNotFound
-from service_parser.domain.shared.patterns import ITEM_INDEX
 
 # ===================== [СУЩНОСТИ ДЛЯ ТЕСТОВ] =====================
 _CABINET_NUMBERS = ['упм. 1, л. 6', 'сз3', '52к']

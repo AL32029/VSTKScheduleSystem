@@ -1,5 +1,17 @@
-from .models import Base, GroupORM, CabinetORM, CabinetRedirectORM, LessonORM, LessonCabinetORM
+from .models import (
+    Base,
+    CabinetORM,
+    CabinetRedirectORM,
+    GroupORM,
+    LessonCabinetORM,
+    LessonORM,
+)
 
 __all__ = [
-    'Base', 'GroupORM', 'CabinetORM', 'CabinetRedirectORM', 'LessonORM', 'LessonCabinetORM'
+    'Base',
+    'CabinetORM',
+    'CabinetRedirectORM',
+    'GroupORM',
+    'LessonCabinetORM',
+    'LessonORM'
 ]

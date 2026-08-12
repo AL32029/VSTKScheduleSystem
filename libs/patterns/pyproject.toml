@@ -1,0 +1,16 @@
+[project]
+name = "patterns"
+version = "0.0.1dev"
+description = "Regex patterns for microservices \"Parser Service\" and \"Schedule API Service\""
+authors = [
+    {name = "Nikita Bondarev",email = "nikitabondarevvitebsk@gmail.com"}
+]
+license = "No license"
+requires-python = ">=3.12,<3.15"
+dependencies = [
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

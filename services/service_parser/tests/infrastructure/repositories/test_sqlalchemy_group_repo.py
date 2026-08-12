@@ -1,10 +1,10 @@
 from collections.abc import Iterable
 
 import pytest
+from patterns import ITEM_INDEX
 
 from service_parser.domain.entities import Group
 from service_parser.domain.exceptions import GroupNotFound
-from service_parser.domain.shared.patterns import ITEM_INDEX
 
 # ===================== [СУЩНОСТИ ДЛЯ ТЕСТОВ] =====================
 _VALID_GROUP_NUMBERS = ['ЖБИ-21', 'ОС-21', 'ПЭС-215']

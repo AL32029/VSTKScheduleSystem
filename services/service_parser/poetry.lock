@@ -1175,6 +1175,20 @@ files = [
 ]
 
 [[package]]
+name = "patterns"
+version = "0.0.1.dev0"
+description = "Regex patterns for microservices \"Parser Service\" and \"Schedule API Service\""
+optional = false
+python-versions = ">=3.12,<3.15"
+groups = ["main"]
+files = []
+develop = false
+
+[package.source]
+type = "directory"
+url = "../../libs/patterns"
+
+[[package]]
 name = "pluggy"
 version = "1.6.0"
 description = "plugin and hook calling mechanisms for python"
@@ -1934,4 +1948,4 @@ dev = ["pytest", "setuptools"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "34a9a91b29cf0242c573990e0dd317b3191fc4e55abbc2ec30504682a78e48df"
+content-hash = "36fbebde974a87d2a04f785dfc2e92425ad01a98f047aa1c5d3f7f24877372b4"

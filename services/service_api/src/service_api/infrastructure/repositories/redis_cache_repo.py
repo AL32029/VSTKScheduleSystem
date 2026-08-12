@@ -5,6 +5,7 @@ from collections.abc import Iterable
 from dataclasses import asdict
 from typing import Literal
 
+from patterns import ITEM_INDEX
 from redis.asyncio import Redis
 
 from service_api.application.ports import CacheRepository
@@ -15,7 +16,6 @@ from service_api.domain.entities import (
     GroupDaySchedule,
 )
 from service_api.domain.exceptions import CacheItemNotFound
-from service_api.domain.shared.patterns import ITEM_INDEX
 from service_api.infrastructure.config import system_settings
 from service_api.infrastructure.mappers import (
     cabinet_day_schedule_to_schema,

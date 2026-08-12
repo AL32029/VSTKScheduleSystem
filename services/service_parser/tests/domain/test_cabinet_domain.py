@@ -1,7 +1,7 @@
 import pytest
+from patterns import ITEM_INDEX
 
 from service_parser.domain.entities import Cabinet
-from service_parser.domain.shared.patterns import ITEM_INDEX
 
 # ====================== [ВАЛИДНЫЕ ЗНАЧЕНИЯ] ======================
 _VALID_CABINET_NUMBERS = ['упм. 1, л. 6', 'сз3', '52к']
