@@ -58,7 +58,7 @@ jobs:
           file: Dockerfile
           push: 'true'
           tags: 10.0.0.1:5000/service_api:${{ github.sha }}
-          build-contexts: libs=../../libs
+          build-contexts: libs=${{ github.workspace }}/libs
 
       - name: Build and push bot image
         uses: docker/build-push-action@v5
@@ -75,5 +75,5 @@ jobs:
           file: Dockerfile
           push: 'true'
           tags: 10.0.0.1:5000/service_parser:${{ github.sha }}
-          build-contexts: libs=../../libs
+          build-contexts: libs=${{ github.workspace }}/libs
 
