@@ -54,8 +54,8 @@ jobs:
       - name: Build and push API image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: services/service_api/Dockerfile
+          context: services/service_api
+          file: Dockerfile
           push: 'true'
           tags: 10.0.0.1:5000/service_api:${{ github.sha }}
           build-contexts: libs=../../libs
@@ -63,16 +63,16 @@ jobs:
       - name: Build and push bot image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: services/service_bot/Dockerfile
+          context: services/service_bot
+          file: Dockerfile
           push: 'true'
           tags: 10.0.0.1:5000/service_bot:${{ github.sha }}
 
       - name: Build parser image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: services/service_parser/Dockerfile
+          context: services/service_parser
+          file: Dockerfile
           push: 'true'
           tags: 10.0.0.1:5000/service_parser:${{ github.sha }}
           build-contexts: libs=../../libs
