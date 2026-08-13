@@ -1,0 +1,79 @@
+name: CD Staging
+on:
+  push:
+    branches:
+      - main
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        run: poetry install
+        working-directory: services/service_api
+      - name: Run ruff
+        run: poetry run ruff check .
+        working-directory: services/service_api
+      - name: Run pytest
+        run: poetry run pytest ./tests
+        working-directory: services/service_api
+
+      - name: Install dependencies
+        run: poetry install
+        working-directory: services/service_bot
+      - name: Run ruff
+        run: poetry run ruff check .
+        working-directory: services/service_bot
+      - name: Run pytest
+        run: poetry run pytest ./tests
+        working-directory: services/service_bot
+
+      - name: Install dependencies
+        run: poetry install
+        working-directory: services/service_parser
+      - name: Run ruff
+        run: poetry run ruff check .
+        working-directory: services/service_parser
+      - name: Run pytest
+        run: poetry run pytest ./tests
+        working-directory: services/service_parser
+
+  build-and-push-images:
+    runs-on: self-hosted
+    needs: lint-and-test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and push API image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: services/service_api/Dockerfile
+          push: 'true'
+          tags: 10.0.0.1:5000/service_api:${{ github.sha }}
+          build-contexts: libs=../../libs
+
+      - name: Build and push bot image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: services/service_bot/Dockerfile
+          push: 'true'
+          tags: 10.0.0.1:5000/service_bot:${{ github.sha }}
+
+      - name: Build parser image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: services/service_parser/Dockerfile
+          push: 'true'
+          tags: 10.0.0.1:5000/service_parser:${{ github.sha }}
+          build-contexts: libs=../../libs
+
