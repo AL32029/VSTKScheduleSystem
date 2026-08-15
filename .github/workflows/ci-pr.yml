@@ -58,3 +58,5 @@ jobs:
         if: fromJSON(needs.changes.outputs[matrix.service]) == true
         run: poetry run pytest ./tests
         working-directory: services/service_${{ matrix.service }}
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: "true"

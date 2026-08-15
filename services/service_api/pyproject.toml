@@ -34,6 +34,7 @@ pytest-cov = "^7.1.0"
 alembic = "^1.18.5"
 ruff = "^0.15.14"
 httpx = "^0.28.1"
+pytest-env = "*"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -42,7 +43,6 @@ build-backend = "poetry.core.masonry.api"
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 addopts = "--asyncio-mode=auto"
-env = ["TESTCONTAINERS_RYUK_DISABLED=true"]
 
 [tool.coverage.run]
 source = ["src/service_api"]
