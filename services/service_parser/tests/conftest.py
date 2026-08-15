@@ -10,7 +10,7 @@ import pytest
 from dishka import make_async_container
 from httpx import AsyncClient
 from redis.asyncio import Redis
-from sqlalchemy import text
+from sqlalchemy import text, NullPool
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -67,8 +67,7 @@ async def async_engine(postgres_container) -> AsyncIterable[AsyncEngine]:
     engine = create_async_engine(
         postgres_container.get_connection_url(driver="asyncpg"),
         echo=False,
-        pool_size=5,
-        pool_pre_ping=True,
+        poolclass=NullPool,
     )
     yield engine
     await engine.dispose()
@@ -99,6 +98,7 @@ async def test_container(request, async_engine, redis_container):
             )
             async with async_session() as session:
                 yield session
+                await session.rollback()
 
     # ====================== [ПРОВАЙДЕР REDIS] ======================
     class TestRedisProvider(Provider):
@@ -145,6 +145,8 @@ async def test_container(request, async_engine, redis_container):
     await container.get(AsyncClient)
     yield container
 
+    await container.close()
+
     async with async_engine.connect() as conn:
         await conn.execute(text("SET session_replication_role = 'replica';"))
         result = await conn.execute(
@@ -158,5 +160,3 @@ async def test_container(request, async_engine, redis_container):
             await conn.execute(text(f'DELETE FROM "{table}";'))
         await conn.execute(text("SET session_replication_role = 'origin';"))
         await conn.commit()
-
-    await container.close()

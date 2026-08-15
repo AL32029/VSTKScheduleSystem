@@ -123,7 +123,6 @@ def redis_container() -> Generator[RedisContainer, Any, None]:
 # ====================== [ФИКСТУРА С ПРОВАЙДЕРАМИ] ======================
 @pytest.fixture(scope="function")
 async def test_container(request, session_with_test_data, redis_container):
-    global _TEST_METRICS_INSTANCE
     from dishka import Provider, Scope, provide
 
     # ====================== [ПРОВАЙДЕР СИСТЕМЫ] ======================
