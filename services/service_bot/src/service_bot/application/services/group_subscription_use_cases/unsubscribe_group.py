@@ -16,5 +16,5 @@ class UnsubscribeGroupUseCase:
         logger.info("Unsubscribing to the %s group", str(group_index))
         await self.repo.unsubscribe_group(user, group_index)
         logger.info(
-            "The unsubscription to the %s group has been completed", str(group_index)
+            "The unsubscription to the %s group has been completed", str(group_index),
         )

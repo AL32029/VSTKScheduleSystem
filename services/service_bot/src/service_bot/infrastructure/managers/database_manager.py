@@ -5,22 +5,24 @@ from ssl import SSLContext
 from typing import cast
 
 import aiofiles
-import asyncpg.exceptions
 import sqlalchemy.exc
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from sqlalchemy import URL, text
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
-from service_bot.infrastructure.config import DatabaseSettings
+from service_bot.infrastructure.config import (
+    DevDatabaseSettings,
+    ProdDatabaseSettings,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class DatabaseEngineManager:
-    def __init__(self, settings: "DatabaseSettings") -> None:
-        logger.info("Initialization of the database manager")
-        self.settings = settings
+    def __init__(self, settings: "DevDatabaseSettings | ProdDatabaseSettings") -> None:
+        logger.info("Initialization of the database manager has begun")
+        self._config: DevDatabaseSettings | ProdDatabaseSettings = settings
         self._engine: AsyncEngine | None = None
         self._lock = asyncio.Lock()
         logger.info("The database manager has been successfully initialized")
@@ -30,48 +32,56 @@ class DatabaseEngineManager:
         if self._engine is None:
             async with self._lock:
                 if self._engine is None:
-                    logger.warning("The database engine is missing, creating...")
+                    logger.warning(
+                        "The database engine is missing; create a new engine"
+                    )
                     self._engine = await self._build_engine()
 
         logger.info("The database engine has been obtained")
         return cast(AsyncEngine, self._engine)
 
     async def rotate(self) -> bool:
-        logger.info("The process of rotating database credentials has begun")
+        logger.info("The rotation of database secrets has begun")
         async with self._lock:
             old_engine = self._engine
-
             try:
-                logger.info("Creating a new database engine")
+                logger.info("Initialization of the new database engine assembly")
                 new_engine = await self._build_engine()
+                logger.info(
+                    "The assembly of the new database engine has been successfully "
+                    "completed"
+                )
 
                 logger.info(
-                    "Checking the correctness of the connection to the database "
-                    "via the new engine"
+                    "Checking the database connection status via the new engine"
                 )
                 async with new_engine.connect() as conn:
                     await conn.execute(text("SELECT 1"))
                 logger.info(
-                    "The connection to the database via the new engine was successful"
+                    "The check of the database connection status "
+                    "via the new engine was successful"
                 )
 
                 self._engine = new_engine
 
                 if old_engine is not None:
                     logger.info(
-                        "Closing connections to the database via the old engine"
+                        "Adding a task to disconnect connections to the database "
+                        "via the old engine"
                     )
                     asyncio.create_task(self._dispose_engine(old_engine))
+                    logger.info(
+                        "The task to disconnect from the database via the old "
+                        "engine has been successfully added"
+                    )
 
                 logger.info(
-                    "The database credential rotation process "
-                    "was completed successfully"
+                    "The database secret rotation has been completed successfully"
                 )
                 return True
-            except (sqlalchemy.exc.SQLAlchemyError, asyncpg.exceptions.PostgresError):
+            except (sqlalchemy.exc.SQLAlchemyError, TimeoutError, ConnectionError):
                 logger.exception(
-                    "The database credential rotation process has completed "
-                    "with an error"
+                    "An error occurred during the rotation of database secrets"
                 )
                 return False
 
@@ -80,56 +90,83 @@ class DatabaseEngineManager:
             await self._dispose_engine(self._engine, delay)
 
     async def _build_engine(self):
-        logger.info("Creating a database engine")
-        ssl_context = self._load_ssl_context()
+        logger.info("The database engine has begun to be assembled")
+
         engine_url = await self._build_engine_url()
-        engine = create_async_engine(
-            engine_url,
-            pool_pre_ping=True,
-            pool_size=5,
-            max_overflow=10,
-            connect_args={"ssl": ssl_context},
-        )
-        logger.info("The database engine has been created")
+
+        if isinstance(self._config, ProdDatabaseSettings):
+            ssl_context = self._load_ssl_context()
+            engine = create_async_engine(
+                engine_url,
+                pool_pre_ping=True,
+                pool_size=5,
+                max_overflow=10,
+                connect_args={"ssl": ssl_context},
+            )
+        else:
+            engine = create_async_engine(
+                engine_url, pool_pre_ping=True, pool_size=5, max_overflow=10
+            )
+        logger.info("The database engine has been successfully created")
         return engine
 
     async def _dispose_engine(self, engine: AsyncEngine, delay: float = 30.0) -> None:
         logger.info(
-            "The process of closing database connections is scheduled "
-            "to begin in %s seconds",
+            "The connections through the old database engine will "
+            "be terminated in %s seconds",
             delay,
         )
         await asyncio.sleep(delay)
-        logger.info("The closing of database connections has begun")
+        logger.info("Disruption of connections via the old database engine")
         await engine.dispose()
-        logger.info("Database connections are closed")
-
-    def _load_ssl_context(self) -> SSLContext:
-        logger.info("Loading the SSL context")
-        ssl_context = ssl.create_default_context(cafile=self.settings.SSL_CA_CERT_FILE)
-        ssl_context.load_cert_chain(
-            certfile=self.settings.SSL_CERT_FILE, keyfile=self.settings.SSL_KEY_FILE
+        logger.info(
+            "Connections through the old database engine have been successfully "
+            "terminated"
         )
-        logger.info("The SSL context has been loaded")
+
+    def _load_ssl_context(self) -> SSLContext | None:
+        if not isinstance(self._config, ProdDatabaseSettings):
+            logger.warning(
+                "Obtaining an SSL context is available only for the production mode "
+                "of the system"
+            )
+            return None
+
+        logger.info("The SSL context has been initialized")
+        ssl_context = ssl.create_default_context(cafile=self._config.SSL_CA_CERT_FILE)
+        ssl_context.load_cert_chain(
+            certfile=self._config.SSL_CERT_FILE, keyfile=self._config.SSL_KEY_FILE
+        )
+        logger.info("The SSL context has been successfully established")
         return ssl_context
 
     async def _build_engine_url(self) -> URL:
-        logger.info("Database connection URL generation")
-        async with aiofiles.open(self.settings.SSL_CERT_FILE, "rb") as f:
-            cert_data = await f.read()
+        logger.info("The generation of the database connection URL has begun")
+        if isinstance(self._config, ProdDatabaseSettings):
+            async with aiofiles.open(self._config.SSL_CERT_FILE, "rb") as f:
+                cert_data = await f.read()
 
-        cert = x509.load_pem_x509_certificate(cert_data, default_backend())
+            cert = x509.load_pem_x509_certificate(cert_data, default_backend())
 
-        common_name = str(
-            cert.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)[0].value
-        )
+            common_name = str(
+                cert.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)[0].value
+            )
 
-        url = URL.create(
-            "postgresql+asyncpg",
-            username=common_name,
-            host=self.settings.HOST,
-            port=self.settings.PORT,
-            database=self.settings.BASE,
-        )
-        logger.info("The database connection URL has been generated")
+            url = URL.create(
+                "postgresql+asyncpg",
+                host=self._config.HOST,
+                port=self._config.PORT,
+                username=common_name,
+                database=self._config.BASE,
+            )
+        else:
+            url = URL.create(
+                "postgresql+asyncpg",
+                host=self._config.HOST,
+                port=self._config.PORT,
+                username=self._config.USER,
+                password=self._config.PASSWORD,
+                database=self._config.BASE,
+            )
+        logger.info("The database connection URL has been successfully generated")
         return url

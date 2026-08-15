@@ -5,15 +5,18 @@ from typing import cast
 import redis.exceptions
 from redis.asyncio import Redis
 
-from service_bot.infrastructure.config import RedisSettings
+from service_bot.infrastructure.config import (
+    DevRedisSettings,
+    ProdRedisSettings,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class RedisClientManager:
-    def __init__(self, settings: "RedisSettings"):
-        logger.info("Initialization of the redis manager")
-        self.settings = settings
+    def __init__(self, settings: "DevRedisSettings | ProdRedisSettings"):
+        logger.info("Initialization of the redis manager has begun")
+        self._config: DevRedisSettings | ProdRedisSettings = settings
         self._client: Redis | None = None
         self._lock = asyncio.Lock()
         logger.info("The redis manager has been successfully initialized")
@@ -23,43 +26,49 @@ class RedisClientManager:
         if self._client is None:
             async with self._lock:
                 if self._client is None:
-                    logger.warning("The redis client is missing, creating...")
+                    logger.warning("The redis client is missing; create a new client")
                     self._client = self._build_client()
 
         logger.info("The redis client has been obtained")
         return cast(Redis, self._client)
 
     async def rotate(self) -> bool:
-        logger.info("The process of rotating redis credentials has begun")
+        logger.info("The rotation of redis secrets has begun")
         async with self._lock:
             old_client = self._client
-
             try:
-                logger.info("Creating a new redis client")
+                logger.info("Initialization of the new redis client assembly")
                 new_client = self._build_client()
-
                 logger.info(
-                    "Checking the correctness of the connection to the redis "
-                    "via the new engine"
+                    "The assembly of the new redis client has been successfully "
+                    "completed"
                 )
+
+                logger.info("Checking the redis connection status via the new client")
                 await new_client.ping()
                 logger.info(
-                    "The connection to the redis via the new engine was successful"
+                    "The check of the redis connection status via the new client "
+                    "was successful"
                 )
 
                 self._client = new_client
 
                 if old_client is not None:
-                    logger.info("Closing connections to the redis via the old engine")
+                    logger.info(
+                        "Adding a task to disconnect connections to the redis "
+                        "via the old client"
+                    )
                     asyncio.create_task(self._close_client(old_client))
+                    logger.info(
+                        "The task to disconnect from the redis via the old "
+                        "client has been successfully added"
+                    )
 
-                logger.info(
-                    "The redis credential rotation process was completed successfully"
-                )
+                logger.info("The redis secret rotation has been completed successfully")
                 return True
-            except redis.exceptions.RedisError:
+            except (redis.exceptions.RedisError, TimeoutError, ConnectionError):
                 logger.exception(
-                    "The redis credential rotation process has completed with an error"
+                    "An error occurred during the rotation of redis secrets"
                 )
                 return False
 
@@ -68,28 +77,37 @@ class RedisClientManager:
             await self._close_client(self._client, delay)
 
     def _build_client(self) -> Redis:
-        logger.info("Creating a redis client")
-        client = Redis(
-            host=self.settings.HOST,
-            port=self.settings.PORT,
-            db=self.settings.DB_NUMBER,
-            ssl=True,
-            ssl_certfile=self.settings.SSL_CERT_FILE,
-            ssl_keyfile=self.settings.SSL_KEY_FILE,
-            ssl_ca_certs=self.settings.SSL_CA_CERT_FILE,
-            ssl_cert_reqs=self.settings.SSL_CERT_REQS,
-            ssl_check_hostname=self.settings.SSL_CHECK_HOSTNAME,
-        )
-        logger.info("The redis client has been created")
+        logger.info("The redis client has begun to be assembled")
+        if isinstance(self._config, ProdRedisSettings):
+            client = Redis(
+                host=self._config.HOST,
+                port=self._config.PORT,
+                db=self._config.DB_NUMBER,
+                ssl=True,
+                ssl_certfile=self._config.SSL_CERT_FILE,
+                ssl_keyfile=self._config.SSL_KEY_FILE,
+                ssl_ca_certs=self._config.SSL_CA_CERT_FILE,
+                ssl_cert_reqs=self._config.SSL_CERT_REQS,
+                ssl_check_hostname=self._config.SSL_CHECK_HOSTNAME,
+            )
+        else:
+            client = Redis(
+                host=self._config.HOST,
+                port=self._config.PORT,
+                db=self._config.DB_NUMBER,
+            )
+        logger.info("The redis client has been successfully created")
         return client
 
     async def _close_client(self, client: Redis, delay: float = 30.0):
         logger.info(
-            "The process of closing redis connections is scheduled "
-            "to begin in %s seconds",
+            "The connections through the old redis client will "
+            "be terminated in %s seconds",
             delay,
         )
         await asyncio.sleep(delay)
-        logger.info("The closing of redis connections has begun")
+        logger.info("Disruption of connections via the old redis client")
         await client.aclose()
-        logger.info("Redis connections are closed")
+        logger.info(
+            "Connections through the old redis client have been successfully terminated"
+        )

@@ -3,7 +3,7 @@ from dataclasses import asdict
 import pytest
 
 from service_bot.domain.entities import Group
-from service_bot.domain.exceptions import GroupNotFound
+from service_bot.domain.exceptions import GroupNotFoundError
 from tests.test_contains import _GROUP_ITEMS
 
 
@@ -23,7 +23,7 @@ async def test_get_by_number(httpx_mock, client, httpx_group_repository, group):
 
 @pytest.mark.parametrize("group", _GROUP_ITEMS)
 async def test_get_by_number_not_found(
-    httpx_mock, client, httpx_group_repository, group
+    httpx_mock, client, httpx_group_repository, group,
 ):
     group_number = str(group)
 
@@ -41,7 +41,7 @@ async def test_get_by_number_not_found(
         },
     )
 
-    with pytest.raises(GroupNotFound) as exc_info:
+    with pytest.raises(GroupNotFoundError) as exc_info:
         await httpx_group_repository.get_by_number(group_number)
 
     assert exc_info.value.args[0] == f"Группа {group_number} не найдена"

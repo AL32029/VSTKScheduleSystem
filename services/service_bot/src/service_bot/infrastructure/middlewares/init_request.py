@@ -26,12 +26,12 @@ class InitRequestMiddleware(BaseMiddleware):
         data: dict[str, Any],
     ):
         if not event.message and not event.callback_query:
-            return
+            return None
 
         instance = event.message or event.callback_query
 
         if instance.from_user.is_bot:
-            return
+            return None
 
         request_id_var.set(str(uuid4()))
         update_id_var.set(event.update_id)

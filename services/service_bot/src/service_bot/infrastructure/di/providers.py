@@ -1,6 +1,6 @@
 import logging
 import os
-from collections.abc import AsyncGenerator, AsyncIterable
+from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator
 from typing import cast
 from zoneinfo import ZoneInfo
 
@@ -19,6 +19,7 @@ from sqlalchemy.ext.asyncio import (
 from service_bot.application.ports import (
     CabinetRepository,
     GroupRepository,
+    MetricsCollector,
     ScheduleRepository,
     UserRepository,
 )
@@ -37,15 +38,17 @@ from service_bot.application.services import (
 )
 from service_bot.infrastructure.config import (
     APISettings,
-    BaseSystemSettings,
     BotSettings,
     DatabaseSettings,
     RedisSettings,
+    SystemSettings,
 )
 from service_bot.infrastructure.managers import (
     DatabaseEngineManager,
     RedisClientManager,
+    WatchFilesManager,
 )
+from service_bot.infrastructure.prometheus_collector import PrometheusMetricsCollector
 from service_bot.infrastructure.repositories import (
     HTTPXCabinetRepository,
     HTTPXGroupRepository,
@@ -60,7 +63,7 @@ from service_bot.infrastructure.template_engine_items import (
 logger = logging.getLogger(__name__)
 
 
-class SystemProvider(Provider):
+class SystemSettingsProvider(Provider):
     """Провайдер системных зависимостей"""
 
     scope = Scope.APP
@@ -74,8 +77,24 @@ class SystemProvider(Provider):
         )
 
     @provide
-    def time_zone(self, base_settings: BaseSystemSettings) -> ZoneInfo:
-        return base_settings.TZ
+    def time_zone(self, base_settings: SystemSettings) -> ZoneInfo:
+        return base_settings.timezone
+
+    @provide
+    def system_settings(self) -> "SystemSettings":
+        return SystemSettings()
+
+    @provide
+    def metrics_collector(self) -> "MetricsCollector":
+        return PrometheusMetricsCollector()
+
+    @provide
+    def watchfiles_manager(
+        self,
+        db_settings: "DatabaseSettings",
+        redis_settings: "RedisSettings",
+    ) -> "WatchFilesManager":
+        return WatchFilesManager(db_settings.config, redis_settings.config)
 
 
 class ClientProvider(Provider):
@@ -85,7 +104,8 @@ class ClientProvider(Provider):
 
     @provide
     async def httpx_client(
-        self, settings: "APISettings"
+        self,
+        settings: "APISettings",
     ) -> AsyncGenerator["AsyncClient"]:
         """Зависимость получения класса httpx.AsyncClient"""
         logger.debug("Creating HTTPX client with base URL: %s", settings.SCHEDULE_URL)
@@ -94,15 +114,18 @@ class ClientProvider(Provider):
 
 
 class DatabaseProvider(Provider):
-    """Провайдер базы данных"""
-
     scope = Scope.APP
+
+    @provide
+    def database_settings(self, settings: "SystemSettings") -> "DatabaseSettings":
+        return DatabaseSettings(settings.SYSTEM_MODE)
 
     @provide
     def database_engine_manager(
         self, settings: "DatabaseSettings"
     ) -> "DatabaseEngineManager":
-        return DatabaseEngineManager(settings)
+        logger.debug("Creating DatabaseEngineManager")
+        return DatabaseEngineManager(settings.config)
 
     @provide(scope=Scope.REQUEST)
     async def provide_session_maker(
@@ -118,27 +141,47 @@ class DatabaseProvider(Provider):
 
     @provide(scope=Scope.REQUEST)
     async def provide_session(
-        self, session_maker: async_sessionmaker[AsyncSession]
+        self,
+        session_maker: async_sessionmaker[AsyncSession],
+        metrics: "MetricsCollector",
     ) -> AsyncIterable[AsyncSession]:
         logger.debug("Creating database session")
         async with session_maker() as session:
-            yield session
-            await session.commit()
+            metrics.inc_gauge("database_active_sessions_count")
+            try:
+                yield session
+
+                await session.commit()
+            finally:
+                await session.aclose()
+
+                metrics.dec_gauge("database_active_sessions_count")
 
 
 class RedisProvider(Provider):
-    """Провайдер Redis"""
-
     scope = Scope.APP
 
     @provide
-    def redis_client_manager(self, settings: "RedisSettings") -> "RedisClientManager":
-        return RedisClientManager(settings)
+    def redis_settings(self, settings: "SystemSettings") -> "RedisSettings":
+        return RedisSettings(settings.SYSTEM_MODE)
 
     @provide
-    async def provide_redis_client(self, manager: "RedisClientManager") -> Redis:
-        logger.debug("Obtaining Redis client")
-        return await manager.get_client()
+    def redis_client_manager(self, settings: "RedisSettings") -> "RedisClientManager":
+        logger.debug("Creating RedisClientManager")
+        return RedisClientManager(settings.config)
+
+    @provide
+    async def provide_redis_client(
+        self,
+        manager: "RedisClientManager",
+        metrics: "MetricsCollector",
+    ) -> AsyncIterator[Redis]:
+        client = await manager.get_client()
+        metrics.inc_gauge("redis_active_sessions_count")
+        try:
+            yield client
+        finally:
+            metrics.dec_gauge("redis_active_sessions_count")
 
 
 class RepositoriesProvider(Provider):
@@ -182,43 +225,50 @@ class UseCasesProvider(Provider):
 
     @provide
     def get_all_cabinets_use_case(
-        self, repo: "CabinetRepository"
+        self,
+        repo: "CabinetRepository",
     ) -> "GetAllCabinetsUseCase":
         return GetAllCabinetsUseCase(repo)
 
     @provide
     def get_user_profile_use_case(
-        self, repo: "UserRepository"
+        self,
+        repo: "UserRepository",
     ) -> "GetUserProfileUseCase":
         return GetUserProfileUseCase(repo)
 
     @provide
     def save_user_profile_use_case(
-        self, repo: "UserRepository"
+        self,
+        repo: "UserRepository",
     ) -> "SaveUserProfileUseCase":
         return SaveUserProfileUseCase(repo)
 
     @provide
     def subscribe_group_use_case(
-        self, repo: "UserRepository"
+        self,
+        repo: "UserRepository",
     ) -> "SubscribeGroupUseCase":
         return SubscribeGroupUseCase(repo)
 
     @provide
     def subscribe_cabinet_use_case(
-        self, repo: "UserRepository"
+        self,
+        repo: "UserRepository",
     ) -> "SubscribeCabinetUseCase":
         return SubscribeCabinetUseCase(repo)
 
     @provide
     def unsubscribe_group_use_case(
-        self, repo: "UserRepository"
+        self,
+        repo: "UserRepository",
     ) -> "UnsubscribeGroupUseCase":
         return UnsubscribeGroupUseCase(repo)
 
     @provide
     def unsubscribe_cabinet_use_case(
-        self, repo: "UserRepository"
+        self,
+        repo: "UserRepository",
     ) -> "UnsubscribeCabinetUseCase":
         return UnsubscribeCabinetUseCase(repo)
 
@@ -239,7 +289,7 @@ class TemplatesProvider(Provider):
             os.getenv("TEMPLATES_FOLDER_PATH", "/app/templates"),
         )
         return TemplateMessageRenderer(
-            os.getenv("TEMPLATES_FOLDER_PATH", "/app/templates")
+            os.getenv("TEMPLATES_FOLDER_PATH", "/app/templates"),
         )
 
     @provide

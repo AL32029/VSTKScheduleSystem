@@ -7,11 +7,11 @@ from httpx import AsyncClient, HTTPStatusError
 from service_bot.application.ports import ScheduleRepository
 from service_bot.domain.entities import Cabinet, DaySchedule, Group
 from service_bot.domain.exceptions import (
-    CabinetNotFound,
-    GroupNotFound,
-    ScheduleDateNotFound,
-    ScheduleForCabinetNotFound,
-    ScheduleForGroupNotFound,
+    CabinetNotFoundError,
+    GroupNotFoundError,
+    ScheduleDateNotFoundError,
+    ScheduleForCabinetNotFoundError,
+    ScheduleForGroupNotFoundError,
 )
 from service_bot.infrastructure.repositories.schemas import DayScheduleItem
 
@@ -19,9 +19,8 @@ logger = logging.getLogger(__name__)
 
 
 class HTTPXScheduleRepository(ScheduleRepository):
-    """
-    Репозиторий HTTPXScheduleRepository [Реализация репозитория ScheduleRepository]
-    """
+    """Репозиторий HTTPXScheduleRepository
+    [Реализация репозитория ScheduleRepository]"""
 
     def __init__(self, client: "AsyncClient"):
         self.client = client
@@ -50,12 +49,12 @@ class HTTPXScheduleRepository(ScheduleRepository):
 
         response_json: dict = resp.json()
 
-        is_success: bool = cast(bool, response_json.get("success"))
+        is_success: bool = cast("bool", response_json.get("success"))
 
         if (
             not is_success
-            and (error := cast(dict, response_json.get("error")))
-            and (code := cast(str, error.get("code")))
+            and (error := cast("dict", response_json.get("error")))
+            and (code := cast("str", error.get("code")))
         ):
             extra = error.get("extra")
             if code in ["GROUP_NOT_FOUND", "CABINET_NOT_FOUND"]:
@@ -69,20 +68,22 @@ class HTTPXScheduleRepository(ScheduleRepository):
                     "Group" if code == "GROUP_NOT_FOUND" else "Cabinet",
                     number,
                 )
-                raise (GroupNotFound if code == "GROUP_NOT_FOUND" else CabinetNotFound)(
-                    number
-                )
+                raise (
+                    GroupNotFoundError
+                    if code == "GROUP_NOT_FOUND"
+                    else CabinetNotFoundError
+                )(number)
 
-            elif code == "SCHEDULE_DATE_NOT_FOUND":
+            if code == "SCHEDULE_DATE_NOT_FOUND":
                 schedule_at = (
                     extra.get("schedule_to", schedule_to)
                     if extra is not None
                     else schedule_to
                 )
                 logger.warning("Schedule date for %s not published yet", schedule_at)
-                raise ScheduleDateNotFound(schedule_to)
+                raise ScheduleDateNotFoundError(schedule_to)
 
-            elif code in [
+            if code in [
                 "SCHEDULE_FOR_GROUP_NOT_FOUND",
                 "SCHEDULE_FOR_CABINET_NOT_FOUND",
             ]:
@@ -90,7 +91,7 @@ class HTTPXScheduleRepository(ScheduleRepository):
                     "group" if code == "SCHEDULE_FOR_GROUP_NOT_FOUND" else "cabinet"
                 )
                 item = (Group if schedule_item_type == "group" else Cabinet)(
-                    **extra["item"]
+                    **extra["item"],
                 )
                 schedule_at = (
                     extra.get("schedule_to", schedule_to)
@@ -106,9 +107,9 @@ class HTTPXScheduleRepository(ScheduleRepository):
                     schedule_date,
                 )
                 raise (
-                    ScheduleForGroupNotFound
+                    ScheduleForGroupNotFoundError
                     if schedule_item_type == "group"
-                    else ScheduleForCabinetNotFound
+                    else ScheduleForCabinetNotFoundError
                 )(item, schedule_at, schedule_date)
 
         try:
@@ -119,7 +120,7 @@ class HTTPXScheduleRepository(ScheduleRepository):
 
         day_schedule_json = response_json.get("data")
         day_schedule = DayScheduleItem.model_validate(day_schedule_json).to_domain(
-            schedule_for
+            schedule_for,
         )
         logger.info(
             "Retrieved schedule for %s %s (%s) from API",

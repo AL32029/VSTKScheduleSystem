@@ -10,7 +10,7 @@ class UserMetadataMissingError(DataValidationError):
         self.missing_keys = missing_keys
         super().__init__(
             f"The following keys are missing from the user metadata: "
-            f"{', '.join(missing_keys)}"
+            f"{', '.join(missing_keys)}",
         )
 
 
@@ -18,11 +18,11 @@ class NotPositiveIntegerValueError(DataValidationError):
     """Ошибка неположительного числа"""
 
 
-class InvalidDayScheduleLessonType(DataValidationError):
+class InvalidDayScheduleLessonTypeError(DataValidationError):
     """Ошибка типа пар в расписании"""
 
 
-class InvalidUserMetadataType(DataValidationError):
+class InvalidUserMetadataTypeError(DataValidationError):
     """Ошибка типа метаданных пользователя"""
 
     def __init__(self, required_type: type, metadata_type: type):
@@ -31,11 +31,11 @@ class InvalidUserMetadataType(DataValidationError):
 
         super().__init__(
             f"Invalid type of user metadata (metadata type - {self.metadata_type}, "
-            f"value type - {self.required_type})"
+            f"value type - {self.required_type})",
         )
 
 
-class InvalidUserMetadataKey(DataValidationError):
+class InvalidUserMetadataKeyError(DataValidationError):
     """Ошибка типа метаданных пользователя"""
 
     def __init__(self, key: str):

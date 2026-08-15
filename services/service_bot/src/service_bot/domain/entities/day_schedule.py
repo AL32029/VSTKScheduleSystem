@@ -1,7 +1,7 @@
 import datetime
 from dataclasses import dataclass
 
-from service_bot.domain.exceptions import InvalidDayScheduleLessonType
+from service_bot.domain.exceptions import InvalidDayScheduleLessonTypeError
 
 from .cabinet import Cabinet
 from .group import Group
@@ -37,16 +37,16 @@ class DaySchedule:
         if isinstance(self.schedule_item, Group) and not all(
             type(lesson) is Lesson for lesson in self.lessons
         ):
-            raise InvalidDayScheduleLessonType(
+            raise InvalidDayScheduleLessonTypeError(
                 "Lessons should only accept objects of type Lesson when "
-                "the type of lessons is Group"
+                "the type of lessons is Group",
             )
-        elif isinstance(self.schedule_item, Cabinet) and not all(
+        if isinstance(self.schedule_item, Cabinet) and not all(
             type(lesson) is CabinetLesson for lesson in self.lessons
         ):
-            raise InvalidDayScheduleLessonType(
+            raise InvalidDayScheduleLessonTypeError(
                 "Lessons should only accept objects of type CabinetLesson when "
-                "the type of lessons is Cabinet"
+                "the type of lessons is Cabinet",
             )
 
         self.lessons = sorted(self.lessons, key=lambda x: x.start)

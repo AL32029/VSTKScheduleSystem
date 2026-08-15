@@ -11,7 +11,7 @@ from pydantic_settings import (
 
 class LoggingSettings(BaseSettings):
     model_config = SettingsConfigDict(
-        json_file=os.getenv("LOGGING_SETTINGS_PATH", "/app/env/logging.json")
+        json_file=os.getenv("LOGGING_SETTINGS_PATH", "/app/env/logging.json"),
     )
 
     version: int = Field(default=1)
@@ -23,9 +23,9 @@ class LoggingSettings(BaseSettings):
     formatters: dict = Field(
         default_factory=lambda: {
             "default": {
-                "format": "[%(asctime)s] %(levelname)s - %(name)s - %(message)s"
-            }
-        }
+                "format": "[%(asctime)s] %(levelname)s - %(name)s - %(message)s",
+            },
+        },
     )
 
     handlers: dict = Field(
@@ -34,14 +34,14 @@ class LoggingSettings(BaseSettings):
                 "class": "logging.StreamHandler",
                 "formatter": "default",
                 "stream": "ext://sys.stdout",
-            }
-        }
+            },
+        },
     )
 
     loggers: dict = Field(default_factory=dict)
 
     root: dict = Field(
-        default_factory=lambda: {"handlers": ["default"], "level": "DEBUG"}
+        default_factory=lambda: {"handlers": ["default"], "level": "DEBUG"},
     )
 
     @classmethod

@@ -63,11 +63,17 @@ _LESSON_ITEMS = [
 ]
 _CABINET_LESSON_ITEMS = [
     CabinetLesson(
-        start, end, name, (Cabinet(index, number) for index, number in cabinets), group
+        start,
+        end,
+        name,
+        (Cabinet(index, number) for index, number in cabinets),
+        group,
     )
     for start, end, group, name, cabinets in _CABINET_LESSON_VALUES
 ]
 _GROUP_DAY_SCHEDULE = DaySchedule(_SCHEDULE_DATE, _GROUP_ITEMS[0], _LESSON_ITEMS)
 _CABINET_DAY_SCHEDULE = DaySchedule(
-    _SCHEDULE_DATE, _CABINET_ITEMS[0], _CABINET_LESSON_ITEMS
+    _SCHEDULE_DATE,
+    _CABINET_ITEMS[0],
+    _CABINET_LESSON_ITEMS,
 )

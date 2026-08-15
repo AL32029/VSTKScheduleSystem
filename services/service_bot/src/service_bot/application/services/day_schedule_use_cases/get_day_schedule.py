@@ -26,7 +26,7 @@ class GetDayScheduleUseCase:
             schedule_to,
         )
         day_schedule = await self.repo.get_day_schedule(
-            schedule_item, schedule_to, schedule_for
+            schedule_item, schedule_to, schedule_for,
         )
         logger.info(
             "The schedule for %s %s for %s has been received",

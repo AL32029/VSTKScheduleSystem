@@ -48,14 +48,14 @@ class UserMetadataORM(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
 
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.user_id", ondelete="CASCADE")
+        ForeignKey("users.user_id", ondelete="CASCADE"),
     )
 
     key: Mapped[str] = mapped_column(String(96))
     value: Mapped[str | None] = mapped_column(String, nullable=True)
 
     user: Mapped["UserORM"] = relationship(
-        "UserORM", back_populates="user_metadata", lazy="noload"
+        "UserORM", back_populates="user_metadata", lazy="noload",
     )
 
     __table_args__ = (
@@ -74,12 +74,12 @@ class GroupSubscribesORM(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
 
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.user_id", ondelete="CASCADE")
+        ForeignKey("users.user_id", ondelete="CASCADE"),
     )
     group_index: Mapped[str] = mapped_column(String(6))
 
     user: Mapped["UserORM"] = relationship(
-        "UserORM", back_populates="group_subscribes", lazy="noload"
+        "UserORM", back_populates="group_subscribes", lazy="noload",
     )
 
     __table_args__ = (
@@ -98,17 +98,17 @@ class CabinetSubscribesORM(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
 
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.user_id", ondelete="CASCADE")
+        ForeignKey("users.user_id", ondelete="CASCADE"),
     )
     cabinet_index: Mapped[str] = mapped_column(String(6))
 
     user: Mapped["UserORM"] = relationship(
-        "UserORM", back_populates="cabinet_subscribes", lazy="noload"
+        "UserORM", back_populates="cabinet_subscribes", lazy="noload",
     )
 
     __table_args__ = (
         Index(
-            "idx_cabinet_subscribes_user_id", "user_id", "cabinet_index", unique=True
+            "idx_cabinet_subscribes_user_id", "user_id", "cabinet_index", unique=True,
         ),
     )
 

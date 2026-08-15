@@ -4,7 +4,7 @@ from .providers import (
     DatabaseProvider,
     RedisProvider,
     RepositoriesProvider,
-    SystemProvider,
+    SystemSettingsProvider,
     TemplatesProvider,
     UseCasesProvider,
 )
@@ -14,7 +14,7 @@ __all__ = [
     "DatabaseProvider",
     "RedisProvider",
     "RepositoriesProvider",
-    "SystemProvider",
+    "SystemSettingsProvider",
     "TemplatesProvider",
     "UseCasesProvider",
     "get_dishka_container",

@@ -3,7 +3,7 @@ from dataclasses import asdict
 import pytest
 
 from service_bot.domain.entities import Cabinet
-from service_bot.domain.exceptions import CabinetNotFound
+from service_bot.domain.exceptions import CabinetNotFoundError
 from tests.test_contains import _CABINET_ITEMS
 
 
@@ -23,7 +23,7 @@ async def test_get_by_number(httpx_mock, client, httpx_cabinet_repository, cabin
 
 @pytest.mark.parametrize("cabinet", _CABINET_ITEMS)
 async def test_get_by_number_not_found(
-    httpx_mock, client, httpx_cabinet_repository, cabinet
+    httpx_mock, client, httpx_cabinet_repository, cabinet,
 ):
     cabinet_number = str(cabinet)
 
@@ -41,7 +41,7 @@ async def test_get_by_number_not_found(
         },
     )
 
-    with pytest.raises(CabinetNotFound) as exc_info:
+    with pytest.raises(CabinetNotFoundError) as exc_info:
         await httpx_cabinet_repository.get_by_number(cabinet_number)
 
     assert exc_info.value.args[0] == f"Кабинет {cabinet_number} не найден"

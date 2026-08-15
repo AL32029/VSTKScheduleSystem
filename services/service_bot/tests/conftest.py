@@ -62,7 +62,7 @@ def postgres_container() -> Generator[PostgresContainer, Any, None]:
         yield postgres
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def async_engine(postgres_container) -> AsyncIterable[AsyncEngine]:
     """Database engine"""
     engine = create_async_engine(
@@ -75,12 +75,12 @@ async def async_engine(postgres_container) -> AsyncIterable[AsyncEngine]:
     await engine.dispose()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def session_maker(async_engine) -> async_sessionmaker[AsyncSession]:
     return async_sessionmaker(async_engine, expire_on_commit=False)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def session_with_test_data(session_maker) -> AsyncIterable[AsyncSession]:
     async with session_maker() as session:
         yield session
@@ -95,10 +95,8 @@ def redis_container() -> Generator[RedisContainer, Any, None]:
 
 
 # ====================== [ФИКСТУРА С ПРОВАЙДЕРАМИ] ======================
-@pytest.fixture(scope="function")
-async def test_container(
-    request, session_with_test_data, redis_container, async_engine
-):
+@pytest.fixture
+async def test_container(session_with_test_data, redis_container, async_engine):
     from dishka import Provider, Scope, provide
 
     # ====================== [ПРОВАЙДЕР СИСТЕМА] ======================
@@ -148,19 +146,19 @@ async def test_container(
 
         @provide
         def httpx_cabinet_repository(
-            self, client: "AsyncClient"
+            self, client: "AsyncClient",
         ) -> "CabinetRepository":
             return HTTPXCabinetRepository(client)
 
         @provide
         def httpx_schedule_repository(
-            self, client: "AsyncClient"
+            self, client: "AsyncClient",
         ) -> "ScheduleRepository":
             return HTTPXScheduleRepository(client)
 
         @provide
         def sqlalchemy_user_repository(
-            self, session: "AsyncSession"
+            self, session: "AsyncSession",
         ) -> "UserRepository":
             return SQLAlchemyUserRepository(session)
 
@@ -183,8 +181,8 @@ async def test_container(
         result = await conn.execute(
             text(
                 "SELECT tablename FROM pg_tables WHERE schemaname = 'public' "
-                "AND tablename != 'alembic_version';"
-            )
+                "AND tablename != 'alembic_version';",
+            ),
         )
         tables = [row[0] for row in result]
         for table in tables:

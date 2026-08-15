@@ -5,7 +5,7 @@ from httpx import AsyncClient, HTTPStatusError
 
 from service_bot.application.ports import GroupRepository
 from service_bot.domain.entities import Group
-from service_bot.domain.exceptions import GroupNotFound
+from service_bot.domain.exceptions import GroupNotFoundError
 
 from .schemas import ScheduleItem
 
@@ -26,10 +26,10 @@ class HTTPXGroupRepository(GroupRepository):
 
         response_json: dict = resp.json()
 
-        is_success: bool = cast(bool, response_json.get("success"))
+        is_success: bool = cast("bool", response_json.get("success"))
 
-        if not is_success and (error := cast(dict, response_json.get("error"))):
-            code: str = cast(str, error.get("code"))
+        if not is_success and (error := cast("dict", response_json.get("error"))):
+            code: str = cast("str", error.get("code"))
 
             if code is not None and code == "GROUP_NOT_FOUND":
                 extra = error.get("extra")
@@ -39,7 +39,7 @@ class HTTPXGroupRepository(GroupRepository):
                     else group_number
                 )
                 logger.warning("Group %s not found in API", number)
-                raise GroupNotFound(number)
+                raise GroupNotFoundError(number)
 
         try:
             resp.raise_for_status()
@@ -49,7 +49,7 @@ class HTTPXGroupRepository(GroupRepository):
 
         group_json = response_json.get("data")
         group = cast(
-            "Group", ScheduleItem.model_validate(group_json).to_domain("group")
+            "Group", ScheduleItem.model_validate(group_json).to_domain("group"),
         )
         logger.info("Group %s retrieved from API", group.number)
         return group
@@ -68,7 +68,7 @@ class HTTPXGroupRepository(GroupRepository):
             logger.exception("API request failed: GET %s", request)
             raise
 
-        groups_list = cast(list[dict], response_json.get("data"))
+        groups_list = cast("list[dict]", response_json.get("data"))
         groups = [
             cast("Group", ScheduleItem.model_validate(group).to_domain("group"))
             for group in groups_list
