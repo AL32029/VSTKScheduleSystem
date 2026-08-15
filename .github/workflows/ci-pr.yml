@@ -16,7 +16,7 @@ jobs:
       - uses: dorny/paths-filter@v3
         id: filter
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          list-files: shell
           filters: |
             api:
               - 'services/service_api/**'
