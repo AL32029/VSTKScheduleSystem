@@ -7,6 +7,9 @@ on:
 jobs:
   changes:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+      contents: read
     outputs:
       api: ${{ steps.filter.outputs.api }}
       bot: ${{ steps.filter.outputs.bot }}
@@ -16,6 +19,7 @@ jobs:
       - uses: dorny/paths-filter@v3
         id: filter
         with:
+          list-files: shell
           filters: |
             api:
               - 'services/service_api/**'
@@ -54,3 +58,5 @@ jobs:
         if: fromJSON(needs.changes.outputs[matrix.service]) == true
         run: poetry run pytest ./tests
         working-directory: services/service_${{ matrix.service }}
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: "true"

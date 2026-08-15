@@ -9,12 +9,13 @@ from .group import Group
 @dataclass
 class Lesson:
     """Сущность пары (для группы)"""
+
     start: datetime.time
     end: datetime.time
 
     name: str
 
-    cabinets: Iterable['Cabinet']
+    cabinets: Iterable["Cabinet"]
 
     def __post_init__(self):
         if not isinstance(self.cabinets, list):
@@ -24,4 +25,5 @@ class Lesson:
 @dataclass
 class CabinetLesson(Lesson):
     """Сущность пары (для кабинета)"""
-    group: 'Group'
+
+    group: "Group"

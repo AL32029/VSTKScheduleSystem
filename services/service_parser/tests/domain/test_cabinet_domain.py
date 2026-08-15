@@ -4,24 +4,23 @@ from patterns import ITEM_INDEX
 from service_parser.domain.entities import Cabinet
 
 # ====================== [ВАЛИДНЫЕ ЗНАЧЕНИЯ] ======================
-_VALID_CABINET_NUMBERS = ['упм. 1, л. 6', 'сз3', '52к']
+_VALID_CABINET_NUMBERS = ["упм. 1, л. 6", "сз3", "52к"]
 
 # ====================== [СУЩНОСТИ] ======================
-_CABINET_ITEMS = [Cabinet(cabinet)
-                  for cabinet in _VALID_CABINET_NUMBERS]
+_CABINET_ITEMS = [Cabinet(cabinet) for cabinet in _VALID_CABINET_NUMBERS]
 
 
 # ====================== [ТЕСТЫ СУЩНОСТИ CABINET] ======================
-@pytest.mark.parametrize('cabinet_number', _VALID_CABINET_NUMBERS)
+@pytest.mark.parametrize("cabinet_number", _VALID_CABINET_NUMBERS)
 def test_create_cabinet_entity(cabinet_number: str):
     """Тест должен корректно создать сущность Cabinet"""
     cabinet = Cabinet(cabinet_number)
 
     assert cabinet.number == cabinet_number
-    assert cabinet.index == ITEM_INDEX.sub('', cabinet_number.lower())
+    assert cabinet.index == ITEM_INDEX.sub("", cabinet_number.lower())
 
 
-@pytest.mark.parametrize('cabinet_number', _VALID_CABINET_NUMBERS)
+@pytest.mark.parametrize("cabinet_number", _VALID_CABINET_NUMBERS)
 def test_cabinet_entity_equal(cabinet_number: str):
     """Тест должен проверить равенство двух равных сущностей Cabinet"""
     first_cabinet = Cabinet(cabinet_number)
@@ -30,7 +29,7 @@ def test_cabinet_entity_equal(cabinet_number: str):
     assert first_cabinet == second_cabinet
 
 
-@pytest.mark.parametrize('cabinet_number', _VALID_CABINET_NUMBERS)
+@pytest.mark.parametrize("cabinet_number", _VALID_CABINET_NUMBERS)
 def test_cabinet_entity_equal_hash(cabinet_number: str):
     """Тест должен проверить равенство хэша двух равных сущностей Cabinet"""
     first_cabinet = Cabinet(cabinet_number)
@@ -39,7 +38,7 @@ def test_cabinet_entity_equal_hash(cabinet_number: str):
     assert hash(first_cabinet) == hash(second_cabinet)
 
 
-@pytest.mark.parametrize('cabinet_item', _CABINET_ITEMS)
+@pytest.mark.parametrize("cabinet_item", _CABINET_ITEMS)
 def test_cabinet_entity_string_representation(cabinet_item: Cabinet):
     """Тест должен вернуть номер группы при str(cabinet_item)"""
 

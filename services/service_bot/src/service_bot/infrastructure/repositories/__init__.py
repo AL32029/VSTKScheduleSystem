@@ -5,9 +5,9 @@ from .schemas import ScheduleItem
 from .sqlalchemy_user_repository import SQLAlchemyUserRepository
 
 __all__ = [
-    'HTTPXCabinetRepository',
-    'HTTPXGroupRepository',
-    'HTTPXScheduleRepository',
-    'SQLAlchemyUserRepository',
-    'ScheduleItem'
+    "HTTPXCabinetRepository",
+    "HTTPXGroupRepository",
+    "HTTPXScheduleRepository",
+    "SQLAlchemyUserRepository",
+    "ScheduleItem",
 ]

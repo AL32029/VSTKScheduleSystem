@@ -5,16 +5,18 @@ from .providers import (
     DatabaseProvider,
     RedisProvider,
     RepositoriesProvider,
+    SystemSettingsProvider,
     UseCasesProvider,
 )
 
 
-def get_dishka_container() -> 'AsyncContainer':
+def get_dishka_container() -> "AsyncContainer":
     """Dishka контейнер зависимостей"""
     return make_async_container(
+        SystemSettingsProvider(),
         DatabaseProvider(),
         RedisProvider(),
         RepositoriesProvider(),
         UseCasesProvider(),
-        FastapiProvider()
+        FastapiProvider(),
     )

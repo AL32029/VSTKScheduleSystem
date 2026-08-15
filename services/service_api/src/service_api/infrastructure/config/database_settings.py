@@ -5,33 +5,45 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class DatabaseSettings(BaseSettings):
+class DevDatabaseSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="DATABASE_", extra="forbid")
+
+    HOST: str
+    PORT: int
+
+    USER: str
+    PASSWORD: str | None = Field(None)
+
+    BASE: str
+
+
+class ProdDatabaseSettings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=os.getenv('DATABASE_SETTINGS_ENV', '/vault/secrets/database.env'),
-        env_prefix='DATABASE_',
-        extra='ignore'
+        env_file=os.getenv("DATABASE_SETTINGS_ENV", "/vault/secrets/database.env"),
+        env_prefix="DATABASE_",
+        extra="forbid",
     )
 
-    SSL_CERT_FILE: str = Field(default='/vault/secrets/database-tls.crt')
-    SSL_KEY_FILE: str = Field(default='/vault/secrets/database-tls.key')
-    SSL_CA_CERT_FILE: str = Field(default='/vault/secrets/database-tls.ca')
+    HOST: str
+    PORT: int
+
+    BASE: str
+
+    SSL_CERT_REQS: Literal["none", "optional", "required"] = Field("required")
+
+    SSL_CERT_FILE: str = Field(default="/vault/secrets/database-tls.crt")
+    SSL_KEY_FILE: str = Field(default="/vault/secrets/database-tls.key")
+    SSL_CA_CERT_FILE: str = Field(default="/vault/secrets/database-tls.ca")
+
+    SSL_CHECK_HOSTNAME: bool = Field(True)
+
+
+class DatabaseSettings:
+    def __init__(self, mode: Literal["dev", "prod"] = "dev"):
+        self.mode = mode
+        self.dev: "DevDatabaseSettings" = DevDatabaseSettings()
+        self.prod: "ProdDatabaseSettings" = ProdDatabaseSettings()
 
     @property
-    def HOST(self) -> str:
-        return os.getenv('DATABASE_HOST')
-
-    @property
-    def PORT(self) -> int:
-        return int(os.getenv('DATABASE_PORT'))
-
-    @property
-    def BASE(self) -> str:
-        return os.getenv('DATABASE_BASE')
-
-    @property
-    def SSL_CERT_REQS(self) -> Literal['none', 'optional', 'required']:
-        return os.getenv('DATABASE_SSL_CERT_REQS')
-
-    @property
-    def SSL_CHECK_HOSTNAME(self) -> bool:
-        return os.getenv('DATABASE_SSL_CHECK_HOSTNAME')
+    def config(self):
+        return self.dev if self.mode == "dev" else self.prod

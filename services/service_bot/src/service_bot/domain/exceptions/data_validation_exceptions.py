@@ -8,7 +8,10 @@ class UserMetadataMissingError(DataValidationError):
 
     def __init__(self, missing_keys: Iterable[str]):
         self.missing_keys = missing_keys
-        super().__init__(f"The following keys are missing from the user metadata: {', '.join(missing_keys)}")
+        super().__init__(
+            f"The following keys are missing from the user metadata: "
+            f"{', '.join(missing_keys)}"
+        )
 
 
 class NotPositiveIntegerValueError(DataValidationError):
@@ -26,8 +29,10 @@ class InvalidUserMetadataType(DataValidationError):
         self.metadata_type = metadata_type
         self.required_type = required_type
 
-        super().__init__(f'Invalid type of user metadata (metadata type - {self.metadata_type}, '
-                         f'value type - {self.required_type})')
+        super().__init__(
+            f"Invalid type of user metadata (metadata type - {self.metadata_type}, "
+            f"value type - {self.required_type})"
+        )
 
 
 class InvalidUserMetadataKey(DataValidationError):
@@ -36,4 +41,4 @@ class InvalidUserMetadataKey(DataValidationError):
     def __init__(self, key: str):
         self.key = key
 
-        super().__init__(f'Invalid key of user metadata - {self.key!r}')
+        super().__init__(f"Invalid key of user metadata - {self.key!r}")

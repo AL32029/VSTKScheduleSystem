@@ -7,9 +7,9 @@ from .providers import (
 )
 
 __all__ = [
-    'DatabaseProvider',
-    'HTTPXClientProvider',
-    'RedisProvider',
-    'RepositoriesProvider',
-    'SystemProvider'
+    "DatabaseProvider",
+    "HTTPXClientProvider",
+    "RedisProvider",
+    "RepositoriesProvider",
+    "SystemProvider",
 ]

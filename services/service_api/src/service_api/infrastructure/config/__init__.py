@@ -1,13 +1,20 @@
-from .base_settings import SystemSettings
-from .database_settings import DatabaseSettings
+from .database_settings import (
+                              DatabaseSettings,
+                              DevDatabaseSettings,
+                              ProdDatabaseSettings,
+)
 from .logging_settings import LoggingSettings
-from .redis_settings import RedisSettings
-
-system_settings = SystemSettings()
+from .redis_settings import DevRedisSettings, ProdRedisSettings, RedisSettings
+from .system_settings import SystemSettings, system_settings
 
 __all__ = [
-    'DatabaseSettings',
+    'ProdDatabaseSettings',
     'LoggingSettings',
+    'ProdRedisSettings',
+    'system_settings',
     'RedisSettings',
-    'system_settings'
+    'DevRedisSettings',
+    'DatabaseSettings',
+    'DevDatabaseSettings',
+    'SystemSettings'
 ]

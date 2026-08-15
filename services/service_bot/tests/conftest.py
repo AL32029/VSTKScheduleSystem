@@ -40,25 +40,33 @@ if sys.platform == "win32":
 
 
 # ====================== [ФИКСТУРЫ БАЗЫ ДАННЫХ] ======================
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def postgres_container() -> Generator[PostgresContainer, Any, None]:
-    with PostgresContainer('postgres:17') as postgres:
-        db_url = postgres.get_connection_url(driver='asyncpg')
+    with PostgresContainer("postgres:17") as postgres:
+        db_url = postgres.get_connection_url(driver="asyncpg")
         os.environ["MIGRATION_DATABASE_URL"] = db_url
         project_root = pathlib.Path(__file__).parent.parent
         subprocess.run(
-            [sys.executable, "-m", "alembic", "-c", str(project_root / "alembic.ini"), "upgrade", "head"],
+            [
+                sys.executable,
+                "-m",
+                "alembic",
+                "-c",
+                str(project_root / "alembic.ini"),
+                "upgrade",
+                "head",
+            ],
             check=True,
-            env=os.environ
+            env=os.environ,
         )
         yield postgres
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 async def async_engine(postgres_container) -> AsyncIterable[AsyncEngine]:
     """Database engine"""
     engine = create_async_engine(
-        postgres_container.get_connection_url(driver='asyncpg'),
+        postgres_container.get_connection_url(driver="asyncpg"),
         echo=False,
         pool_size=5,
         pool_pre_ping=True,
@@ -67,15 +75,12 @@ async def async_engine(postgres_container) -> AsyncIterable[AsyncEngine]:
     await engine.dispose()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 async def session_maker(async_engine) -> async_sessionmaker[AsyncSession]:
-    return async_sessionmaker(
-        async_engine,
-        expire_on_commit=False
-    )
+    return async_sessionmaker(async_engine, expire_on_commit=False)
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 async def session_with_test_data(session_maker) -> AsyncIterable[AsyncSession]:
     async with session_maker() as session:
         yield session
@@ -83,15 +88,17 @@ async def session_with_test_data(session_maker) -> AsyncIterable[AsyncSession]:
 
 
 # ====================== [ФИКСТУРЫ REDIS] ======================
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def redis_container() -> Generator[RedisContainer, Any, None]:
-    with RedisContainer('redis:8.6.3') as redis:
+    with RedisContainer("redis:8.6.3") as redis:
         yield redis
 
 
 # ====================== [ФИКСТУРА С ПРОВАЙДЕРАМИ] ======================
 @pytest.fixture(scope="function")
-async def test_container(request, session_with_test_data, redis_container, async_engine):
+async def test_container(
+    request, session_with_test_data, redis_container, async_engine
+):
     from dishka import Provider, Scope, provide
 
     # ====================== [ПРОВАЙДЕР СИСТЕМА] ======================
@@ -100,7 +107,7 @@ async def test_container(request, session_with_test_data, redis_container, async
 
         @provide
         def time_zone(self) -> ZoneInfo:
-            return ZoneInfo('Europe/Minsk')
+            return ZoneInfo("Europe/Minsk")
 
     # ====================== [ПРОВАЙДЕР БД] ======================
     class TestDatabaseProvider(Provider):
@@ -127,8 +134,8 @@ async def test_container(request, session_with_test_data, redis_container, async
         scope = Scope.APP
 
         @provide
-        async def httpx_client(self) -> AsyncGenerator['AsyncClient']:
-            async with AsyncClient(base_url='http://test') as client:
+        async def httpx_client(self) -> AsyncGenerator["AsyncClient"]:
+            async with AsyncClient(base_url="http://test") as client:
                 yield client
 
     # ====================== [ПРОВАЙДЕР РЕПОЗИТОРИЕВ] ======================
@@ -136,19 +143,25 @@ async def test_container(request, session_with_test_data, redis_container, async
         scope = Scope.REQUEST
 
         @provide
-        def httpx_group_repository(self, client: 'AsyncClient') -> 'GroupRepository':
+        def httpx_group_repository(self, client: "AsyncClient") -> "GroupRepository":
             return HTTPXGroupRepository(client)
 
         @provide
-        def httpx_cabinet_repository(self, client: 'AsyncClient') -> 'CabinetRepository':
+        def httpx_cabinet_repository(
+            self, client: "AsyncClient"
+        ) -> "CabinetRepository":
             return HTTPXCabinetRepository(client)
 
         @provide
-        def httpx_schedule_repository(self, client: 'AsyncClient') -> 'ScheduleRepository':
+        def httpx_schedule_repository(
+            self, client: "AsyncClient"
+        ) -> "ScheduleRepository":
             return HTTPXScheduleRepository(client)
 
         @provide
-        def sqlalchemy_user_repository(self, session: 'AsyncSession') -> 'UserRepository':
+        def sqlalchemy_user_repository(
+            self, session: "AsyncSession"
+        ) -> "UserRepository":
             return SQLAlchemyUserRepository(session)
 
     container = make_async_container(
@@ -158,21 +171,23 @@ async def test_container(request, session_with_test_data, redis_container, async
         TestSystemProvider(),
         TestRedisProvider(),
         TestDatabaseProvider(),
-        TestRepositoriesProvider()
+        TestRepositoriesProvider(),
     )
     await container.get(AsyncClient)
     yield container
 
+    await container.close()
+
     async with async_engine.connect() as conn:
         await conn.execute(text("SET session_replication_role = 'replica';"))
-        result = await conn.execute(text(
-            "SELECT tablename FROM pg_tables WHERE schemaname = 'public' "
-            "AND tablename != 'alembic_version';"
-        ))
+        result = await conn.execute(
+            text(
+                "SELECT tablename FROM pg_tables WHERE schemaname = 'public' "
+                "AND tablename != 'alembic_version';"
+            )
+        )
         tables = [row[0] for row in result]
         for table in tables:
             await conn.execute(text(f'DELETE FROM "{table}";'))
         await conn.execute(text("SET session_replication_role = 'origin';"))
         await conn.commit()
-
-    await container.close()

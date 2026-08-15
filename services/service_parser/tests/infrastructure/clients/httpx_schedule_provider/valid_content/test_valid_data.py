@@ -25,12 +25,14 @@ def test_extract_schedule_times(schedule_provider, html_matrix):
     assert len(schedule_times) == 11
     assert len(set(schedule_times)) == 11
     assert schedule_times == tuple(sorted(schedule_times, key=lambda x: x[0]))
-    assert all(isinstance(schedule_time, tuple)
-               and len(schedule_time) == 2
-               and isinstance(schedule_time[0], datetime.time)
-               and isinstance(schedule_time[1], datetime.time)
-               and schedule_time[0] < schedule_time[1]
-               for schedule_time in schedule_times)
+    assert all(
+        isinstance(schedule_time, tuple)
+        and len(schedule_time) == 2
+        and isinstance(schedule_time[0], datetime.time)
+        and isinstance(schedule_time[1], datetime.time)
+        and schedule_time[0] < schedule_time[1]
+        for schedule_time in schedule_times
+    )
 
 
 def test_extract_schedule_groups(schedule_provider, html_matrix):
@@ -40,33 +42,44 @@ def test_extract_schedule_groups(schedule_provider, html_matrix):
     assert schedule_groups
     assert len(schedule_groups) == 64
     assert len(set(schedule_groups)) == 64
-    assert schedule_groups == tuple(sorted(schedule_groups, key=lambda x: x.group.index))
-    assert all(isinstance(schedule_group, GroupParser)
-               for schedule_group in schedule_groups)
+    assert schedule_groups == tuple(
+        sorted(schedule_groups, key=lambda x: x.group.index)
+    )
+    assert all(
+        isinstance(schedule_group, GroupParser) for schedule_group in schedule_groups
+    )
 
 
-def test_extract_schedule_lessons(schedule_provider, html_matrix, schedule_dates, schedule_times, schedule_groups):
+def test_extract_schedule_lessons(
+    schedule_provider, html_matrix, schedule_dates, schedule_times, schedule_groups
+):
     """Тест должен извлечь расписание из матрицы"""
-    schedule = schedule_provider._extract_lessons(html_matrix, schedule_dates, schedule_times, schedule_groups)
+    schedule = schedule_provider._extract_lessons(
+        html_matrix, schedule_dates, schedule_times, schedule_groups
+    )
 
     assert schedule
     assert len(schedule.keys()) == 64
     assert len(set(schedule.keys())) == 64
-    assert all(isinstance(group, Group)
-               for group in schedule)
+    assert all(isinstance(group, Group) for group in schedule)
     assert all(len(day_schedules) == 1 for day_schedules in schedule.values())
-    assert all(day_schedule.lessons == tuple(sorted(day_schedule.lessons, key=lambda x: x.start))
-               for day_schedules in schedule.values() if day_schedules
-               for day_schedule in day_schedules if day_schedule.lessons)
+    assert all(
+        day_schedule.lessons
+        == tuple(sorted(day_schedule.lessons, key=lambda x: x.start))
+        for day_schedules in schedule.values()
+        if day_schedules
+        for day_schedule in day_schedules
+        if day_schedule.lessons
+    )
 
 
 async def test_get_schedule_for_groups(schedule_provider, httpx_mock):
     """Тест должен провести полный цикл парсинга расписания"""
-    async with aiofiles.open('./tests/fixtures/schedule.html', 'rb') as f:
+    async with aiofiles.open("./tests/fixtures/schedule.html", "rb") as f:
         httpx_mock.add_response(
-            method='GET',
-            url='https://vgtk.by/schedule/lessons/day-tomorrow.php',
-            content=await f.read()
+            method="GET",
+            url="https://vgtk.by/schedule/lessons/day-tomorrow.php",
+            content=await f.read(),
         )
 
     schedule = await schedule_provider.get_schedule_for_groups()
@@ -74,9 +87,13 @@ async def test_get_schedule_for_groups(schedule_provider, httpx_mock):
     assert schedule
     assert len(schedule.keys()) == 64
     assert len(set(schedule.keys())) == 64
-    assert all(isinstance(group, Group)
-               for group in schedule)
+    assert all(isinstance(group, Group) for group in schedule)
     assert all(len(day_schedules) == 1 for day_schedules in schedule.values())
-    assert all(day_schedule.lessons == tuple(sorted(day_schedule.lessons, key=lambda x: x.start))
-               for day_schedules in schedule.values() if day_schedules
-               for day_schedule in day_schedules if day_schedule.lessons)
+    assert all(
+        day_schedule.lessons
+        == tuple(sorted(day_schedule.lessons, key=lambda x: x.start))
+        for day_schedules in schedule.values()
+        if day_schedules
+        for day_schedule in day_schedules
+        if day_schedule.lessons
+    )

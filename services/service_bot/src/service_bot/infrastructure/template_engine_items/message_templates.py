@@ -13,7 +13,7 @@ class TemplateMessageRenderer:
             trim_blocks=True,
             lstrip_blocks=True,
         )
-        self.env.filters['ru_date'] = format_ru_date
+        self.env.filters["ru_date"] = format_ru_date
 
     def render(self, template_name: str, **kwargs) -> str:
         """Рендеринг сообщения"""

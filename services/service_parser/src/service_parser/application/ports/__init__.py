@@ -4,8 +4,8 @@ from .schedule_provider import ScheduleProvider
 from .schedule_repository import ScheduleRepository
 
 __all__ = [
-    'CabinetRepository',
-    'GroupRepository',
-    'ScheduleProvider',
-    'ScheduleRepository'
+    "CabinetRepository",
+    "GroupRepository",
+    "ScheduleProvider",
+    "ScheduleRepository",
 ]

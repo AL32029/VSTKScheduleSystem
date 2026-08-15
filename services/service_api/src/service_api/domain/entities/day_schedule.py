@@ -7,23 +7,28 @@ from .group import Group
 from .lesson import CabinetLesson, GroupLesson
 
 _IGNORED_LESSONS = (
-    'обед', 'каникулы',
+    "обед",
+    "каникулы",
 )
 
 
 @dataclass(frozen=True)
 class GroupDaySchedule:
-    group: 'Group'
+    group: "Group"
 
     date: datetime.date
 
-    lessons: Iterable['GroupLesson']
+    lessons: Iterable["GroupLesson"]
 
     @property
     def lessons_count(self) -> int:
-        return len([lesson
-                    for lesson in self.lessons
-                    if lesson.name.strip().lower() not in _IGNORED_LESSONS])
+        return len(
+            [
+                lesson
+                for lesson in self.lessons
+                if lesson.name.strip().lower() not in _IGNORED_LESSONS
+            ]
+        )
 
     @property
     def pairs_count(self) -> float:
@@ -36,22 +41,30 @@ class GroupDaySchedule:
         if not isinstance(other, GroupDaySchedule):
             raise NotImplementedError
 
-        return (self.group, self.date, tuple(self.lessons)) == (other.group, other.date, tuple(other.lessons))
+        return (self.group, self.date, tuple(self.lessons)) == (
+            other.group,
+            other.date,
+            tuple(other.lessons),
+        )
 
 
 @dataclass(frozen=True)
 class CabinetDaySchedule:
-    cabinet: 'Cabinet'
+    cabinet: "Cabinet"
 
     date: datetime.date
 
-    lessons: Iterable['CabinetLesson']
+    lessons: Iterable["CabinetLesson"]
 
     @property
     def lessons_count(self) -> int:
-        return len([lesson
-                    for lesson in self.lessons
-                    if lesson.name.strip().lower() not in _IGNORED_LESSONS])
+        return len(
+            [
+                lesson
+                for lesson in self.lessons
+                if lesson.name.strip().lower() not in _IGNORED_LESSONS
+            ]
+        )
 
     @property
     def pairs_count(self) -> float:
@@ -64,4 +77,8 @@ class CabinetDaySchedule:
         if not isinstance(other, CabinetDaySchedule):
             raise NotImplementedError
 
-        return (self.cabinet, self.date, tuple(self.lessons)) == (other.cabinet, other.date, tuple(other.lessons))
+        return (self.cabinet, self.date, tuple(self.lessons)) == (
+            other.cabinet,
+            other.date,
+            tuple(other.lessons),
+        )

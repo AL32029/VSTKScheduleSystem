@@ -12,14 +12,16 @@ from service_parser.domain.entities import GroupParser
 @pytest.fixture
 async def html_content(schedule_provider, httpx_mock) -> str:
     """Мок HTLM-контента страницы с расписанием"""
-    async with aiofiles.open('./tests/fixtures/schedule.html', 'rb') as f:
+    async with aiofiles.open("./tests/fixtures/schedule.html", "rb") as f:
         httpx_mock.add_response(
-            method='GET',
-            url='https://vgtk.by/schedule/lessons/day-tomorrow.php',
-            content=await f.read()
+            method="GET",
+            url="https://vgtk.by/schedule/lessons/day-tomorrow.php",
+            content=await f.read(),
         )
 
-    return await schedule_provider._fetch_html('https://vgtk.by/schedule/lessons/day-tomorrow.php')
+    return await schedule_provider._fetch_html(
+        "https://vgtk.by/schedule/lessons/day-tomorrow.php"
+    )
 
 
 @pytest.fixture
@@ -41,7 +43,9 @@ def schedule_dates(schedule_provider, html_matrix) -> tuple[datetime.date, ...]:
 
 
 @pytest.fixture
-def schedule_times(schedule_provider, html_matrix) -> tuple[tuple[datetime.time, datetime.time], ...]:
+def schedule_times(
+    schedule_provider, html_matrix
+) -> tuple[tuple[datetime.time, datetime.time], ...]:
     """Временные диапазоны расписания"""
     return schedule_provider._extract_times(html_matrix)
 

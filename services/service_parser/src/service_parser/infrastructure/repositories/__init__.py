@@ -3,7 +3,7 @@ from .sqlalchemy_group_repo import SQLAlchemyGroupRepository
 from .sqlalchemy_schedule_repo import SQLAlchemyScheduleRepository
 
 __all__ = [
-    'SQLAlchemyCabinetRepository',
-    'SQLAlchemyGroupRepository',
-    'SQLAlchemyScheduleRepository'
+    "SQLAlchemyCabinetRepository",
+    "SQLAlchemyGroupRepository",
+    "SQLAlchemyScheduleRepository",
 ]

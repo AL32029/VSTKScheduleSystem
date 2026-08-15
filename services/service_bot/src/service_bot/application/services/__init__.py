@@ -9,15 +9,15 @@ from .group_use_cases import GetAllGroupsUseCase, GetGroupUseCase
 from .user_profile_use_cases import GetUserProfileUseCase, SaveUserProfileUseCase
 
 __all__ = [
-    'GetAllCabinetsUseCase',
-    'GetAllGroupsUseCase',
-    'GetCabinetUseCase',
-    'GetDayScheduleUseCase',
-    'GetGroupUseCase',
-    'GetUserProfileUseCase',
-    'SaveUserProfileUseCase',
-    'SubscribeCabinetUseCase',
-    'SubscribeGroupUseCase',
-    'UnsubscribeCabinetUseCase',
-    'UnsubscribeGroupUseCase'
+    "GetAllCabinetsUseCase",
+    "GetAllGroupsUseCase",
+    "GetCabinetUseCase",
+    "GetDayScheduleUseCase",
+    "GetGroupUseCase",
+    "GetUserProfileUseCase",
+    "SaveUserProfileUseCase",
+    "SubscribeCabinetUseCase",
+    "SubscribeGroupUseCase",
+    "UnsubscribeCabinetUseCase",
+    "UnsubscribeGroupUseCase",
 ]

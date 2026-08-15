@@ -16,7 +16,9 @@ from tests.test_contains import (
 # ====================== [ТЕСТЫ СУЩНОСТИ GroupDaySchedule] ======================
 def test_create_group_day_schedule():
     """Тест должен корректно создавать сущность GroupDatSchedule"""
-    day_schedule = GroupDaySchedule(_GROUP_ITEM, _DAY_SCHEDULE_DATE, _GROUP_LESSON_ITEMS)
+    day_schedule = GroupDaySchedule(
+        _GROUP_ITEM, _DAY_SCHEDULE_DATE, _GROUP_LESSON_ITEMS
+    )
 
     assert day_schedule.group == _GROUP_ITEM
     assert day_schedule.date == _DAY_SCHEDULE_DATE
@@ -28,8 +30,12 @@ def test_create_group_day_schedule():
 def test_group_day_schedule_equal():
     """Тест должен проверить равенство двух равных сущностей GroupDatSchedule"""
 
-    first_day_schedule = GroupDaySchedule(_GROUP_ITEM, _DAY_SCHEDULE_DATE, _GROUP_LESSON_ITEMS)
-    second_day_schedule = GroupDaySchedule(_GROUP_ITEM, _DAY_SCHEDULE_DATE, _GROUP_LESSON_ITEMS)
+    first_day_schedule = GroupDaySchedule(
+        _GROUP_ITEM, _DAY_SCHEDULE_DATE, _GROUP_LESSON_ITEMS
+    )
+    second_day_schedule = GroupDaySchedule(
+        _GROUP_ITEM, _DAY_SCHEDULE_DATE, _GROUP_LESSON_ITEMS
+    )
 
     assert first_day_schedule == second_day_schedule
 
@@ -37,8 +43,12 @@ def test_group_day_schedule_equal():
 def test_group_day_schedule_equal_hash():
     """Тест должен проверить равенство хэша двух равных сущностей GroupDatSchedule"""
 
-    first_day_schedule = GroupDaySchedule(_GROUP_ITEM, _DAY_SCHEDULE_DATE, _GROUP_LESSON_ITEMS)
-    second_day_schedule = GroupDaySchedule(_GROUP_ITEM, _DAY_SCHEDULE_DATE, _GROUP_LESSON_ITEMS)
+    first_day_schedule = GroupDaySchedule(
+        _GROUP_ITEM, _DAY_SCHEDULE_DATE, _GROUP_LESSON_ITEMS
+    )
+    second_day_schedule = GroupDaySchedule(
+        _GROUP_ITEM, _DAY_SCHEDULE_DATE, _GROUP_LESSON_ITEMS
+    )
 
     assert hash(first_day_schedule) == hash(second_day_schedule)
 
@@ -46,7 +56,9 @@ def test_group_day_schedule_equal_hash():
 # ====================== [ТЕСТЫ СУЩНОСТИ CabinetDaySchedule] ======================
 def test_create_cabinet_day_schedule():
     """Тест должен корректно создавать сущность CabinetDaySchedule"""
-    day_schedule = CabinetDaySchedule(_CABINET_ITEM, _DAY_SCHEDULE_DATE, _CABINET_LESSON_ITEMS)
+    day_schedule = CabinetDaySchedule(
+        _CABINET_ITEM, _DAY_SCHEDULE_DATE, _CABINET_LESSON_ITEMS
+    )
 
     assert day_schedule.cabinet == _CABINET_ITEM
     assert day_schedule.date == _DAY_SCHEDULE_DATE
@@ -58,8 +70,12 @@ def test_create_cabinet_day_schedule():
 def test_cabinet_day_schedule_equal():
     """Тест должен проверить равенство двух равных сущностей CabinetDaySchedule"""
 
-    first_day_schedule = CabinetDaySchedule(_CABINET_ITEM, _DAY_SCHEDULE_DATE, _CABINET_LESSON_ITEMS)
-    second_day_schedule = CabinetDaySchedule(_CABINET_ITEM, _DAY_SCHEDULE_DATE, _CABINET_LESSON_ITEMS)
+    first_day_schedule = CabinetDaySchedule(
+        _CABINET_ITEM, _DAY_SCHEDULE_DATE, _CABINET_LESSON_ITEMS
+    )
+    second_day_schedule = CabinetDaySchedule(
+        _CABINET_ITEM, _DAY_SCHEDULE_DATE, _CABINET_LESSON_ITEMS
+    )
 
     assert first_day_schedule == second_day_schedule
 
@@ -67,7 +83,11 @@ def test_cabinet_day_schedule_equal():
 def test_cabinet_day_schedule_equal_hash():
     """Тест должен проверить равенство хэша двух равных сущностей CabinetDaySchedule"""
 
-    first_day_schedule = CabinetDaySchedule(_CABINET_ITEM, _DAY_SCHEDULE_DATE, _CABINET_LESSON_ITEMS)
-    second_day_schedule = CabinetDaySchedule(_CABINET_ITEM, _DAY_SCHEDULE_DATE, _CABINET_LESSON_ITEMS)
+    first_day_schedule = CabinetDaySchedule(
+        _CABINET_ITEM, _DAY_SCHEDULE_DATE, _CABINET_LESSON_ITEMS
+    )
+    second_day_schedule = CabinetDaySchedule(
+        _CABINET_ITEM, _DAY_SCHEDULE_DATE, _CABINET_LESSON_ITEMS
+    )
 
     assert hash(first_day_schedule) == hash(second_day_schedule)

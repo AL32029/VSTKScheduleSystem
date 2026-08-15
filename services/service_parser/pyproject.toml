@@ -31,8 +31,9 @@ pytest-httpx = "^0.36.2"
 alembic = "^1.18.5"
 pytest-cov = "^7.1.0"
 testcontainers = "^4.14.2"
-ruff = "^0.16.1"
+ruff = "<0.16"
 aiofiles = "^25.1.0"
+pytest-env = "*"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -44,3 +45,6 @@ addopts = "--asyncio-mode=auto"
 
 [tool.coverage.run]
 source = ["src/service_parser"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]

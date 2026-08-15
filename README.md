@@ -7,6 +7,7 @@
 [![Telegram Bot](https://img.shields.io/badge/Telegram-@lessons__vstk__bot-2CA5E0?logo=telegram&logoColor=white)](https://t.me/lessons_vstk_bot)
 [![FastAPI](https://img.shields.io/badge/FastAPI-REST%20API-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Docker](https://img.shields.io/badge/Deploy-Docker%20%2B%20k3s-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![CI Pull Request](https://github.com/AL32029/VSTKScheduleSystem/actions/workflows/ci-pr.yml/badge.svg)](https://github.com/AL32029/VSTKScheduleSystem/actions/workflows/ci-pr.yml)
 
 ---
 
@@ -195,7 +196,7 @@ docker run --env-file services/service_api/env/base.env vstk-service-api
 DATABASE_HOST=<хост>
 DATABASE_PORT=<порт>
 DATABASE_BASE=<имя БД>
-DATABASE_SETTINGS_ENV=<путь к файлу с учётными данными БД>  # из Vault, по умолчанию /vault/secrets/database.env
+DATABASE_SETTINGS_ENV=<путь к файлу с SSL сертификатами БД>  # из Vault, по умолчанию /vault/secrets/database.env
 DATABASE_SSL_CERT_REQS=<none|optional|required>
 DATABASE_SSL_CHECK_HOSTNAME=<true|false>
 
@@ -203,7 +204,7 @@ DATABASE_SSL_CHECK_HOSTNAME=<true|false>
 REDIS_HOST=<хост>
 REDIS_PORT=<порт>
 REDIS_DB_NUMBER=<номер БД>
-REDIS_SETTINGS_ENV=<путь к файлу с учётными данными Redis>  # из Vault, по умолчанию /vault/secrets/redis.env
+REDIS_SETTINGS_ENV=<путь к файлу с SSL сертификатами Redis>  # из Vault, по умолчанию /vault/secrets/redis.env
 REDIS_SSL_CERT_REQS=<none|optional|required>
 REDIS_SSL_CHECK_HOSTNAME=<true|false>
 ```

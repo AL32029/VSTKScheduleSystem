@@ -12,18 +12,30 @@ from service_api.domain.entities import (
 
 class ScheduleRepository(ABC):
     @abstractmethod
-    async def get_schedule_date(self, schedule_type: Literal['today', 'tomorrow']) -> datetime.date:
+    async def get_schedule_date(
+        self, schedule_type: Literal["today", "tomorrow"]
+    ) -> datetime.date:
         """Получение даты расписания"""
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_group(self, group: 'Group', schedule_type: Literal['today', 'tomorrow'],
-                           schedule_date: datetime.date, redirect: bool = True) -> 'GroupDaySchedule':
+    async def get_by_group(
+        self,
+        group: "Group",
+        schedule_type: Literal["today", "tomorrow"],
+        schedule_date: datetime.date,
+        redirect: bool = True,
+    ) -> "GroupDaySchedule":
         """Получение расписания по группе"""
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_cabinet(self, cabinet: 'Cabinet', schedule_type: Literal['today', 'tomorrow'],
-                             schedule_date: datetime.date, redirect: bool = True) -> 'CabinetDaySchedule':
+    async def get_by_cabinet(
+        self,
+        cabinet: "Cabinet",
+        schedule_type: Literal["today", "tomorrow"],
+        schedule_date: datetime.date,
+        redirect: bool = True,
+    ) -> "CabinetDaySchedule":
         """Получение расписания по кабинету"""
         raise NotImplementedError

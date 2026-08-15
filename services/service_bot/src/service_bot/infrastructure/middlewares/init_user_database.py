@@ -16,10 +16,10 @@ class InitUserDatabaseMiddleware(BaseMiddleware):
     """Middleware инициализации пользователя в базе данных"""
 
     async def __call__(
-            self,
-            handler: Callable[[Update, dict[str, Any]], Awaitable[Any]],
-            event: Update,
-            data: dict[str, Any]
+        self,
+        handler: Callable[[Update, dict[str, Any]], Awaitable[Any]],
+        event: Update,
+        data: dict[str, Any],
     ):
         instance = event.message or event.callback_query
 
@@ -33,22 +33,22 @@ class InitUserDatabaseMiddleware(BaseMiddleware):
             return None
 
         try:
-            logger.info('Initialize user from database')
+            logger.info("Initialize user from database")
             user = await user_repository.get_by_id(instance.from_user.id)
-            logger.info('User was found in database')
+            logger.info("User was found in database")
         except UserNotFound:
-            logger.info('User not found in database')
-            logger.info('Registration user in database')
+            logger.info("User not found in database")
+            logger.info("Registration user in database")
             user = await user_repository.save(instance.from_user.id)
-            logger.info('User was registered successfully')
+            logger.info("User was registered successfully")
 
-        data['user'] = user
+        data["user"] = user
 
         old_metadata = user.metadata.copy()
 
         result = await handler(event, data)
 
-        user = data['user']
+        user = data["user"]
 
         if user.metadata != old_metadata:
             for k, v in user.metadata.items():

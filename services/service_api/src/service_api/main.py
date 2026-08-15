@@ -2,19 +2,18 @@ import asyncio
 import logging
 import logging.config
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from dishka.integrations.fastapi import setup_dishka
 from fastapi import FastAPI
-from watchfiles import Change, awatch
-from watchfiles._rust_notify import WatchfilesRustInternalError
+from prometheus_client import make_asgi_app
 
 from service_api.domain.exceptions import APIServiceException
-from service_api.infrastructure.config import LoggingSettings
+from service_api.infrastructure.config import LoggingSettings, SystemSettings
 from service_api.infrastructure.di.container import get_dishka_container
 from service_api.infrastructure.managers import (
     DatabaseEngineManager,
     RedisClientManager,
+    WatchFilesManager,
 )
 from service_api.infrastructure.middlewares import InitRequestMiddleware
 from service_api.presentation.rest.endpoints import (
@@ -26,75 +25,75 @@ from service_api.presentation.rest.exception_responses import (
     api_exception_handler,
 )
 
-logging.config.dictConfig(LoggingSettings().model_dump(mode='json'))
+logging.config.dictConfig(LoggingSettings().model_dump(mode="json"))
 
-logger = logging.getLogger('service_bot')
-
-
-async def watch_loop(db_manager: 'DatabaseEngineManager', redis_client: 'RedisClientManager'):
-    logger.info('Launching tracking of changes in secrets')
-
-    db_paths = {db_manager.settings.SSL_CERT_FILE, db_manager.settings.SSL_KEY_FILE,
-                db_manager.settings.SSL_CA_CERT_FILE}
-    redis_paths = {redis_client.settings.SSL_CERT_FILE, redis_client.settings.SSL_KEY_FILE,
-                   redis_client.settings.SSL_CA_CERT_FILE}
-    all_paths = db_paths | redis_paths
-
-    watch_dirs = {str(Path(p).parent) for p in all_paths}
-
-    def relevant_change(change: Change, path: str) -> bool:
-        return path in all_paths
-
-    try:
-        async for changes in awatch(*watch_dirs, watch_filter=relevant_change, debounce=2000):
-            logger.info('Changes have been detected in the tracked secrets')
-            certs_changes = {p for _, p in changes}
-
-            tasks_run = []
-            if db_paths & certs_changes:
-                logger.info('Initialization of database secret rotation')
-                tasks_run.append(asyncio.create_task(db_manager.rotate()))
-            if redis_paths & certs_changes:
-                logger.info('Initialization of redis secret rotation')
-                tasks_run.append(asyncio.create_task(redis_client.rotate()))
-
-            await asyncio.gather(*tasks_run, return_exceptions=True)
-    except (WatchfilesRustInternalError, PermissionError, OSError, RuntimeError):
-        logger.exception('Error while tracking changes in secrets')
-
-    logger.info('Tracking of changes in secrets has been discontinued')
+logger = logging.getLogger("service_api")
 
 
 @asynccontextmanager
-async def lifespan(app: 'FastAPI'):
+async def lifespan(app: "FastAPI"):
     container = app.state.dishka_container
-    db_manager = await container.get(DatabaseEngineManager)
-    redis_client = await container.get(RedisClientManager)
 
-    await db_manager.get_engine()
-    await redis_client.get_client()
+    system_settings: SystemSettings = await container.get(SystemSettings)
+    logger.info("Starting application in %s mode", system_settings.SYSTEM_MODE)
 
-    task = asyncio.create_task(watch_loop(db_manager, redis_client))
+    watch_files_task: asyncio.Task | None = None
+
+    db_manager: DatabaseEngineManager = await container.get(DatabaseEngineManager)
+    redis_client: RedisClientManager = await container.get(RedisClientManager)
+
+    await db_manager.rotate()
+    await redis_client.rotate()
+
+    if system_settings.SYSTEM_MODE == "prod":
+        watch_files_manager: WatchFilesManager = await container.get(WatchFilesManager)
+
+        try:
+            watch_files_task = asyncio.create_task(
+                watch_files_manager.watch(db_manager, redis_client)
+            )
+            logger.info("Watchfiles task started")
+        except Exception:
+            logger.exception("Failed to start watchfiles task")
 
     yield
 
-    task.cancel()
-    await asyncio.gather(
-        db_manager.dispose(),
-        redis_client.close(),
-        return_exceptions=True,
-    )
+    if system_settings.SYSTEM_MODE == "prod":
+        if watch_files_task and not watch_files_task.done():
+            watch_files_task.cancel()
+            try:
+                await watch_files_task
+            except asyncio.CancelledError:
+                logger.info("Watchfiles task cancelled")
+            except Exception:
+                logger.exception("Watchfiles task failed during shutdown")
+
+        if db_manager is not None:
+            try:
+                await db_manager.dispose()
+            except Exception:
+                logger.exception("Error disposing database engine")
+
+        if redis_client is not None:
+            try:
+                await redis_client.close()
+            except Exception:
+                logger.exception("Error closing Redis client")
+
+    logger.info("Application shutdown complete")
 
 
-def create_app(container=None) -> 'FastAPI':
+def create_app(container=None) -> "FastAPI":
     app = FastAPI(
-        title='Schedule API system',
-        description='The API is designed to retrieve the schedule of classes at '
-                    'Vitebsk State Technical College (Vitebsk, Belarus)',
+        title="Schedule API system",
+        description="The API is designed to retrieve the schedule of classes at "
+        "Vitebsk State Technical College (Vitebsk, Belarus)",
         lifespan=lifespan,
     )
 
-    setup_dishka(container or get_dishka_container(), app)
+    setup_container = container or get_dishka_container()
+
+    setup_dishka(setup_container, app)
 
     app.include_router(cabinet_router)
     app.include_router(group_router)
@@ -103,5 +102,7 @@ def create_app(container=None) -> 'FastAPI':
     app.add_exception_handler(APIServiceException, api_exception_handler)
 
     app.add_middleware(InitRequestMiddleware)
+
+    app.mount("/metrics", make_asgi_app())
 
     return app

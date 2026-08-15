@@ -13,7 +13,7 @@ class GroupLesson:
 
     name: str
 
-    cabinets: Iterable['Cabinet']
+    cabinets: Iterable["Cabinet"]
 
     def __hash__(self):
         return hash((self.start, self.end, self.name, tuple(self.cabinets)))
@@ -22,8 +22,12 @@ class GroupLesson:
         if not isinstance(other, GroupLesson):
             raise NotImplementedError
 
-        return (self.start, self.end, self.name, tuple(self.cabinets)) == (other.start, other.end,
-                                                                           other.name, tuple(other.cabinets))
+        return (self.start, self.end, self.name, tuple(self.cabinets)) == (
+            other.start,
+            other.end,
+            other.name,
+            tuple(other.cabinets),
+        )
 
 
 @dataclass(frozen=True)
@@ -31,11 +35,11 @@ class CabinetLesson:
     start: datetime.time
     end: datetime.time
 
-    group: 'Group'
+    group: "Group"
 
     name: str
 
-    cabinets: Iterable['Cabinet']
+    cabinets: Iterable["Cabinet"]
 
     def __hash__(self):
         return hash((self.start, self.end, self.name, tuple(self.cabinets)))
@@ -44,5 +48,9 @@ class CabinetLesson:
         if not isinstance(other, CabinetLesson):
             raise NotImplementedError
 
-        return (self.start, self.end, self.name, tuple(self.cabinets)) == (other.start, other.end,
-                                                                           other.name, tuple(other.cabinets))
+        return (self.start, self.end, self.name, tuple(self.cabinets)) == (
+            other.start,
+            other.end,
+            other.name,
+            tuple(other.cabinets),
+        )

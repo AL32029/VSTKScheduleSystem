@@ -4,8 +4,8 @@ from .init_request import InitRequestMiddleware
 from .init_user_database import InitUserDatabaseMiddleware
 
 __all__ = [
-    'CheckMessagePanelMiddleware',
-    'DeleteMessageMiddleware',
-    'InitRequestMiddleware',
-    'InitUserDatabaseMiddleware'
+    "CheckMessagePanelMiddleware",
+    "DeleteMessageMiddleware",
+    "InitRequestMiddleware",
+    "InitUserDatabaseMiddleware",
 ]

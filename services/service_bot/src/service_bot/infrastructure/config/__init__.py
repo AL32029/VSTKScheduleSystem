@@ -6,10 +6,10 @@ from .logging_settings import LoggingSettings
 from .redis_settings import RedisSettings
 
 __all__ = [
-    'APISettings',
-    'BaseSystemSettings',
-    'BotSettings',
-    'DatabaseSettings',
-    'LoggingSettings',
-    'RedisSettings'
+    "APISettings",
+    "BaseSystemSettings",
+    "BotSettings",
+    "DatabaseSettings",
+    "LoggingSettings",
+    "RedisSettings",
 ]

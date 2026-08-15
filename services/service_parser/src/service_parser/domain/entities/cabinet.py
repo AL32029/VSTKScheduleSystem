@@ -9,8 +9,8 @@ class Cabinet:
     number: str
 
     def __init__(self, number: str):
-        object.__setattr__(self, 'index', ITEM_INDEX.sub('', number.lower()))
-        object.__setattr__(self, 'number', number)
+        object.__setattr__(self, "index", ITEM_INDEX.sub("", number.lower()))
+        object.__setattr__(self, "number", number)
 
     def __eq__(self, other):
         if not isinstance(other, Cabinet):

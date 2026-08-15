@@ -10,12 +10,12 @@ from .providers import (
 )
 
 __all__ = [
-    'ClientProvider',
-    'DatabaseProvider',
-    'RedisProvider',
-    'RepositoriesProvider',
-    'SystemProvider',
-    'TemplatesProvider',
-    'UseCasesProvider',
-    'get_dishka_container',
+    "ClientProvider",
+    "DatabaseProvider",
+    "RedisProvider",
+    "RepositoriesProvider",
+    "SystemProvider",
+    "TemplatesProvider",
+    "UseCasesProvider",
+    "get_dishka_container",
 ]

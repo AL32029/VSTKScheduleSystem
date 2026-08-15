@@ -12,4 +12,3 @@ class DataSavingError(BotServiceException):
 
 class DataValidationError(BotServiceException):
     """Ошибка валидации данных"""
-
