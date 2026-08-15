@@ -25,7 +25,7 @@ class InitRequestMiddleware(BaseHTTPMiddleware):
         request: Request,
         call_next: RequestResponseEndpoint,
     ) -> Response:
-        metrics: "MetricsCollector" = await request.app.state.dishka_container.get(
+        metrics: MetricsCollector = await request.app.state.dishka_container.get(
             MetricsCollector
         )
 

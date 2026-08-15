@@ -7,14 +7,10 @@ from aiogram.fsm.storage.redis import RedisStorage
 from dishka import AsyncContainer
 from dishka.integrations.aiogram import setup_dishka
 from redis.asyncio import Redis
+from system_managers import DatabaseEngineManager, RedisClientManager, WatchFilesManager
 
 from service_bot.infrastructure.config import LoggingSettings, system_settings
 from service_bot.infrastructure.di.container import get_dishka_container
-from service_bot.infrastructure.managers import (
-    DatabaseEngineManager,
-    RedisClientManager,
-    WatchFilesManager,
-)
 from service_bot.infrastructure.middlewares import (
     CheckMessagePanelMiddleware,
     DeleteMessageMiddleware,

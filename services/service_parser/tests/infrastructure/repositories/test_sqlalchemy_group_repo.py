@@ -4,7 +4,7 @@ import pytest
 from patterns import ITEM_INDEX
 
 from service_parser.domain.entities import Group
-from service_parser.domain.exceptions import GroupNotFound
+from service_parser.domain.exceptions import GroupNotFoundError
 
 # ===================== [СУЩНОСТИ ДЛЯ ТЕСТОВ] =====================
 _VALID_GROUP_NUMBERS = ["ЖБИ-21", "ОС-21", "ПЭС-215"]
@@ -42,7 +42,7 @@ async def test_delete_group(sqlalchemy_group_repo, group):
 
     await sqlalchemy_group_repo.delete(group_item)
 
-    with pytest.raises(GroupNotFound):
+    with pytest.raises(GroupNotFoundError):
         await sqlalchemy_group_repo.get_by_index(group.index)
 
 
@@ -52,7 +52,7 @@ async def test_get_by_index_error_not_found(sqlalchemy_group_repo, group_number)
     """Тест должен выдать ошибку GroupNotFound"""
     group_index = ITEM_INDEX.sub("", group_number)
 
-    with pytest.raises(GroupNotFound) as exc_info:
+    with pytest.raises(GroupNotFoundError) as exc_info:
         await sqlalchemy_group_repo.get_by_index(group_index)
 
     assert exc_info.value.args[0] == f"Group with index {group_index!r} not found"

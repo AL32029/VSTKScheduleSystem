@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
 )
+from system_managers import DatabaseEngineManager, RedisClientManager, WatchFilesManager
 
 from service_bot.application.ports import (
     CabinetRepository,
@@ -42,11 +43,6 @@ from service_bot.infrastructure.config import (
     DatabaseSettings,
     RedisSettings,
     SystemSettings,
-)
-from service_bot.infrastructure.managers import (
-    DatabaseEngineManager,
-    RedisClientManager,
-    WatchFilesManager,
 )
 from service_bot.infrastructure.prometheus_collector import PrometheusMetricsCollector
 from service_bot.infrastructure.repositories import (

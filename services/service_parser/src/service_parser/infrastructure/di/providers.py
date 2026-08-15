@@ -1,32 +1,32 @@
 import logging
-import ssl
-from collections.abc import AsyncGenerator, AsyncIterable
-from typing import Any
+from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator
+from typing import Any, cast
 from zoneinfo import ZoneInfo
 
 import httpx
-from cryptography import x509
-from cryptography.hazmat.backends import default_backend
 from dishka import Provider, Scope, provide
 from httpx import AsyncClient
 from redis.asyncio import Redis
-from sqlalchemy import URL
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
     async_sessionmaker,
-    create_async_engine,
 )
+from system_managers import DatabaseEngineManager, RedisClientManager, WatchFilesManager
 
 from service_parser.application.ports import (
     CabinetRepository,
     GroupRepository,
+    MetricsCollector,
     ScheduleRepository,
 )
 from service_parser.infrastructure.config import (
-    BaseSystemSettings,
     DatabaseSettings,
     RedisSettings,
+    SystemSettings,
+)
+from service_parser.infrastructure.prometheus_collector import (
+    PrometheusMetricsCollector,
 )
 from service_parser.infrastructure.repositories import (
     SQLAlchemyCabinetRepository,
@@ -37,111 +37,99 @@ from service_parser.infrastructure.repositories import (
 logger = logging.getLogger(__name__)
 
 
-class SystemProvider(Provider):
+class SystemSettingsProvider(Provider):
     scope = Scope.APP
 
     @provide
-    def time_zone(self, base_settings: "BaseSystemSettings") -> ZoneInfo:
-        return base_settings.TZ
+    def time_zone(self, base_settings: SystemSettings) -> ZoneInfo:
+        return base_settings.timezone
+
+    @provide
+    def system_settings(self) -> "SystemSettings":
+        return SystemSettings()
+
+    @provide
+    def metrics_collector(self) -> "MetricsCollector":
+        return PrometheusMetricsCollector()
+
+    @provide
+    def watchfiles_manager(
+        self,
+        db_settings: "DatabaseSettings",
+        redis_settings: "RedisSettings",
+    ) -> "WatchFilesManager":
+        return WatchFilesManager(db_settings.config, redis_settings.config)
 
 
 class DatabaseProvider(Provider):
     scope = Scope.APP
 
     @provide
-    def provide_engine(self) -> "AsyncEngine":
-        logger.debug("Creating database engine")
-        settings = DatabaseSettings()
-
-        with open(settings.SSL_CERT_FILE, "rb") as f:
-            cert_data = f.read()
-
-        cert = x509.load_pem_x509_certificate(cert_data, default_backend())
-
-        common_name = cert.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)[
-            0
-        ].value
-
-        ssl_context = ssl.create_default_context(cafile=settings.SSL_CA_CERT_FILE)
-        ssl_context.load_cert_chain(
-            certfile=settings.SSL_CERT_FILE, keyfile=settings.SSL_KEY_FILE
-        )
-        ssl_context.verify_mode = ssl.CERT_REQUIRED
-        ssl_context.check_hostname = True
-
-        connection_url = URL.create(
-            "postgresql+asyncpg",
-            username=str(common_name),
-            host=settings.HOST,
-            port=settings.PORT,
-            database=settings.BASE,
-        )
-
-        logger.debug(
-            "Database engine created for %s@%s:%s/%s",
-            common_name,
-            settings.HOST,
-            settings.PORT,
-            settings.BASE,
-        )
-        return create_async_engine(
-            connection_url,
-            echo=False,
-            pool_pre_ping=True,
-            pool_size=10,
-            max_overflow=20,
-            connect_args={"ssl": ssl_context},
-        )
+    def database_settings(self, settings: "SystemSettings") -> "DatabaseSettings":
+        return DatabaseSettings(settings.SYSTEM_MODE)
 
     @provide
-    def provide_session_maker(
-        self, engine: "AsyncEngine"
-    ) -> async_sessionmaker["AsyncSession"]:
-        logger.debug("Creating session maker")
+    def database_engine_manager(
+        self, settings: "DatabaseSettings"
+    ) -> "DatabaseEngineManager":
+        logger.debug("Creating DatabaseEngineManager")
+        return DatabaseEngineManager(settings.config)
+
+    @provide(scope=Scope.REQUEST)
+    async def provide_session_maker(
+        self, manager: "DatabaseEngineManager"
+    ) -> async_sessionmaker[AsyncSession]:
+        logger.debug("Creating database session maker")
         return async_sessionmaker(
-            bind=engine,
+            cast(AsyncEngine, cast(object, await manager.get_engine())),
             expire_on_commit=False,
             class_=AsyncSession,
             autoflush=False,
         )
 
-    @provide
+    @provide(scope=Scope.REQUEST)
     async def provide_session(
-        self, session_maker: async_sessionmaker["AsyncSession"]
-    ) -> AsyncIterable["AsyncSession"]:
+        self,
+        session_maker: async_sessionmaker[AsyncSession],
+        metrics: "MetricsCollector",
+    ) -> AsyncIterable[AsyncSession]:
         logger.debug("Creating database session")
         async with session_maker() as session:
-            yield session
+            metrics.inc_gauge("database_active_sessions_count")
+            try:
+                yield session
+
+                await session.commit()
+            finally:
+                await session.aclose()
+
+                metrics.dec_gauge("database_active_sessions_count")
 
 
 class RedisProvider(Provider):
     scope = Scope.APP
 
     @provide
-    async def redis_engine(self) -> AsyncIterable["Redis"]:
-        settings = RedisSettings()
-        logger.debug(
-            "Connecting to Redis at %s:%s (db=%s)",
-            settings.HOST,
-            settings.PORT,
-            settings.DB_NUMBER,
-        )
+    def redis_settings(self, settings: "SystemSettings") -> "RedisSettings":
+        return RedisSettings(settings.SYSTEM_MODE)
 
-        client = Redis(
-            host=settings.HOST,
-            port=settings.PORT,
-            db=settings.DB_NUMBER,
-            ssl=True,
-            ssl_certfile=settings.SSL_CERT_FILE,
-            ssl_keyfile=settings.SSL_KEY_FILE,
-            ssl_ca_certs=settings.SSL_CA_CERT_FILE,
-            ssl_cert_reqs=settings.SSL_CERT_REQS,
-            ssl_check_hostname=settings.SSL_CHECK_HOSTNAME,
-        )
-        logger.debug("Redis client created")
-        yield client
-        logger.debug("Closing Redis connection")
-        await client.aclose()
+    @provide
+    def redis_client_manager(self, settings: "RedisSettings") -> "RedisClientManager":
+        logger.debug("Creating RedisClientManager")
+        return RedisClientManager(settings.config)
+
+    @provide
+    async def provide_redis_client(
+        self,
+        manager: "RedisClientManager",
+        metrics: "MetricsCollector",
+    ) -> AsyncIterator[Redis]:
+        client = await manager.get_client()
+        metrics.inc_gauge("redis_active_sessions_count")
+        try:
+            yield client
+        finally:
+            metrics.dec_gauge("redis_active_sessions_count")
 
 
 class RepositoriesProvider(Provider):

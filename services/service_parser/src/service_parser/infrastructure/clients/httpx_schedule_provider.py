@@ -286,12 +286,12 @@ class HTTPXScheduleProvider(ScheduleProvider):
 
         groups = [
             GroupParser(group=g, pos_x=int(x), pos_y=int(y))
-            for g, (y, x) in zip(matrix_mask, argwhere(mask))
+            for g, (y, x) in zip(matrix_mask, argwhere(mask), strict=False)
         ]
 
         return tuple(sorted(groups, key=lambda x: x.group.index))
 
-    def _extract_lessons(
+    def _extract_lessons(  # noqa: C901
         self,
         matrix: ndarray[tuple[int, int], dtype[Any]],
         date_list: tuple[datetime.date, ...],

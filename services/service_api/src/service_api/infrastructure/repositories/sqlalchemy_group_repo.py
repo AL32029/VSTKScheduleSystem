@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from service_api.application.ports import GroupRepository
 from service_api.domain.entities import Group
-from service_api.domain.exceptions import GroupNotFound
+from service_api.domain.exceptions import GroupNotFoundError
 from service_api.infrastructure.mappers import group_orm_to_domain
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ class SQLAlchemyGroupRepository(GroupRepository):
 
         if group is None:
             logger.debug("Group %s not found in database", number)
-            raise GroupNotFound(number)
+            raise GroupNotFoundError(number)
 
         logger.debug("Group %s found in database", number)
         return group_orm_to_domain(group)

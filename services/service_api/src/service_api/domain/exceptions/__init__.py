@@ -1,19 +1,19 @@
-from .base_exceptions import APIServiceException
-from .cache_exceptions import CacheItemNotFound
+from .base_exceptions import APIServiceError
+from .cache_exceptions import CacheItemNotFoundError
 from .missing_data_exceptions import (
-    CabinetDayScheduleNotFound,
-    CabinetNotFound,
-    GroupDayScheduleNotFound,
-    GroupNotFound,
-    ScheduleDateNotFound,
+    CabinetDayScheduleNotFoundError,
+    CabinetNotFoundError,
+    GroupDayScheduleNotFoundError,
+    GroupNotFoundError,
+    ScheduleDateNotFoundError,
 )
 
 __all__ = [
-    'APIServiceException',
-    'CabinetDayScheduleNotFound',
-    'CabinetNotFound',
-    'CacheItemNotFound',
-    'GroupDayScheduleNotFound',
-    'GroupNotFound',
-    'ScheduleDateNotFound',
+    'APIServiceError',
+    'CabinetDayScheduleNotFoundError',
+    'CabinetNotFoundError',
+    'CacheItemNotFoundError',
+    'GroupDayScheduleNotFoundError',
+    'GroupNotFoundError',
+    'ScheduleDateNotFoundError',
 ]

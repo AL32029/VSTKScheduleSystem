@@ -2,7 +2,7 @@ import logging
 
 from service_api.application.ports import CacheRepository, GroupRepository
 from service_api.domain.entities import Group
-from service_api.domain.exceptions import CacheItemNotFound
+from service_api.domain.exceptions import CacheItemNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ class GetAllGroupsUseCase:
             logger.info("Obtaining list of groups from the cache")
             groups = await self.cache_repo.get_all_groups_cache()
             logger.info("List of groups has been retrieved from the cache")
-        except CacheItemNotFound:
+        except CacheItemNotFoundError:
             logger.warning("List of groups is not found in the cache")
 
             logger.info("Obtaining list of groups from the database")

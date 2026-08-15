@@ -2,21 +2,18 @@ import asyncio
 import logging
 from typing import cast
 
-from redis import RedisError
+import redis.exceptions
 from redis.asyncio import Redis
 
-from service_api.infrastructure.config import (
-    DevRedisSettings,
-    ProdRedisSettings,
-)
+from .settings import BaseDevRedisSettings, BaseProdRedisSettings
 
 logger = logging.getLogger(__name__)
 
 
 class RedisClientManager:
-    def __init__(self, settings: "DevRedisSettings | ProdRedisSettings"):
+    def __init__(self, settings: "BaseDevRedisSettings | BaseProdRedisSettings"):
         logger.info("Initialization of the redis manager has begun")
-        self._config: "DevRedisSettings | ProdRedisSettings" = settings
+        self._config: BaseDevRedisSettings | BaseProdRedisSettings = settings
         self._client: Redis | None = None
         self._lock = asyncio.Lock()
         logger.info("The redis manager has been successfully initialized")
@@ -66,7 +63,7 @@ class RedisClientManager:
 
                 logger.info("The redis secret rotation has been completed successfully")
                 return True
-            except (RedisError, TimeoutError, ConnectionError):
+            except (redis.exceptions.RedisError, TimeoutError, ConnectionError):
                 logger.exception(
                     "An error occurred during the rotation of redis secrets"
                 )
@@ -78,7 +75,7 @@ class RedisClientManager:
 
     def _build_client(self) -> Redis:
         logger.info("The redis client has begun to be assembled")
-        if isinstance(self._config, ProdRedisSettings):
+        if isinstance(self._config, BaseProdRedisSettings):
             client = Redis(
                 host=self._config.HOST,
                 port=self._config.PORT,

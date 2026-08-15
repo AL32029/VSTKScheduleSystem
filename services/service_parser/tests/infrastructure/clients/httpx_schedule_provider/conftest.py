@@ -8,21 +8,21 @@ from redis.asyncio import Redis
 from service_parser.infrastructure.clients import HTTPXScheduleProvider
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def client(test_container):
     """Dishka containers client"""
     async with test_container(scope=Scope.REQUEST) as container:
         yield await container.get(AsyncClient)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def redis_client(test_container):
     """Redis containers client"""
     async with test_container(scope=Scope.REQUEST) as container:
         yield await container.get(Redis)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def timezone(test_container):
     """Timezone container"""
     async with test_container(scope=Scope.REQUEST) as container:
@@ -32,6 +32,6 @@ async def timezone(test_container):
 @pytest.fixture
 def schedule_provider(client, redis_client, timezone):
     """HTTPX Schedule Provider"""
-    yield HTTPXScheduleProvider(
+    return HTTPXScheduleProvider(
         client, redis_client=redis_client, schedule_type="tomorrow", timezone=timezone
     )

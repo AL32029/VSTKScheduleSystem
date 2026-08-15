@@ -5,8 +5,8 @@ import pytest
 
 from service_parser.domain.entities import Cabinet, DaySchedule, Group, Lesson
 from service_parser.domain.exceptions import (
-    DayScheduleNotFound,
-    GroupNotFound,
+    DayScheduleNotFoundError,
+    GroupNotFoundError,
 )
 
 # ===================== [СУЩНОСТИ ДЛЯ ТЕСТОВ] =====================
@@ -110,7 +110,7 @@ async def test_save_schedule_with_rewrite(
 
 async def test_save_schedule_error_group_missing(sqlalchemy_schedule_repo):
     """Тест должен выдать ошибку GroupNotFound"""
-    with pytest.raises(GroupNotFound) as exc_info:
+    with pytest.raises(GroupNotFoundError) as exc_info:
         await sqlalchemy_schedule_repo.save([_DAY_SCHEDULE])
 
     assert exc_info.value.args[0] == (
@@ -122,7 +122,7 @@ async def test_save_schedule_error_group_missing(sqlalchemy_schedule_repo):
 # ===================== [ТЕСТЫ МЕТОДА GET_BY_GROUP] =====================
 async def test_get_by_group_error_group_not_found(sqlalchemy_schedule_repo):
     """Тест должен выдать ошибку GroupNotFound"""
-    with pytest.raises(GroupNotFound) as exc_info:
+    with pytest.raises(GroupNotFoundError) as exc_info:
         await sqlalchemy_schedule_repo.get_by_group(_GROUP_ITEM, _SCHEDULE_DATE)
 
     assert exc_info.value.args[0] == f"Group {str(_GROUP_ITEM)!r} not found"
@@ -134,7 +134,7 @@ async def test_get_by_group_error_day_schedule_not_found(
     """Тест должен выдать ошибку DayScheduleNotFound"""
     await sqlalchemy_group_repo.save([_GROUP_ITEM])
 
-    with pytest.raises(DayScheduleNotFound) as exc_info:
+    with pytest.raises(DayScheduleNotFoundError) as exc_info:
         await sqlalchemy_schedule_repo.get_by_group(_GROUP_ITEM, _SCHEDULE_DATE)
 
     assert (
@@ -185,7 +185,7 @@ async def test_get_many_by_groups(
 
 async def test_get_many_by_groups_error_group_missing(sqlalchemy_schedule_repo):
     """Тест должен выдать ошибку GroupNotFound"""
-    with pytest.raises(GroupNotFound) as exc_info:
+    with pytest.raises(GroupNotFoundError) as exc_info:
         await sqlalchemy_schedule_repo.get_many_by_groups(
             [(_GROUP_ITEM, schedule_date) for schedule_date in _SCHEDULE_DATES]
         )

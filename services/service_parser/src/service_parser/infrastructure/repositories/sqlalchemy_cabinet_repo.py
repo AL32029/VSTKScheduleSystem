@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from service_parser.application.ports import CabinetRepository
 from service_parser.domain.entities import Cabinet
-from service_parser.domain.exceptions import CabinetNotFound
+from service_parser.domain.exceptions import CabinetNotFoundError
 from service_parser.infrastructure.domain_mappers import (
     cabinet_domain_to_orm,
     cabinet_orm_to_domain,
@@ -51,7 +51,7 @@ class SQLAlchemyCabinetRepository(CabinetRepository):
 
         if cabinet_orm is None:
             logger.debug("Cabinet with index %s not found in database", cabinet_index)
-            raise CabinetNotFound(
+            raise CabinetNotFoundError(
                 f"Cabinet with index {str(cabinet_index)!r} not found"
             )
 

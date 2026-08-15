@@ -7,7 +7,7 @@ from service_api.application.ports import (
     ScheduleRepository,
 )
 from service_api.domain.entities import GroupDaySchedule
-from service_api.domain.exceptions import CacheItemNotFound
+from service_api.domain.exceptions import CacheItemNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ class GetGroupDayScheduleUseCase:
                 str(day_schedule.date),
                 schedule_to,
             )
-        except CacheItemNotFound:
+        except CacheItemNotFoundError:
             logger.warning(
                 "The lesson schedule for group %s for %s is not found in the cache",
                 group_number,

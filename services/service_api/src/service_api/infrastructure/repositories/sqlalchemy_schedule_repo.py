@@ -15,9 +15,9 @@ from service_api.domain.entities import (
     GroupDaySchedule,
 )
 from service_api.domain.exceptions import (
-    CabinetDayScheduleNotFound,
-    GroupDayScheduleNotFound,
-    ScheduleDateNotFound,
+    CabinetDayScheduleNotFoundError,
+    GroupDayScheduleNotFoundError,
+    ScheduleDateNotFoundError,
 )
 from service_api.infrastructure.config import system_settings
 from service_api.infrastructure.mappers import (
@@ -36,7 +36,7 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
         self, schedule_type: Literal["today", "tomorrow"]
     ) -> datetime.date:
         logger.debug("Requesting schedule date for %s from database", schedule_type)
-        today = datetime.datetime.now(system_settings.TIMEZONE).date()
+        today = datetime.datetime.now(system_settings.timezone).date()
 
         stmt = select(
             func.max(LessonORM.date)
@@ -52,7 +52,7 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
 
         if date is None:
             logger.debug("Schedule date for %s not found in database", schedule_type)
-            raise ScheduleDateNotFound(schedule_type)
+            raise ScheduleDateNotFoundError(schedule_type)
 
         logger.debug("Schedule date for %s found: %s", schedule_type, date.isoformat())
         return date
@@ -85,7 +85,7 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
                 group.number,
                 schedule_date.isoformat(),
             )
-            raise GroupDayScheduleNotFound(group, schedule_type, schedule_date)
+            raise GroupDayScheduleNotFoundError(group, schedule_type, schedule_date)
 
         logger.debug(
             "Retrieved %d lessons for group %s on %s from database",
@@ -125,7 +125,7 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
                 cabinet.number,
                 schedule_date.isoformat(),
             )
-            raise CabinetDayScheduleNotFound(cabinet, schedule_type, schedule_date)
+            raise CabinetDayScheduleNotFoundError(cabinet, schedule_type, schedule_date)
 
         logger.debug(
             "Retrieved %d lessons for cabinet %s on %s from database",

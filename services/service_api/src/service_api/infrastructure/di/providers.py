@@ -1,6 +1,6 @@
 import logging
-from collections.abc import AsyncIterable
-from typing import AsyncIterator, cast
+from collections.abc import AsyncIterable, AsyncIterator
+from typing import cast
 
 from dishka import Provider, Scope, provide
 from redis.asyncio import Redis
@@ -8,6 +8,11 @@ from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
     async_sessionmaker,
+)
+from system_managers import (
+    DatabaseEngineManager,
+    RedisClientManager,
+    WatchFilesManager,
 )
 
 from service_api.application.ports import (
@@ -29,11 +34,6 @@ from service_api.infrastructure.config import (
     DatabaseSettings,
     RedisSettings,
     SystemSettings,
-)
-from service_api.infrastructure.managers import (
-    DatabaseEngineManager,
-    RedisClientManager,
-    WatchFilesManager,
 )
 from service_api.infrastructure.prometheus_collector import PrometheusMetricsCollector
 from service_api.infrastructure.repositories import (

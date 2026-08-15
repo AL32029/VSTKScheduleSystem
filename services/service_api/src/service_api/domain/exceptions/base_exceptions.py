@@ -1,5 +1,5 @@
 # ====================== [БАЗОВЫЕ ИСКЛЮЧЕНИЯ] ======================
-class APIServiceException(Exception):
+class APIServiceError(Exception):
     """Базовое исключение API Service"""
 
     code: str = "INTERNAL_ERROR"
@@ -16,17 +16,17 @@ class APIServiceException(Exception):
 
 
 # ====================== [ИСКЛЮЧЕНИЯ-РОДИТЕЛИ] ======================
-class ValidationError(APIServiceException):
+class ValidationError(APIServiceError):
     """Ошибка валидации"""
 
     status_code: int = 422
 
 
-class NotFoundError(APIServiceException):
+class NotFoundError(APIServiceError):
     """Ошибка отсутствия данных"""
 
     status_code: int = 404
 
 
-class CacheError(APIServiceException):
+class CacheError(APIServiceError):
     """Ошибка кэша"""

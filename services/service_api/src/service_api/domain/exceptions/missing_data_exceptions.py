@@ -7,7 +7,7 @@ from service_api.domain.entities import Cabinet, Group
 from .base_exceptions import NotFoundError
 
 
-class GroupNotFound(NotFoundError):
+class GroupNotFoundError(NotFoundError):
     """Ошибка отсутствия группы"""
 
     code: str = "GROUP_NOT_FOUND"
@@ -18,7 +18,7 @@ class GroupNotFound(NotFoundError):
         super().__init__(message, extra)
 
 
-class CabinetNotFound(NotFoundError):
+class CabinetNotFoundError(NotFoundError):
     """Ошибка отсутствия кабинета"""
 
     code: str = "CABINET_NOT_FOUND"
@@ -29,7 +29,7 @@ class CabinetNotFound(NotFoundError):
         super().__init__(message, extra)
 
 
-class ScheduleDateNotFound(NotFoundError):
+class ScheduleDateNotFoundError(NotFoundError):
     """Ошибка отсутствия даты расписания в базе данных"""
 
     code: str = "SCHEDULE_DATE_NOT_FOUND"
@@ -40,7 +40,7 @@ class ScheduleDateNotFound(NotFoundError):
         super().__init__(message, extra)
 
 
-class GroupDayScheduleNotFound(NotFoundError):
+class GroupDayScheduleNotFoundError(NotFoundError):
     """Ошибка отсутствия пар для группы на указанную дату"""
 
     code: str = "SCHEDULE_FOR_GROUP_NOT_FOUND"
@@ -63,7 +63,7 @@ class GroupDayScheduleNotFound(NotFoundError):
         super().__init__(message, extra)
 
 
-class CabinetDayScheduleNotFound(NotFoundError):
+class CabinetDayScheduleNotFoundError(NotFoundError):
     """Ошибка отсутствия пар для кабинета на указанную дату"""
 
     code: str = "SCHEDULE_FOR_CABINET_NOT_FOUND"

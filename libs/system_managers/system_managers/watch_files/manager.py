@@ -5,18 +5,20 @@ from pathlib import Path
 from watchfiles import Change, awatch
 from watchfiles._rust_notify import WatchfilesRustInternalError
 
-from service_api.infrastructure.config import ProdDatabaseSettings, ProdRedisSettings
-from service_api.infrastructure.managers import (
+from ..database import (
+    BaseProdDatabaseSettings,
     DatabaseEngineManager,
-    RedisClientManager,
 )
+from ..redis import BaseProdRedisSettings, RedisClientManager
 
 logger = logging.getLogger(__name__)
 
 
 class WatchFilesManager:
     def __init__(
-        self, db_settings: "ProdDatabaseSettings", redis_settings: "ProdRedisSettings"
+        self,
+        db_settings: "BaseProdDatabaseSettings",
+        redis_settings: "BaseProdRedisSettings",
     ):
         self.db_paths = {
             db_settings.SSL_CERT_FILE,
@@ -30,7 +32,9 @@ class WatchFilesManager:
         }
 
     async def watch(
-        self, db_manager: "DatabaseEngineManager", redis_client: "RedisClientManager"
+        self,
+        db_manager: "DatabaseEngineManager",
+        redis_client: "RedisClientManager",
     ):
         logger.info("Launching tracking of changes in secrets")
 
@@ -38,12 +42,14 @@ class WatchFilesManager:
 
         watch_dirs = {str(Path(p).parent) for p in all_paths}
 
-        def relevant_change(change: Change, path: str) -> bool:
+        def relevant_change(change: Change, path: str) -> bool:  # noqa: ARG001
             return path in all_paths
 
         try:
             async for changes in awatch(
-                *watch_dirs, watch_filter=relevant_change, debounce=2000
+                *watch_dirs,
+                watch_filter=relevant_change,
+                debounce=2000,
             ):
                 logger.info("Changes have been detected in the tracked secrets")
                 certs_changes = {p for _, p in changes}

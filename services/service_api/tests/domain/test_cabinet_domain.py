@@ -5,7 +5,7 @@ from tests.test_contains import _CABINET_ITEMS, _VALID_CABINET_NUMBERS
 
 
 # ====================== [ТЕСТЫ СУЩНОСТИ CABINET] ======================
-@pytest.mark.parametrize("index, number", _VALID_CABINET_NUMBERS)
+@pytest.mark.parametrize(("index", "number"), _VALID_CABINET_NUMBERS)
 def test_create_cabinet_entity(index: str, number: str):
     """Тест должен корректно создать сущность Cabinet"""
     cabinet = Cabinet(index, number)
@@ -14,7 +14,7 @@ def test_create_cabinet_entity(index: str, number: str):
     assert cabinet.index == index
 
 
-@pytest.mark.parametrize("index, number", _VALID_CABINET_NUMBERS)
+@pytest.mark.parametrize(("index", "number"), _VALID_CABINET_NUMBERS)
 def test_cabinet_entity_equal(index: str, number: str):
     """Тест должен проверить равенство двух равных сущностей Cabinet"""
     first_cabinet = Cabinet(index, number)
@@ -23,7 +23,7 @@ def test_cabinet_entity_equal(index: str, number: str):
     assert first_cabinet == second_cabinet
 
 
-@pytest.mark.parametrize("index, number", _VALID_CABINET_NUMBERS)
+@pytest.mark.parametrize(("index", "number"), _VALID_CABINET_NUMBERS)
 def test_cabinet_entity_equal_hash(index: str, number: str):
     """Тест должен проверить равенство хэша двух равных сущностей Cabinet"""
     first_cabinet = Cabinet(index, number)

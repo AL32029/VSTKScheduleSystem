@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from service_parser.application.ports import GroupRepository
 from service_parser.domain.entities import Group
-from service_parser.domain.exceptions import GroupNotFound
+from service_parser.domain.exceptions import GroupNotFoundError
 from service_parser.infrastructure.domain_mappers import (
     group_domain_to_orm,
     group_orm_to_domain,
@@ -51,7 +51,7 @@ class SQLAlchemyGroupRepository(GroupRepository):
             logger.debug(
                 "Group %s not found in database, skipping deletion", group.number
             )
-            raise GroupNotFound(f"Group with index {group.index!r} not found")
+            raise GroupNotFoundError(f"Group with index {group.index!r} not found")
 
         await self.session.delete(group_orm)
         await self.session.commit()
@@ -63,7 +63,7 @@ class SQLAlchemyGroupRepository(GroupRepository):
 
         if group_orm is None:
             logger.debug("Group with index %s not found in database", group_index)
-            raise GroupNotFound(f"Group with index {group_index!r} not found")
+            raise GroupNotFoundError(f"Group with index {group_index!r} not found")
 
         logger.debug("Group with index %s found in database", group_index)
         return group_orm_to_domain(group_orm)

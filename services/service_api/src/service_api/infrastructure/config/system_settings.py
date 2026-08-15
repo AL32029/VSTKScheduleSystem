@@ -13,7 +13,7 @@ class SystemSettings(BaseSettings):
     TZ: str = Field(alias="TIMEZONE", default="Europe/Minsk")
 
     @property
-    def TIMEZONE(self) -> ZoneInfo:
+    def timezone(self) -> ZoneInfo:
         return ZoneInfo(self.TZ)
 
 

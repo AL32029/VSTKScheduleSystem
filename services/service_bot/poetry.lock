@@ -2244,6 +2244,29 @@ pymysql = ["pymysql"]
 sqlcipher = ["sqlcipher3_binary"]
 
 [[package]]
+name = "system-managers"
+version = "0.0.4.dev0"
+description = "Managers for microservices"
+optional = false
+python-versions = ">=3.12,<3.15"
+groups = ["main"]
+files = []
+develop = false
+
+[package.dependencies]
+aiofiles = ">=25.1.0,<26.0.0"
+cryptography = ">=50.0.0,<51.0.0"
+pydantic-settings = ">=2.15.0,<3.0.0"
+python-json-logger = "^4.2.0"
+redis = ">=8.1.0,<9.0.0"
+sqlalchemy = ">=2.0.52,<3.0.0"
+watchfiles = "^1.2.0"
+
+[package.source]
+type = "directory"
+url = "../../libs/system_managers"
+
+[[package]]
 name = "testcontainers"
 version = "4.15.0"
 description = "Python library for throwaway instances of anything that can run in a Docker container"
@@ -2701,4 +2724,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "4279c233ae7ad62d5f16e5ba40b0ec3818ecffaaa529db86d705671a8efe4b66"
+content-hash = "81f2e7ca570432c237056c7dfb10a39441f99b1cd647e618b8ee85aca93bd076"

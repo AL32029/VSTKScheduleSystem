@@ -1,0 +1,26 @@
+[project]
+name = "system-managers"
+version = "0.0.4dev"
+description = "Managers for microservices"
+authors = [
+    { name = "Nikita Bondarev", email = "nikitabondarevvitebsk@gmail.com" }
+]
+license = "No license"
+requires-python = ">=3.12,<3.15"
+
+[tool.poetry.dependencies]
+pydantic-settings = ">=2.15.0,<3.0.0"
+sqlalchemy = ">=2.0.52,<3.0.0"
+aiofiles = ">=25.1.0,<26.0.0"
+cryptography = ">=50.0.0,<51.0.0"
+redis = ">=8.1.0,<9.0.0"
+watchfiles = "^1.2.0"
+python-json-logger = "^4.2.0"
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "C", "N", "UP", "B", "A", "SIM", "ARG", "PT"]

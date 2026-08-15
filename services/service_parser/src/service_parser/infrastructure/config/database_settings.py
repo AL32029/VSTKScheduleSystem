@@ -1,43 +1,28 @@
 import os
 from typing import Literal
 
-from pydantic import Field, PostgresDsn
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import SettingsConfigDict
+from system_managers import BaseDevDatabaseSettings, BaseProdDatabaseSettings
 
 
-class DatabaseSettings(BaseSettings):
+class DevDatabaseSettings(BaseDevDatabaseSettings):
+    model_config = SettingsConfigDict(env_prefix="DATABASE_", extra="forbid")
+
+
+class ProdDatabaseSettings(BaseProdDatabaseSettings):
     model_config = SettingsConfigDict(
         env_file=os.getenv("DATABASE_SETTINGS_ENV", "/vault/secrets/database.env"),
         env_prefix="DATABASE_",
-        extra="ignore",
+        extra="forbid",
     )
 
-    SSL_CERT_FILE: str = Field(default="/vault/secrets/database-tls.crt")
-    SSL_KEY_FILE: str = Field(default="/vault/secrets/database-tls.key")
-    SSL_CA_CERT_FILE: str = Field(default="/vault/secrets/database-tls.ca")
+
+class DatabaseSettings:
+    def __init__(self, mode: Literal["dev", "prod"] = "dev"):
+        self.mode = mode
+        self.dev: BaseDevDatabaseSettings = DevDatabaseSettings()
+        self.prod: BaseProdDatabaseSettings = ProdDatabaseSettings()
 
     @property
-    def HOST(self) -> str:
-        return os.getenv("DATABASE_HOST")
-
-    @property
-    def PORT(self) -> int:
-        return int(os.getenv("DATABASE_PORT"))
-
-    @property
-    def BASE(self) -> str:
-        return os.getenv("DATABASE_BASE")
-
-    @property
-    def SSL_CERT_REQS(self) -> Literal["none", "optional", "required"]:
-        return os.getenv("DATABASE_SSL_CERT_REQS")
-
-    @property
-    def SSL_CHECK_HOSTNAME(self) -> bool:
-        return os.getenv("DATABASE_SSL_CHECK_HOSTNAME")
-
-    @property
-    def URL(self) -> "PostgresDsn":
-        return PostgresDsn.build(
-            scheme="postgresql+asyncpg", host=self.HOST, port=self.PORT, path=self.BASE
-        )
+    def config(self) -> "BaseDevDatabaseSettings | BaseProdDatabaseSettings":
+        return self.dev if self.mode == "dev" else self.prod

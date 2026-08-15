@@ -67,7 +67,7 @@ _EMPTY_NAMES_LESSON_VALUES = [
 
 
 # ====================== [ТЕСТЫ СУЩНОСТИ LESSON] ======================
-@pytest.mark.parametrize("start, end, name, cabinets", _LESSON_VALUES)
+@pytest.mark.parametrize(("start", "end", "name", "cabinets"), _LESSON_VALUES)
 def test_create_lesson_entity(
     start: dt.time, end: dt.time, name: str, cabinets: tuple[Cabinet, ...]
 ):
@@ -80,7 +80,9 @@ def test_create_lesson_entity(
     assert lesson.cabinets == cabinets
 
 
-@pytest.mark.parametrize("start, end, name, cabinets", _INVALID_TIMES_LESSON_VALUES)
+@pytest.mark.parametrize(
+    ("start", "end", "name", "cabinets"), _INVALID_TIMES_LESSON_VALUES
+)
 def test_create_lesson_entity_with_invalid_time(
     start: dt.time, end: dt.time, name: str, cabinets: tuple[Cabinet, ...]
 ):
@@ -94,7 +96,9 @@ def test_create_lesson_entity_with_invalid_time(
     )
 
 
-@pytest.mark.parametrize("start, end, name, cabinets", _EMPTY_NAMES_LESSON_VALUES)
+@pytest.mark.parametrize(
+    ("start", "end", "name", "cabinets"), _EMPTY_NAMES_LESSON_VALUES
+)
 def test_create_lesson_entity_with_empty_name(
     start: dt.time, end: dt.time, name: str, cabinets: tuple[Cabinet, ...]
 ):
@@ -105,7 +109,7 @@ def test_create_lesson_entity_with_empty_name(
     assert exc_info.value.args[0] == "Lesson name is missing"
 
 
-@pytest.mark.parametrize("start, end, name, cabinets", _LESSON_VALUES)
+@pytest.mark.parametrize(("start", "end", "name", "cabinets"), _LESSON_VALUES)
 def test_lesson_entity_equal_hash(
     start: dt.time, end: dt.time, name: str, cabinets: tuple[Cabinet, ...]
 ):
@@ -138,7 +142,7 @@ def test_create_day_schedule_entity(lessons: tuple[Lesson, Lesson]):
     assert all(isinstance(lesson, Lesson) for lesson in day_schedule.lessons)
 
 
-@pytest.mark.parametrize("existing_lesson, new_lesson", _OVERLAPPING_LESSON_PAIRS)
+@pytest.mark.parametrize(("existing_lesson", "new_lesson"), _OVERLAPPING_LESSON_PAIRS)
 def test_create_day_schedule_entity_with_overlap_lessons(
     existing_lesson: Lesson, new_lesson: Lesson
 ):
@@ -154,7 +158,7 @@ def test_create_day_schedule_entity_with_overlap_lessons(
     )
 
 
-@pytest.mark.parametrize("start, end, name, cabinets", _LESSON_VALUES)
+@pytest.mark.parametrize(("start", "end", "name", "cabinets"), _LESSON_VALUES)
 def test_day_schedule_entity_add_lesson(
     start: dt.time, end: dt.time, name: str, cabinets: tuple[Cabinet, ...]
 ):
