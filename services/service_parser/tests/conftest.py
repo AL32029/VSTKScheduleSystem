@@ -2,11 +2,10 @@ import asyncio
 import os
 import pathlib
 import subprocess
-from zoneinfo import ZoneInfo
-
 import sys
 from collections.abc import AsyncIterable, Generator
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pytest
 from dishka import make_async_container
@@ -27,9 +26,7 @@ from service_parser.application.ports import (
     GroupRepository,
     ScheduleRepository,
 )
-from service_parser.infrastructure.config import SystemSettings
 from service_parser.infrastructure.di import HTTPXClientProvider
-from service_parser.infrastructure.di.providers import SystemSettingsProvider
 from service_parser.infrastructure.repositories import (
     SQLAlchemyCabinetRepository,
     SQLAlchemyGroupRepository,
