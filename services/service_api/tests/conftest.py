@@ -126,7 +126,7 @@ async def test_container(request, session_with_test_data, redis_container):
 
     # ====================== [ПРОВАЙДЕР СИСТЕМЫ] ======================
     class TestSystemSettingsProvider(Provider):
-        scope = Scope.REQUEST
+        scope = Scope.APP
 
         @provide
         def metrics_collector(self) -> "MetricsCollector":
