@@ -17,6 +17,8 @@ RUN useradd --shell /bin/bash appuser
 
 WORKDIR /app
 
+COPY --from=libs . /libs
+
 COPY --from=builder requirements.txt /app/requirements.txt
 
 RUN pip install --no-cache-dir --disable-pip-version-check \
