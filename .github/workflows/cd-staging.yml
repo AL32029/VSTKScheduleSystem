@@ -6,6 +6,9 @@ on:
 jobs:
   changes:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+      contents: read
     outputs:
       api: ${{ steps.filter.outputs.api }}
       bot: ${{ steps.filter.outputs.bot }}
