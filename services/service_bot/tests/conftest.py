@@ -176,6 +176,8 @@ async def test_container(
     await container.get(AsyncClient)
     yield container
 
+    await container.close()
+
     async with async_engine.connect() as conn:
         await conn.execute(text("SET session_replication_role = 'replica';"))
         result = await conn.execute(
@@ -189,5 +191,3 @@ async def test_container(
             await conn.execute(text(f'DELETE FROM "{table}";'))
         await conn.execute(text("SET session_replication_role = 'origin';"))
         await conn.commit()
-
-    await container.close()
