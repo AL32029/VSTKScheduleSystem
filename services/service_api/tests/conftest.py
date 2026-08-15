@@ -19,15 +19,16 @@ from sqlalchemy.ext.asyncio import (
 from testcontainers.community.postgres import PostgresContainer
 from testcontainers.community.redis import RedisContainer
 
+from service_api.application.ports import MetricsCollector
 from service_api.infrastructure.di.providers import (
     RepositoriesProvider,
-    SystemSettingsProvider,
     UseCasesProvider,
 )
 from service_api.infrastructure.mappers.domain_mappers import (
     cabinet_domain_to_orm,
     group_domain_to_orm,
 )
+from service_api.infrastructure.prometheus_collector import PrometheusMetricsCollector
 from tests.test_contains import (
     _CABINET_ITEM,
     _CABINET_ITEMS,
@@ -123,6 +124,14 @@ def redis_container() -> Generator[RedisContainer, Any, None]:
 async def test_container(request, session_with_test_data, redis_container):
     from dishka import Provider, Scope, provide
 
+    # ====================== [ПРОВАЙДЕР СИСТЕМЫ] ======================
+    class TestSystemSettingsProvider(Provider):
+        scope = Scope.REQUEST
+
+        @provide
+        def metrics_collector(self) -> "MetricsCollector":
+            return PrometheusMetricsCollector()
+
     # ====================== [ПРОВАЙДЕР БД] ======================
     class TestDatabaseProvider(Provider):
         scope = Scope.REQUEST
@@ -148,7 +157,7 @@ async def test_container(request, session_with_test_data, redis_container):
             await client.delete("group", "schedule")
 
     container = make_async_container(
-        SystemSettingsProvider(),
+        TestSystemSettingsProvider(),
         TestRedisProvider(),
         TestDatabaseProvider(),
         RepositoriesProvider(),
