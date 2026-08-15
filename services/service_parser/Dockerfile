@@ -17,7 +17,9 @@ RUN useradd --shell /bin/bash appuser
 
 WORKDIR /app
 
-COPY --from=libs . /libs
+COPY --from=patterns . /libs/patterns
+
+COPY --from=schedule_db_models . /libs/schedule_db_models
 
 COPY --from=builder requirements.txt /app/requirements.txt
 

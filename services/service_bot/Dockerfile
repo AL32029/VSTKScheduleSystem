@@ -17,7 +17,7 @@ RUN useradd --shell /bin/bash appuser
 
 WORKDIR /app
 
-COPY --from=libs . /libs
+COPY --from=system_managers . /libs/system_managers
 
 COPY --from=builder requirements.txt /app/requirements.txt
 
