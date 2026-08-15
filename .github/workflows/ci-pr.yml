@@ -5,8 +5,32 @@ on:
       - main
 
 jobs:
-  lint-and-test:
+  changes:
     runs-on: ubuntu-latest
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
+      bot: ${{ steps.filter.outputs.bot }}
+      parser: ${{ steps.filter.outputs.parser }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api:
+              - 'services/service_api/**'
+            bot:
+              - 'services/service_bot/**'
+            parser:
+              - 'services/service_parser/**'
+
+  lint-and-test:
+    needs: changes
+    if: always() && (needs.changes.outputs.api == 'true' || needs.changes.outputs.bot == 'true' || needs.changes.outputs.parser == 'true')
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [ api, bot, parser ]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -16,32 +40,17 @@ jobs:
       - name: Install poetry
         run: pip install poetry
 
-      - name: Install dependencies
+      - name: Install dependencies for ${{ matrix.service }}
+        if: fromJSON(needs.changes.outputs[matrix.service]) == true
         run: poetry install
-        working-directory: services/service_api
-      - name: Run ruff
-        run: poetry run ruff check .
-        working-directory: services/service_api
-      - name: Run pytest
-        run: poetry run pytest ./tests
-        working-directory: services/service_api
+        working-directory: services/service_${{ matrix.service }}
 
-      - name: Install dependencies
-        run: poetry install
-        working-directory: services/service_bot
-      - name: Run ruff
+      - name: Run ruff for ${{ matrix.service }}
+        if: fromJSON(needs.changes.outputs[matrix.service]) == true
         run: poetry run ruff check .
-        working-directory: services/service_bot
-      - name: Run pytest
-        run: poetry run pytest ./tests
-        working-directory: services/service_bot
+        working-directory: services/service_${{ matrix.service }}
 
-      - name: Install dependencies
-        run: poetry install
-        working-directory: services/service_parser
-      - name: Run ruff
-        run: poetry run ruff check .
-        working-directory: services/service_parser
-      - name: Run pytest
+      - name: Run pytest for ${{ matrix.service }}
+        if: fromJSON(needs.changes.outputs[matrix.service]) == true
         run: poetry run pytest ./tests
-        working-directory: services/service_parser
+        working-directory: services/service_${{ matrix.service }}
