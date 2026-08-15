@@ -21,6 +21,7 @@ from testcontainers.community.redis import RedisContainer
 
 from service_api.infrastructure.di.providers import (
     RepositoriesProvider,
+    SystemSettingsProvider,
     UseCasesProvider,
 )
 from service_api.infrastructure.mappers.domain_mappers import (
@@ -147,6 +148,7 @@ async def test_container(request, session_with_test_data, redis_container):
             await client.delete("group", "schedule")
 
     container = make_async_container(
+        SystemSettingsProvider(),
         TestRedisProvider(),
         TestDatabaseProvider(),
         RepositoriesProvider(),
