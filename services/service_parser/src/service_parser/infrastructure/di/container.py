@@ -19,7 +19,5 @@ def get_dishka_container():
         RepositoriesProvider(),
         HTTPXClientProvider(),
         SystemProvider(),
-        context={
-            BaseSystemSettings: base_settings
-        }
+        context={BaseSystemSettings: base_settings},
     )

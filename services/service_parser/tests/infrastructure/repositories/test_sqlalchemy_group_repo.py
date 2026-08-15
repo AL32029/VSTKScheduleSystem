@@ -7,12 +7,12 @@ from service_parser.domain.entities import Group
 from service_parser.domain.exceptions import GroupNotFound
 
 # ===================== [СУЩНОСТИ ДЛЯ ТЕСТОВ] =====================
-_VALID_GROUP_NUMBERS = ['ЖБИ-21', 'ОС-21', 'ПЭС-215']
+_VALID_GROUP_NUMBERS = ["ЖБИ-21", "ОС-21", "ПЭС-215"]
 _VALID_GROUP_ITEMS = [Group(group) for group in _VALID_GROUP_NUMBERS]
 
 
 # ===================== [ТЕСТЫ МЕТОДА SAVE] =====================
-@pytest.mark.parametrize('group', _VALID_GROUP_ITEMS)
+@pytest.mark.parametrize("group", _VALID_GROUP_ITEMS)
 async def test_save_group(sqlalchemy_group_repo, group):
     """Тест должен корректно сохранить сущность Group в базу данных"""
     await sqlalchemy_group_repo.save([group])
@@ -33,7 +33,7 @@ async def test_save_many_groups(sqlalchemy_group_repo):
 
 
 # ===================== [ТЕСТЫ МЕТОДА DELETE] =====================
-@pytest.mark.parametrize('group', _VALID_GROUP_ITEMS)
+@pytest.mark.parametrize("group", _VALID_GROUP_ITEMS)
 async def test_delete_group(sqlalchemy_group_repo, group):
     """Тест должен корректно удалить сущность Group из базы данных"""
     await sqlalchemy_group_repo.save([group])
@@ -50,12 +50,12 @@ async def test_delete_group(sqlalchemy_group_repo, group):
 @pytest.mark.parametrize("group_number", _VALID_GROUP_NUMBERS)
 async def test_get_by_index_error_not_found(sqlalchemy_group_repo, group_number):
     """Тест должен выдать ошибку GroupNotFound"""
-    group_index = ITEM_INDEX.sub('', group_number)
+    group_index = ITEM_INDEX.sub("", group_number)
 
     with pytest.raises(GroupNotFound) as exc_info:
         await sqlalchemy_group_repo.get_by_index(group_index)
 
-    assert exc_info.value.args[0] == f'Group with index {group_index!r} not found'
+    assert exc_info.value.args[0] == f"Group with index {group_index!r} not found"
 
 
 # ===================== [ТЕСТЫ МЕТОДА GET_ALL] =====================

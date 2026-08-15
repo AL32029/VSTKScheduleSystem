@@ -39,25 +39,33 @@ if sys.platform == "win32":
 
 
 # ====================== [ФИКСТУРЫ БАЗЫ ДАННЫХ] ======================
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def postgres_container() -> Generator[PostgresContainer, Any, None]:
-    with PostgresContainer('postgres:17') as postgres:
-        db_url = postgres.get_connection_url(driver='asyncpg')
+    with PostgresContainer("postgres:17") as postgres:
+        db_url = postgres.get_connection_url(driver="asyncpg")
         os.environ["MIGRATION_DATABASE_URL"] = db_url
         project_root = pathlib.Path(__file__).parent.parent.parent.parent
         subprocess.run(
-            [sys.executable, "-m", "alembic", "-c", str(project_root / "schedule_alembic.ini"), "upgrade", "head"],
+            [
+                sys.executable,
+                "-m",
+                "alembic",
+                "-c",
+                str(project_root / "schedule_alembic.ini"),
+                "upgrade",
+                "head",
+            ],
             check=True,
-            env=os.environ
+            env=os.environ,
         )
         yield postgres
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 async def async_engine(postgres_container) -> AsyncIterable[AsyncEngine]:
     """Database engine"""
     engine = create_async_engine(
-        postgres_container.get_connection_url(driver='asyncpg'),
+        postgres_container.get_connection_url(driver="asyncpg"),
         echo=False,
         pool_size=5,
         pool_pre_ping=True,
@@ -67,9 +75,9 @@ async def async_engine(postgres_container) -> AsyncIterable[AsyncEngine]:
 
 
 # ====================== [ФИКСТУРЫ REDIS] ======================
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def redis_container() -> Generator[RedisContainer, Any, None]:
-    with RedisContainer('redis:8.6.3') as redis:
+    with RedisContainer("redis:8.6.3") as redis:
         yield redis
 
 
@@ -107,15 +115,21 @@ async def test_container(request, async_engine, redis_container):
         scope = Scope.REQUEST
 
         @provide
-        async def sqlalchemy_cabinet_repository(self, session: AsyncSession) -> CabinetRepository:
+        async def sqlalchemy_cabinet_repository(
+            self, session: AsyncSession
+        ) -> CabinetRepository:
             return SQLAlchemyCabinetRepository(session)
 
         @provide
-        async def sqlalchemy_group_repository(self, session: AsyncSession) -> GroupRepository:
+        async def sqlalchemy_group_repository(
+            self, session: AsyncSession
+        ) -> GroupRepository:
             return SQLAlchemyGroupRepository(session)
 
         @provide
-        async def sqlalchemy_schedule_repository(self, session: AsyncSession) -> ScheduleRepository:
+        async def sqlalchemy_schedule_repository(
+            self, session: AsyncSession
+        ) -> ScheduleRepository:
             return SQLAlchemyScheduleRepository(session)
 
     base_settings = BaseSystemSettings()
@@ -126,19 +140,19 @@ async def test_container(request, async_engine, redis_container):
         TestRedisProvider(),
         TestDatabaseProvider(),
         TestRepositoriesProvide(),
-        context={
-            BaseSystemSettings: base_settings
-        }
+        context={BaseSystemSettings: base_settings},
     )
     await container.get(AsyncClient)
     yield container
 
     async with async_engine.connect() as conn:
         await conn.execute(text("SET session_replication_role = 'replica';"))
-        result = await conn.execute(text(
-            "SELECT tablename FROM pg_tables WHERE schemaname = 'public' "
-            "AND tablename != 'alembic_version';"
-        ))
+        result = await conn.execute(
+            text(
+                "SELECT tablename FROM pg_tables WHERE schemaname = 'public' "
+                "AND tablename != 'alembic_version';"
+            )
+        )
         tables = [row[0] for row in result]
         for table in tables:
             await conn.execute(text(f'DELETE FROM "{table}";'))
