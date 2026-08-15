@@ -2,6 +2,8 @@ import asyncio
 import os
 import pathlib
 import subprocess
+from zoneinfo import ZoneInfo
+
 import sys
 from collections.abc import AsyncIterable, Generator
 from typing import Any
@@ -85,6 +87,14 @@ def redis_container() -> Generator[RedisContainer, Any, None]:
 async def test_container(request, async_engine, redis_container):  # noqa: ARG001
     from dishka import Provider, Scope, provide
 
+    # ====================== [ПРОВАЙДЕР СИСТЕМА] ======================
+    class TestSystemProvider(Provider):
+        scope = Scope.APP
+
+        @provide
+        def time_zone(self) -> ZoneInfo:
+            return ZoneInfo("Europe/Minsk")
+
     # ====================== [ПРОВАЙДЕР БД] ======================
     class TestDatabaseProvider(Provider):
         scope = Scope.REQUEST
@@ -132,15 +142,12 @@ async def test_container(request, async_engine, redis_container):  # noqa: ARG00
         ) -> ScheduleRepository:
             return SQLAlchemyScheduleRepository(session)
 
-    base_settings = SystemSettings()
-
     container = make_async_container(
-        SystemSettingsProvider(),
+        TestSystemProvider(),
         HTTPXClientProvider(),
         TestRedisProvider(),
         TestDatabaseProvider(),
         TestRepositoriesProvide(),
-        context={SystemSettings: base_settings},
     )
     await container.get(AsyncClient)
     yield container
