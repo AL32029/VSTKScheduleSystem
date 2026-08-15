@@ -15,7 +15,7 @@ from service_api.domain.entities import (
     Group,
     GroupDaySchedule,
 )
-from service_api.domain.exceptions import CacheItemNotFound
+from service_api.domain.exceptions import CacheItemNotFoundError
 from service_api.infrastructure.config import system_settings
 from service_api.infrastructure.mappers import (
     cabinet_day_schedule_to_schema,
@@ -41,7 +41,7 @@ class RedisCacheRepository(CacheRepository):
 
         if group is None:
             logger.debug("Group %s not found in cache", group_number)
-            raise CacheItemNotFound(
+            raise CacheItemNotFoundError(
                 f"Cache of group with number {group_number} not found"
             )
 
@@ -67,7 +67,7 @@ class RedisCacheRepository(CacheRepository):
 
         if groups is None:
             logger.debug("Groups list not found in cache")
-            raise CacheItemNotFound("Cache of all groups not found")
+            raise CacheItemNotFoundError("Cache of all groups not found")
 
         group_items = [Group(**group) for group in json.loads(groups)]
         logger.debug("Groups list found in cache, %d items", len(group_items))
@@ -98,7 +98,7 @@ class RedisCacheRepository(CacheRepository):
 
         if cabinet is None:
             logger.debug("Cabinet %s not found in cache", cabinet_number)
-            raise CacheItemNotFound(
+            raise CacheItemNotFoundError(
                 f"Cache of cabinet with number {cabinet_number} not found"
             )
 
@@ -125,7 +125,7 @@ class RedisCacheRepository(CacheRepository):
 
         if cabinets is None:
             logger.debug("Cabinets list not found in cache")
-            raise CacheItemNotFound("Cache of all cabinets not found")
+            raise CacheItemNotFoundError("Cache of all cabinets not found")
 
         result = [Cabinet(**cabinet) for cabinet in json.loads(cabinets)]
         logger.debug("Cabinets list found in cache, %d items", len(result))
@@ -163,7 +163,7 @@ class RedisCacheRepository(CacheRepository):
                 group_number,
                 schedule_to,
             )
-            raise CacheItemNotFound(
+            raise CacheItemNotFoundError(
                 f"Cache of day schedule for {group_number!r} at {schedule_to} not found"
             )
 
@@ -206,7 +206,7 @@ class RedisCacheRepository(CacheRepository):
             ),
         )
 
-        ttl = datetime.datetime.now(system_settings.TIMEZONE).replace(
+        ttl = datetime.datetime.now(system_settings.timezone).replace(
             hour=23, minute=59, second=59
         )
         logger.debug(
@@ -232,7 +232,7 @@ class RedisCacheRepository(CacheRepository):
                 cabinet_number,
                 schedule_to,
             )
-            raise CacheItemNotFound(
+            raise CacheItemNotFoundError(
                 f"Cache of day schedule for {cabinet_number!r} at "
                 f"{schedule_to} not found"
             )
@@ -285,7 +285,7 @@ class RedisCacheRepository(CacheRepository):
             ),
         )
 
-        ttl = datetime.datetime.now(system_settings.TIMEZONE).replace(
+        ttl = datetime.datetime.now(system_settings.timezone).replace(
             hour=23, minute=59, second=59
         )
         logger.debug(

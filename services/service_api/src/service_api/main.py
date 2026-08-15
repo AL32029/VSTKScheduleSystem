@@ -6,15 +6,15 @@ from contextlib import asynccontextmanager
 from dishka.integrations.fastapi import setup_dishka
 from fastapi import FastAPI
 from prometheus_client import make_asgi_app
-
-from service_api.domain.exceptions import APIServiceException
-from service_api.infrastructure.config import LoggingSettings, SystemSettings
-from service_api.infrastructure.di.container import get_dishka_container
-from service_api.infrastructure.managers import (
+from system_managers import (
     DatabaseEngineManager,
     RedisClientManager,
     WatchFilesManager,
 )
+
+from service_api.domain.exceptions import APIServiceError
+from service_api.infrastructure.config import LoggingSettings, SystemSettings
+from service_api.infrastructure.di.container import get_dishka_container
 from service_api.infrastructure.middlewares import InitRequestMiddleware
 from service_api.presentation.rest.endpoints import (
     cabinet_router,
@@ -31,7 +31,7 @@ logger = logging.getLogger("service_api")
 
 
 @asynccontextmanager
-async def lifespan(app: "FastAPI"):
+async def lifespan(app: "FastAPI"):  # noqa: C901
     container = app.state.dishka_container
 
     system_settings: SystemSettings = await container.get(SystemSettings)
@@ -99,7 +99,7 @@ def create_app(container=None) -> "FastAPI":
     app.include_router(group_router)
     app.include_router(schedule_router)
 
-    app.add_exception_handler(APIServiceException, api_exception_handler)
+    app.add_exception_handler(APIServiceError, api_exception_handler)
 
     app.add_middleware(InitRequestMiddleware)
 

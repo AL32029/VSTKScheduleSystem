@@ -1572,6 +1572,23 @@ dev = ["pre-commit", "tox"]
 testing = ["coverage", "pytest", "pytest-benchmark"]
 
 [[package]]
+name = "prometheus-client"
+version = "0.26.0"
+description = "Python client for the Prometheus monitoring system."
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "prometheus_client-0.26.0-py3-none-any.whl", hash = "sha256:fa93d06737aa02bacd05794768508bb97d2fbee28cb3bca04eaae92f0ca953d6"},
+    {file = "prometheus_client-0.26.0.tar.gz", hash = "sha256:04a91bcf94e2cf74a44a1a874d651a2e853ed354b6e822f3b7487751465d5c2b"},
+]
+
+[package.extras]
+aiohttp = ["aiohttp"]
+django = ["django"]
+twisted = ["twisted"]
+
+[[package]]
 name = "propcache"
 version = "0.5.2"
 description = "Accelerated property cache"
@@ -2227,6 +2244,29 @@ pymysql = ["pymysql"]
 sqlcipher = ["sqlcipher3_binary"]
 
 [[package]]
+name = "system-managers"
+version = "0.0.4.dev0"
+description = "Managers for microservices"
+optional = false
+python-versions = ">=3.12,<3.15"
+groups = ["main"]
+files = []
+develop = false
+
+[package.dependencies]
+aiofiles = ">=25.1.0,<26.0.0"
+cryptography = ">=50.0.0,<51.0.0"
+pydantic-settings = ">=2.15.0,<3.0.0"
+python-json-logger = "^4.2.0"
+redis = ">=8.1.0,<9.0.0"
+sqlalchemy = ">=2.0.52,<3.0.0"
+watchfiles = "^1.2.0"
+
+[package.source]
+type = "directory"
+url = "../../libs/system_managers"
+
+[[package]]
 name = "testcontainers"
 version = "4.15.0"
 description = "Python library for throwaway instances of anything that can run in a Docker container"
@@ -2684,4 +2724,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "b53a2516238404eacf274b9b7190b20c31ccea6a8ecb34afe6c7c0a29cfb95d8"
+content-hash = "81f2e7ca570432c237056c7dfb10a39441f99b1cd647e618b8ee85aca93bd076"

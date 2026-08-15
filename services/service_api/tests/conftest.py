@@ -65,7 +65,7 @@ def postgres_container() -> Generator[PostgresContainer, Any, None]:
         yield postgres
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def async_engine(postgres_container) -> AsyncIterable[AsyncEngine]:
     """Database engine"""
     engine = create_async_engine(
@@ -76,12 +76,12 @@ async def async_engine(postgres_container) -> AsyncIterable[AsyncEngine]:
     await engine.dispose()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def session_maker(async_engine) -> async_sessionmaker[AsyncSession]:
     return async_sessionmaker(async_engine, expire_on_commit=False)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def session_with_test_data(session_maker):
     groups_orm = (group_domain_to_orm(x) for x in {_GROUP_ITEM, *_GROUP_ITEMS})
     cabinets_orm = (cabinet_domain_to_orm(x) for x in {_CABINET_ITEM, *_CABINET_ITEMS})
@@ -121,8 +121,8 @@ def redis_container() -> Generator[RedisContainer, Any, None]:
 
 
 # ====================== [ФИКСТУРА С ПРОВАЙДЕРАМИ] ======================
-@pytest.fixture(scope="function")
-async def test_container(request, session_with_test_data, redis_container):
+@pytest.fixture
+async def test_container(request, session_with_test_data, redis_container):  # noqa: ARG001
     from dishka import Provider, Scope, provide
 
     # ====================== [ПРОВАЙДЕР СИСТЕМЫ] ======================

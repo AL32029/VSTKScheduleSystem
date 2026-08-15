@@ -8,7 +8,7 @@ from tests.test_contains import (
 
 
 # ====================== [ТЕСТЫ СУЩНОСТИ GroupLesson] ======================
-@pytest.mark.parametrize("start, end, name, cabinets", _GROUP_LESSON_VALUES)
+@pytest.mark.parametrize(("start", "end", "name", "cabinets"), _GROUP_LESSON_VALUES)
 def test_create_group_lesson_entity(start, end, name, cabinets):
     """Тест должен корректно создать сущность GroupLesson"""
     lesson = GroupLesson(start, end, name, cabinets)
@@ -23,7 +23,7 @@ def test_create_group_lesson_entity(start, end, name, cabinets):
     assert all(isinstance(cabinet, Cabinet) for cabinet in lesson.cabinets)
 
 
-@pytest.mark.parametrize("start, end, name, cabinets", _GROUP_LESSON_VALUES)
+@pytest.mark.parametrize(("start", "end", "name", "cabinets"), _GROUP_LESSON_VALUES)
 def test_group_lesson_entity_equal(start, end, name, cabinets):
     """Тест должен создать 2 идентичные сущности GroupLesson и провести их сравнение"""
 
@@ -33,7 +33,7 @@ def test_group_lesson_entity_equal(start, end, name, cabinets):
     assert first_lesson == second_lesson
 
 
-@pytest.mark.parametrize("start, end, name, cabinets", _GROUP_LESSON_VALUES)
+@pytest.mark.parametrize(("start", "end", "name", "cabinets"), _GROUP_LESSON_VALUES)
 def test_group_lesson_entity_equal_hash(start, end, name, cabinets):
     """
     Тест должен создать 2 идентичные сущности GroupLesson
@@ -47,7 +47,9 @@ def test_group_lesson_entity_equal_hash(start, end, name, cabinets):
 
 
 # ====================== [ТЕСТЫ СУЩНОСТИ CabinetLesson] ======================
-@pytest.mark.parametrize("start, end, group, name, cabinets", _CABINET_LESSON_VALUES)
+@pytest.mark.parametrize(
+    ("start", "end", "group", "name", "cabinets"), _CABINET_LESSON_VALUES
+)
 def test_create_cabinet_lesson_entity(start, end, group, name, cabinets):
     """Тест должен корректно создать сущность CabinetLesson"""
     lesson = CabinetLesson(start, end, group, name, cabinets)
@@ -64,7 +66,9 @@ def test_create_cabinet_lesson_entity(start, end, group, name, cabinets):
     assert all(isinstance(cabinet, Cabinet) for cabinet in lesson.cabinets)
 
 
-@pytest.mark.parametrize("start, end, group, name, cabinets", _CABINET_LESSON_VALUES)
+@pytest.mark.parametrize(
+    ("start", "end", "group", "name", "cabinets"), _CABINET_LESSON_VALUES
+)
 def test_cabinet_lesson_entity_equal(start, end, group, name, cabinets):
     """
     Тест должен создать 2 идентичные сущности CabinetLesson
@@ -77,7 +81,9 @@ def test_cabinet_lesson_entity_equal(start, end, group, name, cabinets):
     assert first_lesson == second_lesson
 
 
-@pytest.mark.parametrize("start, end, group, name, cabinets", _CABINET_LESSON_VALUES)
+@pytest.mark.parametrize(
+    ("start", "end", "group", "name", "cabinets"), _CABINET_LESSON_VALUES
+)
 def test_cabinet_lesson_entity_equal_hash(start, end, group, name, cabinets):
     """
     Тест должен создать 2 идентичные сущности CabinetLesson

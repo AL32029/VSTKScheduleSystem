@@ -12,7 +12,9 @@ _VALID_GROUP_NUMBERS = ["ЖБИ-21", "ОС-21", "ПЭС-215"]
 _VALID_GROUP_PARSER_POSITIONS = [(1, 1), (2, 10), (5, 3)]
 _VALID_GROUP_PARSER_VALUES = [
     (group, x, y)
-    for group, (x, y) in zip(_VALID_GROUP_NUMBERS, _VALID_GROUP_PARSER_POSITIONS)
+    for group, (x, y) in zip(
+        _VALID_GROUP_NUMBERS, _VALID_GROUP_PARSER_POSITIONS, strict=False
+    )
 ]
 
 # ====================== [НЕВАЛИДНЫЕ ЗНАЧЕНИЯ] ======================
@@ -20,14 +22,18 @@ _INVALID_GROUP_NUMBERS = ["ZHBI-21", "ос 21", "ПЭС 2"]
 _INVALID_GROUP_PARSER_POSITIONS = [(-1, 1), (2, -10), (-5, -3)]
 _INVALID_GROUP_PARSER_VALUES = [
     (group, x, y)
-    for group, (x, y) in zip(_VALID_GROUP_NUMBERS, _INVALID_GROUP_PARSER_POSITIONS)
+    for group, (x, y) in zip(
+        _VALID_GROUP_NUMBERS, _INVALID_GROUP_PARSER_POSITIONS, strict=False
+    )
 ]
 
 # ====================== [СУЩНОСТИ] ======================
 _GROUP_ITEMS = [Group(group) for group in _VALID_GROUP_NUMBERS]
 _GROUP_PARSER_ITEMS = [
     GroupParser(group, x, y)
-    for group, (x, y) in zip(_VALID_GROUP_NUMBERS, _VALID_GROUP_PARSER_POSITIONS)
+    for group, (x, y) in zip(
+        _VALID_GROUP_NUMBERS, _VALID_GROUP_PARSER_POSITIONS, strict=False
+    )
 ]
 
 
@@ -76,7 +82,7 @@ def test_group_entity_string_representation(group_item: Group):
 
 
 # ====================== [ТЕСТЫ СУЩНОСТИ GROUPPARSER] ======================
-@pytest.mark.parametrize("group_number, pos_x, pos_y", _VALID_GROUP_PARSER_VALUES)
+@pytest.mark.parametrize(("group_number", "pos_x", "pos_y"), _VALID_GROUP_PARSER_VALUES)
 def test_create_group_parser_entity(group_number: str, pos_x: int, pos_y: int):
     """Тест должен корректно создать сущность GroupParser"""
     group = GroupParser(group_number, pos_x, pos_y)
@@ -87,7 +93,9 @@ def test_create_group_parser_entity(group_number: str, pos_x: int, pos_y: int):
     assert group.pos_y == pos_y
 
 
-@pytest.mark.parametrize("group_number, pos_x, pos_y", _INVALID_GROUP_PARSER_VALUES)
+@pytest.mark.parametrize(
+    ("group_number", "pos_x", "pos_y"), _INVALID_GROUP_PARSER_VALUES
+)
 def test_create_group_parser_entity_with_invalid_number(
     group_number: str, pos_x: int, pos_y: int
 ):
@@ -98,7 +106,7 @@ def test_create_group_parser_entity_with_invalid_number(
     assert str(exc_info.value).endswith("position must be positive")
 
 
-@pytest.mark.parametrize("group_number, pos_x, pos_y", _VALID_GROUP_PARSER_VALUES)
+@pytest.mark.parametrize(("group_number", "pos_x", "pos_y"), _VALID_GROUP_PARSER_VALUES)
 def test_group_parser_entity_equal(group_number: str, pos_x: int, pos_y: int):
     """Тест должен проверить равенство двух равных сущностей GroupParser"""
     first_group_parser = GroupParser(group_number, pos_x, pos_y)
@@ -107,7 +115,7 @@ def test_group_parser_entity_equal(group_number: str, pos_x: int, pos_y: int):
     assert first_group_parser == second_group_parser
 
 
-@pytest.mark.parametrize("group_number, pos_x, pos_y", _VALID_GROUP_PARSER_VALUES)
+@pytest.mark.parametrize(("group_number", "pos_x", "pos_y"), _VALID_GROUP_PARSER_VALUES)
 def test_group_parser_entity_equal_hash(group_number: str, pos_x: int, pos_y: int):
     """Тест должен проверить равенство хэша двух равных сущностей GroupParser"""
     first_group_parser = GroupParser(group_number, pos_x, pos_y)

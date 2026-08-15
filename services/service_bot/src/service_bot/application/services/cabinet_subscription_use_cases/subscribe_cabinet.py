@@ -16,5 +16,5 @@ class SubscribeCabinetUseCase:
         logger.info("Subscribing to the %s cabinet", str(cabinet))
         await self.repo.subscribe_cabinet(user, cabinet)
         logger.info(
-            "The subscription to the %s cabinet has been completed", str(cabinet)
+            "The subscription to the %s cabinet has been completed", str(cabinet),
         )

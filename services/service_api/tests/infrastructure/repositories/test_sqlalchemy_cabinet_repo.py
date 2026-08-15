@@ -1,7 +1,7 @@
 import pytest
 
 from service_api.domain.entities import Cabinet
-from service_api.domain.exceptions import CabinetNotFound
+from service_api.domain.exceptions import CabinetNotFoundError
 from tests.test_contains import _CABINET_ITEM, _CABINET_ITEM_NOT_SAVED, _CABINET_ITEMS
 
 
@@ -18,7 +18,7 @@ async def test_get_by_number(sqlalchemy_cabinet_repo):
 
 async def test_get_by_number_not_found(sqlalchemy_cabinet_repo):
     """Тест должен выдать ошибку CabinetNotFound"""
-    with pytest.raises(CabinetNotFound) as exc_info:
+    with pytest.raises(CabinetNotFoundError) as exc_info:
         await sqlalchemy_cabinet_repo.get_by_number(_CABINET_ITEM_NOT_SAVED.number)
 
     assert exc_info.value.args != (

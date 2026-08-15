@@ -1,6 +1,12 @@
-from .base_settings import BaseSystemSettings
 from .database_settings import DatabaseSettings
 from .logging_settings import LoggingSettings
 from .redis_settings import RedisSettings
+from .system_settings import SystemSettings, system_settings
 
-__all__ = ["BaseSystemSettings", "DatabaseSettings", "LoggingSettings", "RedisSettings"]
+__all__ = [
+    "SystemSettings",
+    "DatabaseSettings",
+    "LoggingSettings",
+    "RedisSettings",
+    "system_settings",
+]

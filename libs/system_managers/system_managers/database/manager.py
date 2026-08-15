@@ -5,24 +5,23 @@ from ssl import SSLContext
 from typing import cast
 
 import aiofiles
+import sqlalchemy.exc
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from sqlalchemy import URL, text
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
-from service_api.infrastructure.config import (
-    DevDatabaseSettings,
-    ProdDatabaseSettings,
-)
+from .settings import BaseDevDatabaseSettings, BaseProdDatabaseSettings
 
 logger = logging.getLogger(__name__)
 
 
 class DatabaseEngineManager:
-    def __init__(self, settings: "DevDatabaseSettings | ProdDatabaseSettings") -> None:
+    def __init__(
+        self, settings: "BaseDevDatabaseSettings | BaseProdDatabaseSettings"
+    ) -> None:
         logger.info("Initialization of the database manager has begun")
-        self._config: "DevDatabaseSettings | ProdDatabaseSettings" = settings
+        self._config: BaseDevDatabaseSettings | BaseProdDatabaseSettings = settings
         self._engine: AsyncEngine | None = None
         self._lock = asyncio.Lock()
         logger.info("The database manager has been successfully initialized")
@@ -79,7 +78,7 @@ class DatabaseEngineManager:
                     "The database secret rotation has been completed successfully"
                 )
                 return True
-            except (SQLAlchemyError, TimeoutError, ConnectionError):
+            except (sqlalchemy.exc.SQLAlchemyError, TimeoutError, ConnectionError):
                 logger.exception(
                     "An error occurred during the rotation of database secrets"
                 )
@@ -94,7 +93,7 @@ class DatabaseEngineManager:
 
         engine_url = await self._build_engine_url()
 
-        if isinstance(self._config, ProdDatabaseSettings):
+        if isinstance(self._config, BaseProdDatabaseSettings):
             ssl_context = self._load_ssl_context()
             engine = create_async_engine(
                 engine_url,
@@ -125,7 +124,7 @@ class DatabaseEngineManager:
         )
 
     def _load_ssl_context(self) -> SSLContext | None:
-        if not isinstance(self._config, ProdDatabaseSettings):
+        if not isinstance(self._config, BaseProdDatabaseSettings):
             logger.warning(
                 "Obtaining an SSL context is available only for the production mode "
                 "of the system"
@@ -142,7 +141,7 @@ class DatabaseEngineManager:
 
     async def _build_engine_url(self) -> URL:
         logger.info("The generation of the database connection URL has begun")
-        if isinstance(self._config, ProdDatabaseSettings):
+        if isinstance(self._config, BaseProdDatabaseSettings):
             async with aiofiles.open(self._config.SSL_CERT_FILE, "rb") as f:
                 cert_data = await f.read()
 

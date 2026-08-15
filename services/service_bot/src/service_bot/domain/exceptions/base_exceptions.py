@@ -1,14 +1,14 @@
-class BotServiceException(Exception):
+class BotServiceError(Exception):
     """Базовое исключение Bot Service"""
 
 
-class DataRequestError(BotServiceException):
+class DataRequestError(BotServiceError):
     """Ошибка запроса данных"""
 
 
-class DataSavingError(BotServiceException):
+class DataSavingError(BotServiceError):
     """Ошибка сохранения данных"""
 
 
-class DataValidationError(BotServiceException):
+class DataValidationError(BotServiceError):
     """Ошибка валидации данных"""

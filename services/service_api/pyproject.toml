@@ -7,6 +7,7 @@ authors = [
 ]
 license = "No license"
 requires-python = ">=3.12,<3.15"
+
 [tool.poetry.dependencies]
 fastapi = { extras = ["uvicorn"], version = "^0.141.1" }
 uvicorn = "^0.52.0"
@@ -15,7 +16,6 @@ asyncpg = "^0.31.0"
 pydantic = "^2.13.4"
 pydantic-settings = "^2.14.2"
 dishka = "^1.10.1"
-cryptography = "^49.0.0"
 redis = "^8.1.0"
 schedule-db-models = { path = "../../libs/schedule_db_models" }
 patterns = { path = "../../libs/patterns" }
@@ -24,6 +24,7 @@ watchfiles = "^1.2.0"
 aiofiles = "^25.1.0"
 prometheus-client = "^0.26.0"
 python-json-logger = "^4.1.0"
+system-managers = {path = "../../libs/system_managers"}
 
 
 [tool.poetry.group.dev.dependencies]
@@ -48,4 +49,4 @@ addopts = "--asyncio-mode=auto"
 source = ["src/service_api"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
+select = ["E", "F", "I", "W", "C", "N", "UP", "B", "A", "SIM", "ARG", "PT"]

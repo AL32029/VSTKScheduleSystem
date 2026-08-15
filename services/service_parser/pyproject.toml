@@ -21,8 +21,10 @@ schedule-db-models = { path = "../../libs/schedule_db_models" }
 patterns = { path = "../../libs/patterns" }
 dishka = "^1.10.1"
 redis = "^8.0.1"
-cryptography = "^49.0.0"
 tzdata = "^2026.3"
+system-managers = {path = "../../libs/system_managers"}
+prometheus-client = "^0.26.0"
+python-json-logger = "^4.2.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.1.1"
@@ -47,4 +49,4 @@ addopts = "--asyncio-mode=auto"
 source = ["src/service_parser"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
+select = ["E", "F", "I", "W", "C", "N", "UP", "B", "A", "SIM", "ARG", "PT"]

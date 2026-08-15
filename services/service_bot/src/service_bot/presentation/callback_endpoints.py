@@ -18,13 +18,13 @@ from service_bot.application.services import (
 )
 from service_bot.domain.entities import User
 from service_bot.domain.exceptions import (
-    CabinetNotFound,
-    CabinetUnsubscribeNotFound,
-    GroupNotFound,
-    GroupUnsubscribeNotFound,
-    ScheduleDateNotFound,
-    ScheduleForCabinetNotFound,
-    ScheduleForGroupNotFound,
+    CabinetNotFoundError,
+    CabinetUnsubscribeNotFoundError,
+    GroupNotFoundError,
+    GroupUnsubscribeNotFoundError,
+    ScheduleDateNotFoundError,
+    ScheduleForCabinetNotFoundError,
+    ScheduleForGroupNotFoundError,
 )
 from service_bot.infrastructure.template_engine_items import (
     TemplateKeyboardRenderer,
@@ -152,7 +152,7 @@ async def callback_open_schedule(
 ):
     """Callback обработчик открытия расписания"""
     schedule_for, schedule_item = OPEN_DAY_SCHEDULE_COMPILE.match(
-        callback.data
+        callback.data,
     ).groups()
 
     schedule_to: Literal["today", "tomorrow"] | None = None
@@ -161,19 +161,19 @@ async def callback_open_schedule(
     for s_to in ("tomorrow", "today"):
         try:
             schedule_to: Literal["today", "tomorrow"] = cast(
-                Literal["today", "tomorrow"], s_to
+                "Literal['today', 'tomorrow']", s_to,
             )
             day_schedule = await use_case.execute(
-                schedule_item, schedule_to, schedule_for
+                schedule_item, schedule_to, schedule_for,
             )
             break
-        except (GroupNotFound, CabinetNotFound) as e:
+        except (GroupNotFoundError, CabinetNotFoundError) as e:
             logger.warning("The %s %s was not found", schedule_for, schedule_item)
             return await callback.answer(f"⚠ {e!s}")
-        except ScheduleDateNotFound as e:
+        except ScheduleDateNotFoundError as e:
             logger.warning("The schedule for %s has not been published", schedule_to)
             error = e
-        except (ScheduleForGroupNotFound, ScheduleForCabinetNotFound) as e:
+        except (ScheduleForGroupNotFoundError, ScheduleForCabinetNotFoundError) as e:
             logger.warning(
                 "The schedule for %s %s for %s is unavailable",
                 schedule_for,
@@ -183,15 +183,15 @@ async def callback_open_schedule(
             error = e
     else:
         logger.warning(
-            "The schedule for %s %s has not been found", schedule_for, schedule_item
+            "The schedule for %s %s has not been found", schedule_for, schedule_item,
         )
         return await callback.answer(f"⚠ {error!s}")
 
     rendered_text = message_templater.render(
-        "day_schedule", schedule_to=schedule_for, day_schedule=day_schedule
+        "day_schedule", schedule_to=schedule_for, day_schedule=day_schedule,
     )
     rendered_keyboard = keyboard_templater.day_schedule(
-        schedule_item, schedule_for, schedule_to
+        schedule_item, schedule_for, schedule_to,
     )
 
     logger.info("Changing the message to the schedule for %s", schedule_to)
@@ -229,17 +229,17 @@ async def callback_day_schedule(
 
         try:
             day_schedule = await day_schedule_use_case.execute(
-                schedule_item, schedule_action, schedule_for
+                schedule_item, schedule_action, schedule_for,
             )
-        except (GroupNotFound, CabinetNotFound) as e:
+        except (GroupNotFoundError, CabinetNotFoundError) as e:
             logger.warning("The %s %s was not found", schedule_for, schedule_item)
             return await callback.answer(f"⚠ {e!s}")
-        except ScheduleDateNotFound as e:
+        except ScheduleDateNotFoundError as e:
             logger.warning(
-                "The schedule for %s has not been published", schedule_action
+                "The schedule for %s has not been published", schedule_action,
             )
             return await callback.answer(f"⚠ {e!s}")
-        except (ScheduleForGroupNotFound, ScheduleForCabinetNotFound) as e:
+        except (ScheduleForGroupNotFoundError, ScheduleForCabinetNotFoundError) as e:
             logger.warning(
                 "The schedule for %s %s for %s is unavailable",
                 schedule_for,
@@ -255,17 +255,17 @@ async def callback_day_schedule(
             updated_time=updated_time,
         )
         rendered_keyboard = keyboard_templater.day_schedule(
-            schedule_item, schedule_for, schedule_action
+            schedule_item, schedule_for, schedule_action,
         )
 
         logger.info("Updating the message with the schedule page")
         await callback.message.edit_text(
-            text=rendered_text, reply_markup=rendered_keyboard
+            text=rendered_text, reply_markup=rendered_keyboard,
         )
         logger.info("The message with the schedule page has been updated")
 
         return None
-    elif schedule_action == "delete":
+    if schedule_action == "delete":
         try:
             if schedule_for == "group":
                 await unsubscribe_group_use_case.execute(user, schedule_item)
@@ -273,7 +273,7 @@ async def callback_day_schedule(
             elif schedule_for == "cabinet":
                 await unsubscribe_cabinet_use_case.execute(user, schedule_item)
                 await callback.answer("✔ Вы перестали отслеживать кабинет")
-        except (GroupUnsubscribeNotFound, CabinetUnsubscribeNotFound) as e:
+        except (GroupUnsubscribeNotFoundError, CabinetUnsubscribeNotFoundError) as e:
             await callback.answer(f"⚠ {e!s}")
 
         schedule_items = (
@@ -291,13 +291,13 @@ async def callback_day_schedule(
         logger.info("The user status has been changed to %s", user_state.state)
 
         rendered_text = message_templater.render(
-            "main_menu", user_tg=callback.from_user
+            "main_menu", user_tg=callback.from_user,
         )
         rendered_keyboard = keyboard_templater.main_menu(user, schedule_items)
 
         logger.info("Changing the message to the main menu")
         await callback.message.edit_text(
-            text=rendered_text, reply_markup=rendered_keyboard
+            text=rendered_text, reply_markup=rendered_keyboard,
         )
         logger.info("The message has been changed to the main menu")
 
@@ -312,5 +312,5 @@ async def invalid_callback(callback: CallbackQuery):
     """Callback обработчик нереализованных кнопок"""
     logger.warning("The button has no useful functionality")
     return await callback.answer(
-        "⚠ На данный момент данная кнопка не выполняет обработку"
+        "⚠ На данный момент данная кнопка не выполняет обработку",
     )

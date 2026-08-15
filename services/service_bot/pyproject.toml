@@ -3,43 +3,43 @@ name = "service-bot"
 version = "0.0.3dev"
 description = "Microservice \"Bot Service\""
 authors = [
-    {name = "Nikita Bondarev",email = "nikitabondarevvitebsk@gmail.com"}
+    { name = "Nikita Bondarev", email = "nikitabondarevvitebsk@gmail.com" }
 ]
 license = "No license"
 requires-python = ">=3.12,<3.15"
-dependencies = [
-    "aiogram (>=3.30.0,<4.0.0)",
-    "sqlalchemy (>=2.0.51,<3.0.0)",
-    "asyncpg (>=0.31.0,<0.32.0)",
-    "watchfiles (>=1.2.0,<2.0.0)",
-    "cryptography (>=50.0.0,<51.0.0)",
-    "dishka[aiogram] (>=1.10.1,<2.0.0)",
-    "redis (>=8.1.0,<9.0.0)",
-    "pydantic (>=2.13.4,<3.0.0)",
-    "pydantic-settings (>=2.14.2,<3.0.0)",
-    "httpx (>=0.28.1,<0.29.0)",
-    "jinja2 (>=3.1.6,<4.0.0)",
-    "python-json-logger (>=4.1.0,<5.0.0)",
-    "tzdata (>=2026.3,<2027.0)",
-]
+
+[tool.poetry.dependencies]
+aiogram = ">=3.30.0,<4.0.0"
+sqlalchemy = ">=2.0.51,<3.0.0"
+asyncpg = ">=0.31.0,<0.32.0"
+watchfiles = ">=1.2.0,<2.0.0"
+cryptography = ">=50.0.0,<51.0.0"
+dishka = { version = ">=1.10.1,<2.0.0", extras = ["aiogram"] }
+redis = ">=8.1.0,<9.0.0"
+pydantic = ">=2.13.4,<3.0.0"
+pydantic-settings = ">=2.14.2,<3.0.0"
+httpx = ">=0.28.1,<0.29.0"
+jinja2 = ">=3.1.6,<4.0.0"
+python-json-logger = ">=4.1.0,<5.0.0"
+tzdata = ">=2026.3,<2027.0"
+prometheus-client = ">=0.26.0,<0.27.0"
+system-managers = {path = "../../libs/system_managers"}
 
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
-[dependency-groups]
-dev = [
-    "ruff (<0.16)",
-    "pytest (>=9.1.1,<10.0.0)",
-    "pytest-asyncio (>=1.4.0,<2.0.0)",
-    "pytest-httpx (>=0.36.2,<0.37.0)",
-    "alembic (>=1.18.5,<2.0.0)",
-    "pytest-cov (>=7.1.0,<8.0.0)",
-    "testcontainers (>=4.15.0,<5.0.0)",
-    "aiogram-test-framework (>=1.0.4,<2.0.0)",
-    "pytest-env"
-]
+[tool.poetry.group.dev.dependencies]
+ruff = "<0.16"
+pytest = ">=9.1.1,<10.0.0"
+pytest-asyncio = ">=1.4.0,<2.0.0"
+pytest-httpx = ">=0.36.2,<0.37.0"
+alembic = ">=1.18.5,<2.0.0"
+pytest-cov = ">=7.1.0,<8.0.0"
+testcontainers = ">=4.15.0,<5.0.0"
+aiogram-test-framework = ">=1.0.4,<2.0.0"
+pytest-env = "*"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
@@ -49,4 +49,4 @@ addopts = "--asyncio-mode=auto"
 source = ["src/service_bot"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
+select = ["E", "F", "I", "W", "C", "N", "UP", "B", "A", "SIM", "ARG", "PT"]

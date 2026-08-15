@@ -3,7 +3,7 @@ from .providers import (
     HTTPXClientProvider,
     RedisProvider,
     RepositoriesProvider,
-    SystemProvider,
+    SystemSettingsProvider,
 )
 
 __all__ = [
@@ -11,5 +11,5 @@ __all__ = [
     "HTTPXClientProvider",
     "RedisProvider",
     "RepositoriesProvider",
-    "SystemProvider",
+    "SystemSettingsProvider",
 ]

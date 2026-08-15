@@ -3,10 +3,10 @@ from dishka.integrations.aiogram import AiogramProvider
 
 from service_bot.infrastructure.config import (
     APISettings,
-    BaseSystemSettings,
     BotSettings,
     DatabaseSettings,
     RedisSettings,
+    SystemSettings,
 )
 
 from .providers import (
@@ -14,7 +14,7 @@ from .providers import (
     DatabaseProvider,
     RedisProvider,
     RepositoriesProvider,
-    SystemProvider,
+    SystemSettingsProvider,
     TemplatesProvider,
     UseCasesProvider,
 )
@@ -23,13 +23,14 @@ from .providers import (
 def get_dishka_container() -> "AsyncContainer":
     bot_settings = BotSettings()
     api_settings = APISettings()
-    base_system_settings = BaseSystemSettings()
+    base_system_settings = SystemSettings()
     database_settings = DatabaseSettings()
     redis_settings = RedisSettings()
 
     container = make_async_container(
+        SystemSettingsProvider(),
         AiogramProvider(),
-        SystemProvider(),
+        SystemSettingsProvider(),
         ClientProvider(),
         RedisProvider(),
         DatabaseProvider(),
@@ -39,7 +40,7 @@ def get_dishka_container() -> "AsyncContainer":
         context={
             BotSettings: bot_settings,
             APISettings: api_settings,
-            BaseSystemSettings: base_system_settings,
+            SystemSettings: base_system_settings,
             DatabaseSettings: database_settings,
             RedisSettings: redis_settings,
         },

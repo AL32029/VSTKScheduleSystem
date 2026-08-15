@@ -10,7 +10,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from service_parser.application.ports import ScheduleRepository
 from service_parser.domain.entities import DaySchedule, Group
-from service_parser.domain.exceptions import DayScheduleNotFound, GroupNotFound
+from service_parser.domain.exceptions import (
+    DayScheduleNotFoundError,
+    GroupNotFoundError,
+)
 from service_parser.infrastructure.domain_mappers import (
     group_orm_to_domain,
     lesson_domain_in_orm,
@@ -24,7 +27,7 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
     def __init__(self, session: "AsyncSession"):
         self.session = session
 
-    async def save(self, day_schedules: Iterable["DaySchedule"]) -> None:
+    async def save(self, day_schedules: Iterable["DaySchedule"]) -> None:  # noqa: C901
         schedules_list = list(day_schedules)
         logger.debug("Saving %d day schedules to database", len(schedules_list))
 
@@ -46,7 +49,7 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
                 str(group) for group in schedule_groups - database_groups
             )
             logger.debug("Missing groups: %s", missing)
-            raise GroupNotFound(f"The following groups are missing: {missing}")
+            raise GroupNotFoundError(f"The following groups are missing: {missing}")
 
         logger.debug("All groups exist, computing differences")
         schedule_updates = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
@@ -165,7 +168,7 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
 
         if not group_is_exists:
             logger.debug("Group %s not found in database", group.number)
-            raise GroupNotFound(f"Group {str(group)!r} not found")
+            raise GroupNotFoundError(f"Group {str(group)!r} not found")
 
         stmt = select(LessonORM).where(
             LessonORM.group_index == group.index, LessonORM.date == date
@@ -177,7 +180,7 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
             logger.debug(
                 "Schedule for group %s on %s not found", group.number, date.isoformat()
             )
-            raise DayScheduleNotFound(
+            raise DayScheduleNotFoundError(
                 f"Day schedule at {date!s} for group {str(group)!r} not found"
             )
 
@@ -214,7 +217,7 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
         if schedule_groups - db_groups:
             missing = ", ".join(str(group) for group in schedule_groups - db_groups)
             logger.debug("Missing groups: %s", missing)
-            raise GroupNotFound(f"The following groups are missing: {missing}")
+            raise GroupNotFoundError(f"The following groups are missing: {missing}")
 
         items_return = defaultdict(lambda: defaultdict(list))
         total_lessons = 0

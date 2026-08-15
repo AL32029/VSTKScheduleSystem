@@ -22,8 +22,7 @@ class ScheduleItem(BaseModel):
         """Конвертация схемы в сущность Group/Cabinet"""
         if item_type == "group":
             return Group(self.index, self.number)
-        else:
-            return Cabinet(self.index, self.number)
+        return Cabinet(self.index, self.number)
 
 
 class LessonItem(BaseModel):
@@ -38,7 +37,7 @@ class LessonItem(BaseModel):
     cabinets: list["ScheduleItem"]
 
     def to_domain(
-        self, item_type: Literal["group", "cabinet"]
+        self, item_type: Literal["group", "cabinet"],
     ) -> "Lesson | CabinetLesson":
         """Конвертация схемы в сущность Lesson/CabinetLesson"""
         if item_type == "group":
@@ -47,19 +46,18 @@ class LessonItem(BaseModel):
                 end=self.end,
                 name=self.name,
                 cabinets=cast(
-                    list["Cabinet"], [x.to_domain("cabinet") for x in self.cabinets]
+                    "list[Cabinet]", [x.to_domain("cabinet") for x in self.cabinets],
                 ),
             )
-        else:
-            return CabinetLesson(
-                start=self.start,
-                end=self.end,
-                group=cast("Group", self.group.to_domain("group")),
-                name=self.name,
-                cabinets=cast(
-                    list["Cabinet"], [x.to_domain("cabinet") for x in self.cabinets]
-                ),
-            )
+        return CabinetLesson(
+            start=self.start,
+            end=self.end,
+            group=cast("Group", self.group.to_domain("group")),
+            name=self.name,
+            cabinets=cast(
+                "list[Cabinet]", [x.to_domain("cabinet") for x in self.cabinets],
+            ),
+        )
 
 
 class DayScheduleItem(BaseModel):

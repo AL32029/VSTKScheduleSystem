@@ -5,6 +5,7 @@ import subprocess
 import sys
 from collections.abc import AsyncIterable, Generator
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pytest
 from dishka import make_async_container
@@ -25,9 +26,7 @@ from service_parser.application.ports import (
     GroupRepository,
     ScheduleRepository,
 )
-from service_parser.infrastructure.config import BaseSystemSettings
 from service_parser.infrastructure.di import HTTPXClientProvider
-from service_parser.infrastructure.di.providers import SystemProvider
 from service_parser.infrastructure.repositories import (
     SQLAlchemyCabinetRepository,
     SQLAlchemyGroupRepository,
@@ -61,7 +60,7 @@ def postgres_container() -> Generator[PostgresContainer, Any, None]:
         yield postgres
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def async_engine(postgres_container) -> AsyncIterable[AsyncEngine]:
     """Database engine"""
     engine = create_async_engine(
@@ -81,9 +80,17 @@ def redis_container() -> Generator[RedisContainer, Any, None]:
 
 
 # ====================== [ФИКСТУРА С ПРОВАЙДЕРАМИ] ======================
-@pytest.fixture(scope="function")
-async def test_container(request, async_engine, redis_container):
+@pytest.fixture
+async def test_container(request, async_engine, redis_container):  # noqa: ARG001
     from dishka import Provider, Scope, provide
+
+    # ====================== [ПРОВАЙДЕР СИСТЕМА] ======================
+    class TestSystemProvider(Provider):
+        scope = Scope.APP
+
+        @provide
+        def time_zone(self) -> ZoneInfo:
+            return ZoneInfo("Europe/Minsk")
 
     # ====================== [ПРОВАЙДЕР БД] ======================
     class TestDatabaseProvider(Provider):
@@ -132,15 +139,12 @@ async def test_container(request, async_engine, redis_container):
         ) -> ScheduleRepository:
             return SQLAlchemyScheduleRepository(session)
 
-    base_settings = BaseSystemSettings()
-
     container = make_async_container(
-        SystemProvider(),
+        TestSystemProvider(),
         HTTPXClientProvider(),
         TestRedisProvider(),
         TestDatabaseProvider(),
         TestRepositoriesProvide(),
-        context={BaseSystemSettings: base_settings},
     )
     await container.get(AsyncClient)
     yield container

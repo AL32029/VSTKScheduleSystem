@@ -12,11 +12,11 @@ from service_bot.application.ports import UserRepository
 from service_bot.domain.entities import Cabinet, Group, User
 from service_bot.domain.exceptions import (
     CabinetAlreadyInsertedError,
-    CabinetUnsubscribeNotFound,
+    CabinetUnsubscribeNotFoundError,
     GroupAlreadyInsertedError,
-    GroupUnsubscribeNotFound,
+    GroupUnsubscribeNotFoundError,
     UserMetadataMissingError,
-    UserNotFound,
+    UserNotFoundError,
 )
 from service_bot.infrastructure.db import (
     CabinetSubscribesORM,
@@ -54,7 +54,7 @@ class SQLAlchemyUserRepository(UserRepository):
 
         if user_orm is None:
             logger.warning("User %d not found in database", user_id)
-            raise UserNotFound(f"User with ID {user_id} not found")
+            raise UserNotFoundError(f"User with ID {user_id} not found")
 
         try:
             user_domain = user_orm_to_domain(user_orm)
@@ -62,7 +62,9 @@ class SQLAlchemyUserRepository(UserRepository):
             return user_domain
         except UserMetadataMissingError as e:
             logger.warning(
-                "User %d metadata missing: %s", user_id, ", ".join(e.missing_keys)
+                "User %d metadata missing: %s",
+                user_id,
+                ", ".join(e.missing_keys),
             )
             await self._insert_default_metadata(user_orm, e.missing_keys)
             user_domain = user_orm_to_domain(user_orm)
@@ -86,7 +88,9 @@ class SQLAlchemyUserRepository(UserRepository):
             logger.info("Metadata %s for user %d updated", key, user.user_id)
         except (SQLAlchemyError, IntegrityError, TimeoutError):
             logger.exception(
-                "Failed to update metadata %s for user %d", key, user.user_id
+                "Failed to update metadata %s for user %d",
+                key,
+                user.user_id,
             )
             user.metadata[key] = old_metadata_value
             raise
@@ -104,7 +108,9 @@ class SQLAlchemyUserRepository(UserRepository):
 
         if inserted is None:
             logger.warning(
-                "User %d already subscribed to group %s", user.user_id, group.number
+                "User %d already subscribed to group %s",
+                user.user_id,
+                group.number,
             )
             raise GroupAlreadyInsertedError(group.number)
 
@@ -124,7 +130,9 @@ class SQLAlchemyUserRepository(UserRepository):
 
         if inserted is None:
             logger.warning(
-                "User %d already subscribed to cabinet %s", user.user_id, cabinet.number
+                "User %d already subscribed to cabinet %s",
+                user.user_id,
+                cabinet.number,
             )
             raise CabinetAlreadyInsertedError(cabinet.number)
 
@@ -137,9 +145,11 @@ class SQLAlchemyUserRepository(UserRepository):
 
         if group_index not in user.group_subscribes:
             logger.warning(
-                "User %d not subscribed to group %s", user.user_id, group_index
+                "User %d not subscribed to group %s",
+                user.user_id,
+                group_index,
             )
-            raise GroupUnsubscribeNotFound()
+            raise GroupUnsubscribeNotFoundError()
 
         stmt = delete(GroupSubscribesORM).where(
             GroupSubscribesORM.user_id == user.user_id,
@@ -153,14 +163,18 @@ class SQLAlchemyUserRepository(UserRepository):
     async def unsubscribe_cabinet(self, user: "User", cabinet_index: str) -> None:
         """Отписка от кабинета"""
         logger.debug(
-            "Unsubscribing user %d from cabinet %s", user.user_id, cabinet_index
+            "Unsubscribing user %d from cabinet %s",
+            user.user_id,
+            cabinet_index,
         )
 
         if cabinet_index not in user.cabinet_subscribes:
             logger.warning(
-                "User %d not subscribed to cabinet %s", user.user_id, cabinet_index
+                "User %d not subscribed to cabinet %s",
+                user.user_id,
+                cabinet_index,
             )
-            raise CabinetUnsubscribeNotFound()
+            raise CabinetUnsubscribeNotFoundError()
 
         stmt = delete(CabinetSubscribesORM).where(
             CabinetSubscribesORM.user_id == user.user_id,
@@ -174,7 +188,9 @@ class SQLAlchemyUserRepository(UserRepository):
         logger.info("User %d unsubscribed from cabinet %s", user.user_id, cabinet_index)
 
     async def _insert_default_metadata(
-        self, user_orm: "UserORM", keys: Iterable[str]
+        self,
+        user_orm: "UserORM",
+        keys: Iterable[str],
     ) -> None:
         """Вставка стандартных метаданных"""
         logger.debug("Inserting default metadata for user %d", user_orm.user_id)
@@ -189,7 +205,7 @@ class SQLAlchemyUserRepository(UserRepository):
                 UserMetadataORM(
                     key=key,
                     value=json.dumps(User._DEFAULT_METADATA[key], ensure_ascii=False),
-                )
+                ),
             )
 
         logger.info(

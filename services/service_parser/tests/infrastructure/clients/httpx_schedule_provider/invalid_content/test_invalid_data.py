@@ -26,7 +26,7 @@ def test_fetch_schedule_table_error(
 
 # ===================== [ТЕСТЫ ОШИБКИ ParsingMatrixError] =====================
 @pytest.mark.parametrize(
-    "html_fixture, expected_message",
+    ("html_fixture", "expected_message"),
     [
         ("html_content_without_rows", "The schedule table does not contain any rows"),
         (
@@ -49,7 +49,7 @@ def test_parse_table_to_matrix_errors(
 
 # ===================== [ТЕСТЫ ОШИБКИ ParsingDateError] =====================
 @pytest.mark.parametrize(
-    "html_fixture, expected_message",
+    ("html_fixture", "expected_message"),
     [
         (
             "html_content_with_invalid_date_format",
@@ -85,7 +85,7 @@ def test_extract_dates_errors(
 
 # ===================== [ТЕСТЫ ОШИБКИ ParsingLessonTimesError] =====================
 @pytest.mark.parametrize(
-    "html_fixture, expected_message",
+    ("html_fixture", "expected_message"),
     [
         (
             "html_content_with_invalid_time_format",
@@ -111,7 +111,7 @@ def test_extract_times_errors(
 
 # ===================== [ТЕСТЫ ОШИБКИ ParsingGroupsError] =====================
 @pytest.mark.parametrize(
-    "html_fixture, expected_message",
+    ("html_fixture", "expected_message"),
     [
         (
             "html_content_with_invalid_group_format",
@@ -137,7 +137,7 @@ def test_extract_groups_errors(
 
 # ===================== [ТЕСТЫ ОШИБКИ ParsingDayScheduleError] =========
 @pytest.mark.parametrize(
-    "html_fixture, expected_message",
+    ("html_fixture", "expected_message"),
     [
         (
             "html_content_without_lessons",

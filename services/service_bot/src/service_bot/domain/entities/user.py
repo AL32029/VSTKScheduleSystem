@@ -4,8 +4,8 @@ from dataclasses import dataclass, field
 from typing import Any, ClassVar, Literal, cast
 
 from service_bot.domain.exceptions import (
-    InvalidUserMetadataKey,
-    InvalidUserMetadataType,
+    InvalidUserMetadataKeyError,
+    InvalidUserMetadataTypeError,
     NotPositiveIntegerValueError,
     UserMetadataMissingError,
 )
@@ -29,7 +29,7 @@ class User:
     user_id: int
 
     metadata: dict[str, Any] = field(
-        default_factory=lambda: User._DEFAULT_METADATA.copy()
+        default_factory=lambda: User._DEFAULT_METADATA.copy(),
     )
 
     group_subscribes: Iterable[str] = field(default_factory=list)
@@ -51,7 +51,7 @@ class User:
     @property
     def user_type(self) -> Literal["student", "teacher"]:
         """Тип пользователя [student/teacher]"""
-        return cast(Literal["student", "teacher"], self.metadata.get("user_type"))
+        return cast("Literal['student', 'teacher']", self.metadata.get("user_type"))
 
     @user_type.setter
     def user_type(self, new_value: Literal["student", "teacher"]) -> None:
@@ -63,7 +63,7 @@ class User:
     @property
     def notifications_enabled(self) -> bool:
         """Статус уведомлений об изменениях в расписании"""
-        return cast(bool, self.metadata.get("notifications_enabled"))
+        return cast("bool", self.metadata.get("notifications_enabled"))
 
     @notifications_enabled.setter
     def notifications_enabled(self, new_status: bool) -> None:
@@ -78,7 +78,7 @@ class User:
     @property
     def is_admin(self) -> bool:
         """Статус наличия админ-прав"""
-        return cast(bool, self.metadata.get("is_admin"))
+        return cast("bool", self.metadata.get("is_admin"))
 
     @is_admin.setter
     def is_admin(self, new_status: bool) -> None:
@@ -103,16 +103,16 @@ class User:
 
         if key not in self.metadata:
             logger.warning("Unknown user metadata key %s", key)
-            raise InvalidUserMetadataKey(key)
+            raise InvalidUserMetadataKeyError(key)
 
         if self.metadata[key] is not None and type(self.metadata[key]) is not type(
-            value
+            value,
         ):
             logger.warning(
                 "The new metadata value differs from the original metadata in terms "
-                "of data type"
+                "of data type",
             )
-            raise InvalidUserMetadataType(type(self.metadata[key]), type(value))
+            raise InvalidUserMetadataTypeError(type(self.metadata[key]), type(value))
 
         self.metadata[key] = value
         logger.info("The metadata with the key %s has been updated", key)

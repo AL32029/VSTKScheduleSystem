@@ -7,7 +7,7 @@ from aiogram.types import Update
 from dishka import AsyncContainer
 
 from service_bot.application.ports import UserRepository
-from service_bot.domain.exceptions import UserNotFound
+from service_bot.domain.exceptions import UserNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class InitUserDatabaseMiddleware(BaseMiddleware):
             logger.info("Initialize user from database")
             user = await user_repository.get_by_id(instance.from_user.id)
             logger.info("User was found in database")
-        except UserNotFound:
+        except UserNotFoundError:
             logger.info("User not found in database")
             logger.info("Registration user in database")
             user = await user_repository.save(instance.from_user.id)

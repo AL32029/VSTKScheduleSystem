@@ -4,7 +4,7 @@ from dataclasses import asdict
 from typing import cast
 
 import pytest
-from aiogram import Bot, Dispatcher
+from aiogram import Dispatcher
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import InlineKeyboardMarkup, Message
@@ -15,12 +15,12 @@ from httpx import AsyncClient
 
 from service_bot.application.ports import UserRepository
 from service_bot.domain.exceptions import (
-    CabinetNotFound,
-    CabinetUnsubscribeNotFound,
-    GroupNotFound,
-    GroupUnsubscribeNotFound,
-    ScheduleForCabinetNotFound,
-    ScheduleForGroupNotFound,
+    CabinetNotFoundError,
+    CabinetUnsubscribeNotFoundError,
+    GroupNotFoundError,
+    GroupUnsubscribeNotFoundError,
+    ScheduleForCabinetNotFoundError,
+    ScheduleForGroupNotFoundError,
 )
 from service_bot.infrastructure.middlewares import (
     CheckMessagePanelMiddleware,
@@ -48,7 +48,7 @@ from tests.test_contains import (
 )
 
 
-def create_app(container: AsyncContainer, bot: Bot, dispatcher: Dispatcher) -> None:
+def create_app(container: AsyncContainer, dispatcher: Dispatcher) -> None:
     setup_dishka(container, dispatcher)
 
     dispatcher.include_router(message_router)
@@ -65,7 +65,7 @@ class TestBot(AsyncBotTestMixin):
     async def setup(self, test_container):
         async with test_container(scope=Scope.REQUEST) as container:
             self.client = await self.setup_client(
-                setup_dispatcher_func=lambda bot, dp: create_app(container, bot, dp),
+                setup_dispatcher_func=lambda _, dp: create_app(container, dp),
                 dispatcher=Dispatcher(storage=MemoryStorage()),
             )
             yield
@@ -144,12 +144,14 @@ class TestBot(AsyncBotTestMixin):
             await client.click_button("add_schedule_item", message=main_menu_message)
 
             add_schedule_item_message = cast(
-                Message, self.client.capture.get_last_request().response
+                "Message",
+                self.client.capture.get_last_request().response,
             )
 
             user_item = await user_repo.get_by_id(client.user_id)
             add_schedule_item_text = templater.render(
-                "add_schedule_item", user=user_item
+                "add_schedule_item",
+                user=user_item,
             )
 
             assert add_schedule_item_message.text == add_schedule_item_text
@@ -161,17 +163,20 @@ class TestBot(AsyncBotTestMixin):
             # Отправка сообщения с номером группы
             await client.send_message(_GROUP_ITEM.number)
 
-            message = cast(Message, client.get_last_message().response)
+            message = cast("Message", client.get_last_message().response)
 
             success_rendered_message = templater.render(
-                "success_added_schedule_item", user=user_item, schedule_item=_GROUP_ITEM
+                "success_added_schedule_item",
+                user=user_item,
+                schedule_item=_GROUP_ITEM,
             )
 
             assert message.text == success_rendered_message
 
             # Возврат в главное меню
             main_menu_message = cast(
-                Message, self.client.capture.get_last_request().response
+                "Message",
+                self.client.capture.get_last_request().response,
             )
 
             main_menu_text = templater.render("main_menu", user_tg=client.user)
@@ -214,12 +219,14 @@ class TestBot(AsyncBotTestMixin):
             await client.click_button("add_schedule_item", message=main_menu_message)
 
             add_schedule_item_message = cast(
-                Message, self.client.capture.get_last_request().response
+                "Message",
+                self.client.capture.get_last_request().response,
             )
 
             user_item = await user_repo.get_by_id(client.user_id)
             add_schedule_item_text = templater.render(
-                "add_schedule_item", user=user_item
+                "add_schedule_item",
+                user=user_item,
             )
 
             assert add_schedule_item_message.text == add_schedule_item_text
@@ -231,9 +238,9 @@ class TestBot(AsyncBotTestMixin):
             # Отправка сообщения с номером группы
             await client.send_message(_GROUP_ITEM.number)
 
-            message = cast(Message, client.get_last_message().response)
+            message = cast("Message", client.get_last_message().response)
 
-            assert message.text == f"⚠ {GroupNotFound(_GROUP_ITEM.number)!s}"
+            assert message.text == f"⚠ {GroupNotFoundError(_GROUP_ITEM.number)!s}"
 
     async def test_add_cabinet_item(self, test_container, httpx_mock):
         async with test_container(scope=Scope.REQUEST) as container:
@@ -264,12 +271,14 @@ class TestBot(AsyncBotTestMixin):
             await client.click_button("add_schedule_item", message=main_menu_message)
 
             add_schedule_item_message = cast(
-                Message, self.client.capture.get_last_request().response
+                "Message",
+                self.client.capture.get_last_request().response,
             )
 
             user_item = await user_repo.get_by_id(client.user_id)
             add_schedule_item_text = templater.render(
-                "add_schedule_item", user=user_item
+                "add_schedule_item",
+                user=user_item,
             )
 
             assert add_schedule_item_message.text == add_schedule_item_text
@@ -281,7 +290,7 @@ class TestBot(AsyncBotTestMixin):
             # Отправка сообщения с номером кабинета
             await client.send_message(_CABINET_ITEM.number)
 
-            message = cast(Message, client.get_last_message().response)
+            message = cast("Message", client.get_last_message().response)
 
             success_rendered_message = templater.render(
                 "success_added_schedule_item",
@@ -293,7 +302,8 @@ class TestBot(AsyncBotTestMixin):
 
             # Возврат в главное меню
             main_menu_message = cast(
-                Message, self.client.capture.get_last_request().response
+                "Message",
+                self.client.capture.get_last_request().response,
             )
 
             main_menu_text = templater.render("main_menu", user_tg=client.user)
@@ -323,7 +333,7 @@ class TestBot(AsyncBotTestMixin):
                     "error": {
                         "code": "CABINET_NOT_FOUND",
                         "detailt": f"Cabinet with number {_CABINET_ITEM.number!r} "
-                                   f"not found",
+                        f"not found",
                         "extra": {"input_number": _CABINET_ITEM.number},
                     },
                 },
@@ -345,11 +355,13 @@ class TestBot(AsyncBotTestMixin):
             await client.click_button("add_schedule_item", message=main_menu_message)
 
             add_schedule_item_message = cast(
-                Message, self.client.capture.get_last_request().response
+                "Message",
+                self.client.capture.get_last_request().response,
             )
 
             add_schedule_item_text = templater.render(
-                "add_schedule_item", user=user_item
+                "add_schedule_item",
+                user=user_item,
             )
 
             assert add_schedule_item_message.text == add_schedule_item_text
@@ -361,9 +373,9 @@ class TestBot(AsyncBotTestMixin):
             # Отправка сообщения с номером кабинета
             await client.send_message(_CABINET_ITEM.number)
 
-            message = cast(Message, client.get_last_message().response)
+            message = cast("Message", client.get_last_message().response)
 
-            assert message.text == f"⚠ {CabinetNotFound(_CABINET_ITEM.number)!s}"
+            assert message.text == f"⚠ {CabinetNotFoundError(_CABINET_ITEM.number)!s}"
 
     async def test_open_main_menu(self, test_container):
         async with test_container(scope=Scope.REQUEST) as container:
@@ -381,12 +393,14 @@ class TestBot(AsyncBotTestMixin):
             await client.click_button("add_schedule_item", message=main_menu_message)
 
             add_schedule_item_message = cast(
-                Message, self.client.capture.get_last_request().response
+                "Message",
+                self.client.capture.get_last_request().response,
             )
 
             user_item = await user_repo.get_by_id(client.user_id)
             add_schedule_item_text = templater.render(
-                "add_schedule_item", user=user_item
+                "add_schedule_item",
+                user=user_item,
             )
 
             assert add_schedule_item_message.text == add_schedule_item_text
@@ -399,7 +413,8 @@ class TestBot(AsyncBotTestMixin):
             await client.click_button("open_main_menu", message=main_menu_message)
 
             main_menu_message = cast(
-                Message, self.client.capture.get_last_request().response
+                "Message",
+                self.client.capture.get_last_request().response,
             )
 
             main_menu_text = templater.render("main_menu", user_tg=client.user)
@@ -426,7 +441,8 @@ class TestBot(AsyncBotTestMixin):
             await client.click_button("open_settings", message=main_menu_message)
 
             user_settings_message = cast(
-                Message, self.client.capture.get_last_request().response
+                "Message",
+                self.client.capture.get_last_request().response,
             )
 
             user_before = await user_repo.get_by_id(client.user_id)
@@ -436,11 +452,13 @@ class TestBot(AsyncBotTestMixin):
 
             # Переключение статуса уведомлений
             await client.click_button(
-                "user_settings_notifications", message=main_menu_message
+                "user_settings_notifications",
+                message=main_menu_message,
             )
 
             user_settings_message = cast(
-                Message, self.client.capture.get_last_request().response
+                "Message",
+                self.client.capture.get_last_request().response,
             )
 
             user_after = await user_repo.get_by_id(client.user_id)
@@ -454,11 +472,13 @@ class TestBot(AsyncBotTestMixin):
 
             # Переключение типа профиля
             await client.click_button(
-                "user_settings_profile_type", message=main_menu_message
+                "user_settings_profile_type",
+                message=main_menu_message,
             )
 
             user_settings_message = cast(
-                Message, self.client.capture.get_last_request().response
+                "Message",
+                self.client.capture.get_last_request().response,
             )
 
             user_after = await user_repo.get_by_id(client.user_id)
@@ -524,17 +544,22 @@ class TestBot(AsyncBotTestMixin):
             )
 
             day_schedule_message = cast(
-                Message, self.client.capture.get_last_request().response
+                "Message",
+                self.client.capture.get_last_request().response,
             )
 
             day_schedule_text = templater.render(
-                "day_schedule", schedule_to="group", day_schedule=_GROUP_DAY_SCHEDULE
+                "day_schedule",
+                schedule_to="group",
+                day_schedule=_GROUP_DAY_SCHEDULE,
             )
 
             assert day_schedule_message.text == day_schedule_text
 
     async def test_get_group_day_schedule_error_group_not_found(
-        self, test_container, httpx_mock
+        self,
+        test_container,
+        httpx_mock,
     ):
         async with test_container(scope=Scope.REQUEST) as container:
             user_repo: SQLAlchemyUserRepository = await container.get(UserRepository)
@@ -554,10 +579,10 @@ class TestBot(AsyncBotTestMixin):
                     "error": {
                         "code": "GROUP_NOT_FOUND",
                         "detail": f"Group with number "
-                                  f"{_GROUP_DAY_SCHEDULE.schedule_item.index!r} "
-                                  f"not found",
+                        f"{_GROUP_DAY_SCHEDULE.schedule_item.index!r} "
+                        f"not found",
                         "extra": {
-                            "input_number": _GROUP_DAY_SCHEDULE.schedule_item.index
+                            "input_number": _GROUP_DAY_SCHEDULE.schedule_item.index,
                         },
                     },
                 },
@@ -585,11 +610,13 @@ class TestBot(AsyncBotTestMixin):
 
             assert (
                 day_schedule_error_message
-                == f"⚠ {GroupNotFound(_GROUP_DAY_SCHEDULE.schedule_item.index)!s}"
+                == f"⚠ {GroupNotFoundError(_GROUP_DAY_SCHEDULE.schedule_item.index)!s}"
             )
 
     async def test_get_cabinet_day_schedule_error_cabinet_not_found(
-        self, test_container, httpx_mock
+        self,
+        test_container,
+        httpx_mock,
     ):
         async with test_container(scope=Scope.REQUEST) as container:
             user_repo: SQLAlchemyUserRepository = await container.get(UserRepository)
@@ -609,10 +636,10 @@ class TestBot(AsyncBotTestMixin):
                     "error": {
                         "code": "CABINET_NOT_FOUND",
                         "detail": f"Cabinet with number "
-                                  f"{_CABINET_DAY_SCHEDULE.schedule_item.index!r} "
-                                  f"not found",
+                        f"{_CABINET_DAY_SCHEDULE.schedule_item.index!r} "
+                        f"not found",
                         "extra": {
-                            "input_number": _CABINET_DAY_SCHEDULE.schedule_item.index
+                            "input_number": _CABINET_DAY_SCHEDULE.schedule_item.index,
                         },
                     },
                 },
@@ -642,11 +669,15 @@ class TestBot(AsyncBotTestMixin):
 
             assert (
                 day_schedule_error_message
-                == f"⚠ {CabinetNotFound(_CABINET_DAY_SCHEDULE.schedule_item.index)!s}"
+                == f"⚠ {
+                    CabinetNotFoundError(_CABINET_DAY_SCHEDULE.schedule_item.index)!s
+                }"
             )
 
     async def test_get_group_day_schedule_error_schedule_not_found(
-        self, test_container, httpx_mock
+        self,
+        test_container,
+        httpx_mock,
     ):
         async with test_container(scope=Scope.REQUEST) as container:
             user_repo: SQLAlchemyUserRepository = await container.get(UserRepository)
@@ -666,7 +697,7 @@ class TestBot(AsyncBotTestMixin):
                     "error": {
                         "code": "SCHEDULE_FOR_GROUP_NOT_FOUND",
                         "detail": f"For the {_GROUP_DAY_SCHEDULE.schedule_item!s} "
-                                  f"group, there are no lessons "
+                        f"group, there are no lessons "
                         f"scheduled for tomorrow (2099-12-31)",
                         "extra": {
                             "item": asdict(_GROUP_DAY_SCHEDULE.schedule_item),
@@ -733,7 +764,7 @@ class TestBot(AsyncBotTestMixin):
             assert (
                 day_schedule_error_message
                 == f"⚠ {
-                    ScheduleForGroupNotFound(
+                    ScheduleForGroupNotFoundError(
                         _GROUP_DAY_SCHEDULE.schedule_item,
                         'tomorrow',
                         datetime.date(2099, 12, 31),
@@ -742,7 +773,9 @@ class TestBot(AsyncBotTestMixin):
             )
 
     async def test_get_cabinet_day_schedule_error_schedule_not_found(
-        self, test_container, httpx_mock
+        self,
+        test_container,
+        httpx_mock,
     ):
         async with test_container(scope=Scope.REQUEST) as container:
             user_repo: SQLAlchemyUserRepository = await container.get(UserRepository)
@@ -762,7 +795,7 @@ class TestBot(AsyncBotTestMixin):
                     "error": {
                         "code": "SCHEDULE_FOR_CABINET_NOT_FOUND",
                         "detail": f"For the {_CABINET_DAY_SCHEDULE.schedule_item!s} "
-                                  f"cabinet, there are no lessons "
+                        f"cabinet, there are no lessons "
                         f"scheduled for tomorrow (2099-12-31)",
                         "extra": {
                             "item": asdict(_CABINET_DAY_SCHEDULE.schedule_item),
@@ -785,7 +818,7 @@ class TestBot(AsyncBotTestMixin):
                     "data": DayScheduleItem(
                         date=_CABINET_DAY_SCHEDULE.date,
                         cabinet=ScheduleItem(
-                            **asdict(_CABINET_DAY_SCHEDULE.schedule_item)
+                            **asdict(_CABINET_DAY_SCHEDULE.schedule_item),
                         ),
                         lessons=[
                             LessonItem(
@@ -834,7 +867,7 @@ class TestBot(AsyncBotTestMixin):
             assert (
                 day_schedule_error_message
                 == f"⚠ {
-                    ScheduleForCabinetNotFound(
+                    ScheduleForCabinetNotFoundError(
                         _CABINET_DAY_SCHEDULE.schedule_item,
                         'tomorrow',
                         datetime.date(2099, 12, 31),
@@ -843,7 +876,9 @@ class TestBot(AsyncBotTestMixin):
             )
 
     async def test_get_group_day_schedule_switch_schedule_types(
-        self, test_container, httpx_mock
+        self,
+        test_container,
+        httpx_mock,
     ):
         async with test_container(scope=Scope.REQUEST) as container:
             text_templater = await container.get(TemplateMessageRenderer)
@@ -926,16 +961,20 @@ class TestBot(AsyncBotTestMixin):
             )
 
             last_request = self.client.capture.get_last_request()
-            day_schedule_message = cast(Message, last_request.response)
+            day_schedule_message = cast("Message", last_request.response)
             actual_keyboard = InlineKeyboardMarkup.model_validate(
-                last_request.reply_markup
+                last_request.reply_markup,
             )
 
             day_schedule_text = text_templater.render(
-                "day_schedule", schedule_to="group", day_schedule=_GROUP_DAY_SCHEDULE
+                "day_schedule",
+                schedule_to="group",
+                day_schedule=_GROUP_DAY_SCHEDULE,
             )
             day_schedule_keyboard = keyboard_templater.day_schedule(
-                _GROUP_DAY_SCHEDULE.schedule_item.index, "group", "tomorrow"
+                _GROUP_DAY_SCHEDULE.schedule_item.index,
+                "group",
+                "tomorrow",
             )
 
             assert day_schedule_message.text == day_schedule_text
@@ -948,23 +987,29 @@ class TestBot(AsyncBotTestMixin):
             )
 
             last_request = self.client.capture.get_last_request()
-            day_schedule_message = cast(Message, last_request.response)
+            day_schedule_message = cast("Message", last_request.response)
             actual_keyboard = InlineKeyboardMarkup.model_validate(
-                last_request.reply_markup
+                last_request.reply_markup,
             )
 
             day_schedule_text = text_templater.render(
-                "day_schedule", schedule_to="group", day_schedule=_GROUP_DAY_SCHEDULE
+                "day_schedule",
+                schedule_to="group",
+                day_schedule=_GROUP_DAY_SCHEDULE,
             )
             day_schedule_keyboard = keyboard_templater.day_schedule(
-                _GROUP_DAY_SCHEDULE.schedule_item.index, "group", "today"
+                _GROUP_DAY_SCHEDULE.schedule_item.index,
+                "group",
+                "today",
             )
 
             assert day_schedule_message.text == day_schedule_text
             assert actual_keyboard == day_schedule_keyboard
 
     async def test_get_group_day_schedule_error_not_found(
-        self, test_container, httpx_mock
+        self,
+        test_container,
+        httpx_mock,
     ):
         async with test_container(scope=Scope.REQUEST) as container:
             user_repo: SQLAlchemyUserRepository = await container.get(UserRepository)
@@ -983,10 +1028,10 @@ class TestBot(AsyncBotTestMixin):
                     "error": {
                         "code": "GROUP_NOT_FOUND",
                         "detail": f"Group with number "
-                                  f"{_GROUP_DAY_SCHEDULE.schedule_item.index} "
-                                  f"not found",
+                        f"{_GROUP_DAY_SCHEDULE.schedule_item.index} "
+                        f"not found",
                         "extra": {
-                            "input_number": _GROUP_DAY_SCHEDULE.schedule_item.index
+                            "input_number": _GROUP_DAY_SCHEDULE.schedule_item.index,
                         },
                     },
                 },
@@ -1014,11 +1059,13 @@ class TestBot(AsyncBotTestMixin):
 
             assert (
                 day_schedule_error_message
-                == f"⚠ {GroupNotFound(_GROUP_DAY_SCHEDULE.schedule_item.index)!s}"
+                == f"⚠ {GroupNotFoundError(_GROUP_DAY_SCHEDULE.schedule_item.index)!s}"
             )
 
     async def test_get_cabinet_day_schedule_error_not_found(
-        self, test_container, httpx_mock
+        self,
+        test_container,
+        httpx_mock,
     ):
         async with test_container(scope=Scope.REQUEST) as container:
             user_repo: SQLAlchemyUserRepository = await container.get(UserRepository)
@@ -1037,10 +1084,10 @@ class TestBot(AsyncBotTestMixin):
                     "error": {
                         "code": "CABINET_NOT_FOUND",
                         "detail": f"Cabinet with number "
-                                  f"{_CABINET_DAY_SCHEDULE.schedule_item.index} "
-                                  f"not found",
+                        f"{_CABINET_DAY_SCHEDULE.schedule_item.index} "
+                        f"not found",
                         "extra": {
-                            "input_number": _CABINET_DAY_SCHEDULE.schedule_item.index
+                            "input_number": _CABINET_DAY_SCHEDULE.schedule_item.index,
                         },
                     },
                 },
@@ -1070,11 +1117,15 @@ class TestBot(AsyncBotTestMixin):
 
             assert (
                 day_schedule_error_message
-                == f"⚠ {CabinetNotFound(_CABINET_DAY_SCHEDULE.schedule_item.index)!s}"
+                == f"⚠ {
+                    CabinetNotFoundError(_CABINET_DAY_SCHEDULE.schedule_item.index)!s
+                }"
             )
 
     async def test_get_group_day_schedule_with_deletion(
-        self, test_container, httpx_mock
+        self,
+        test_container,
+        httpx_mock,
     ):
         async with test_container(scope=Scope.REQUEST) as container:
             text_templater = await container.get(TemplateMessageRenderer)
@@ -1131,11 +1182,14 @@ class TestBot(AsyncBotTestMixin):
             )
 
             day_schedule_message = cast(
-                Message, self.client.capture.get_last_request().response
+                "Message",
+                self.client.capture.get_last_request().response,
             )
 
             day_schedule_text = text_templater.render(
-                "day_schedule", schedule_to="group", day_schedule=_GROUP_DAY_SCHEDULE
+                "day_schedule",
+                schedule_to="group",
+                day_schedule=_GROUP_DAY_SCHEDULE,
             )
 
             assert day_schedule_message.text == day_schedule_text
@@ -1155,7 +1209,9 @@ class TestBot(AsyncBotTestMixin):
             )
 
     async def test_get_cabinet_day_schedule_with_deletion(
-        self, test_container, httpx_mock
+        self,
+        test_container,
+        httpx_mock,
     ):
         async with test_container(scope=Scope.REQUEST) as container:
             text_templater = await container.get(TemplateMessageRenderer)
@@ -1175,7 +1231,7 @@ class TestBot(AsyncBotTestMixin):
                     "data": DayScheduleItem(
                         date=_CABINET_DAY_SCHEDULE.date,
                         cabinet=ScheduleItem(
-                            **asdict(_CABINET_DAY_SCHEDULE.schedule_item)
+                            **asdict(_CABINET_DAY_SCHEDULE.schedule_item),
                         ),
                         lessons=[
                             LessonItem(
@@ -1217,7 +1273,8 @@ class TestBot(AsyncBotTestMixin):
             )
 
             day_schedule_message = cast(
-                Message, self.client.capture.get_last_request().response
+                "Message",
+                self.client.capture.get_last_request().response,
             )
 
             day_schedule_text = text_templater.render(
@@ -1243,7 +1300,9 @@ class TestBot(AsyncBotTestMixin):
             )
 
     async def test_get_group_day_schedule_with_deletion_error_not_found(
-        self, test_container, httpx_mock
+        self,
+        test_container,
+        httpx_mock,
     ):
         async with test_container(scope=Scope.REQUEST) as container:
             text_templater = await container.get(TemplateMessageRenderer)
@@ -1300,18 +1359,22 @@ class TestBot(AsyncBotTestMixin):
             )
 
             day_schedule_message = cast(
-                Message, self.client.capture.get_last_request().response
+                "Message",
+                self.client.capture.get_last_request().response,
             )
 
             day_schedule_text = text_templater.render(
-                "day_schedule", schedule_to="group", day_schedule=_GROUP_DAY_SCHEDULE
+                "day_schedule",
+                schedule_to="group",
+                day_schedule=_GROUP_DAY_SCHEDULE,
             )
 
             assert day_schedule_message.text == day_schedule_text
 
             # Прекращение отслеживания группы
             await user_repo.unsubscribe_group(
-                user, _GROUP_DAY_SCHEDULE.schedule_item.index
+                user,
+                _GROUP_DAY_SCHEDULE.schedule_item.index,
             )
 
             user_repo.session.expire_all()
@@ -1324,10 +1387,12 @@ class TestBot(AsyncBotTestMixin):
 
             error_callback_text = self.client.capture.get_callback_answers()[-1].text
 
-            assert error_callback_text == f"⚠ {GroupUnsubscribeNotFound()!s}"
+            assert error_callback_text == f"⚠ {GroupUnsubscribeNotFoundError()!s}"
 
     async def test_get_cabinet_day_schedule_with_deletion_error_not_found(
-        self, test_container, httpx_mock
+        self,
+        test_container,
+        httpx_mock,
     ):
         async with test_container(scope=Scope.REQUEST) as container:
             text_templater = await container.get(TemplateMessageRenderer)
@@ -1347,7 +1412,7 @@ class TestBot(AsyncBotTestMixin):
                     "data": DayScheduleItem(
                         date=_CABINET_DAY_SCHEDULE.date,
                         cabinet=ScheduleItem(
-                            **asdict(_CABINET_DAY_SCHEDULE.schedule_item)
+                            **asdict(_CABINET_DAY_SCHEDULE.schedule_item),
                         ),
                         lessons=[
                             LessonItem(
@@ -1389,7 +1454,8 @@ class TestBot(AsyncBotTestMixin):
             )
 
             day_schedule_message = cast(
-                Message, self.client.capture.get_last_request().response
+                "Message",
+                self.client.capture.get_last_request().response,
             )
 
             day_schedule_text = text_templater.render(
@@ -1402,7 +1468,8 @@ class TestBot(AsyncBotTestMixin):
 
             # Прекращение отслеживания группы
             await user_repo.unsubscribe_cabinet(
-                user, _CABINET_DAY_SCHEDULE.schedule_item.index
+                user,
+                _CABINET_DAY_SCHEDULE.schedule_item.index,
             )
 
             user_repo.session.expire_all()
@@ -1415,7 +1482,7 @@ class TestBot(AsyncBotTestMixin):
 
             error_callback_text = self.client.capture.get_callback_answers()[-1].text
 
-            assert error_callback_text == f"⚠ {CabinetUnsubscribeNotFound()!s}"
+            assert error_callback_text == f"⚠ {CabinetUnsubscribeNotFoundError()!s}"
 
     async def test_click_maintenance_free_button(self):
         client = self.client.create_user()

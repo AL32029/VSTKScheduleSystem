@@ -4,18 +4,18 @@ from typing import Literal
 from .base_exceptions import DataRequestError
 
 
-class UserNotFound(DataRequestError):
+class UserNotFoundError(DataRequestError):
     """Ошибка отсутствия пользователя"""
 
 
-class GroupNotFound(DataRequestError):
+class GroupNotFoundError(DataRequestError):
     """Ошибка отсутствия группы"""
 
     def __init__(self, group_number: str):
         super().__init__(f"Группа {group_number} не найдена")
 
 
-class CabinetNotFound(DataRequestError):
+class CabinetNotFoundError(DataRequestError):
     """Ошибка отсутствия кабинета"""
 
     def __init__(self, cabinet_number: str):
@@ -23,32 +23,32 @@ class CabinetNotFound(DataRequestError):
         super().__init__(f"Кабинет {cabinet_number} не найден")
 
 
-class GroupUnsubscribeNotFound(DataRequestError):
+class GroupUnsubscribeNotFoundError(DataRequestError):
     """Ошибка отсутствия группы при отписке"""
 
     def __init__(self):
         super().__init__("Вы не отслеживаете расписание для данной группы")
 
 
-class CabinetUnsubscribeNotFound(DataRequestError):
+class CabinetUnsubscribeNotFoundError(DataRequestError):
     """Ошибка отсутствия кабинета при отписке"""
 
     def __init__(self):
         super().__init__("Вы не отслеживаете расписание для данного кабинета")
 
 
-class ScheduleDateNotFound(DataRequestError):
+class ScheduleDateNotFoundError(DataRequestError):
     """Ошибка получения даты расписания"""
 
     def __init__(self, schedule_to: Literal["today", "tomorrow"]):
         self.schedule_to = schedule_to
         super().__init__(
             f"Расписание на {'сегодня' if schedule_to == 'today' else 'завтра'} "
-            f"еще не было опубликовано"
+            f"еще не было опубликовано",
         )
 
 
-class ScheduleForGroupNotFound(DataRequestError):
+class ScheduleForGroupNotFoundError(DataRequestError):
     """Ошибка получения расписания для группы"""
 
     def __init__(
@@ -63,11 +63,11 @@ class ScheduleForGroupNotFound(DataRequestError):
         super().__init__(
             f"Для кабинета {group!s} отсутствуют пары на "
             f"{'сегодня' if schedule_to == 'today' else 'завтра'} "
-            f"({schedule_date.strftime('%d.%m.%Y г.')})"
+            f"({schedule_date.strftime('%d.%m.%Y г.')})",
         )
 
 
-class ScheduleForCabinetNotFound(DataRequestError):
+class ScheduleForCabinetNotFoundError(DataRequestError):
     """Ошибка получения расписания для кабинета"""
 
     def __init__(
@@ -82,5 +82,5 @@ class ScheduleForCabinetNotFound(DataRequestError):
         super().__init__(
             f"Для кабинета {cabinet!s} отсутствуют пары на "
             f"{'сегодня' if schedule_to == 'today' else 'завтра'} "
-            f"({schedule_date.strftime('%d.%m.%Y г.')})"
+            f"({schedule_date.strftime('%d.%m.%Y г.')})",
         )

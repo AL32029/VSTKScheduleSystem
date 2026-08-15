@@ -1,7 +1,7 @@
 import pytest
 
 from service_api.domain.entities import Group
-from service_api.domain.exceptions import GroupNotFound
+from service_api.domain.exceptions import GroupNotFoundError
 from tests.test_contains import _GROUP_ITEM, _GROUP_ITEM_NOT_SAVED, _GROUP_ITEMS
 
 
@@ -18,7 +18,7 @@ async def test_get_by_number(sqlalchemy_group_repo):
 
 async def test_get_by_number_not_found(sqlalchemy_group_repo):
     """Тест должен выдать ошибку GroupNotFound"""
-    with pytest.raises(GroupNotFound) as exc_info:
+    with pytest.raises(GroupNotFoundError) as exc_info:
         await sqlalchemy_group_repo.get_by_number(_GROUP_ITEM_NOT_SAVED.number)
 
     assert exc_info.value.args != (

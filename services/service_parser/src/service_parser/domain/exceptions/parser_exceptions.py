@@ -1,10 +1,10 @@
 # ====================== [БАЗОВЫЕ ИСКЛЮЧЕНИЯ] ======================
-class ParserServiceException(BaseException):
+class ParserServiceError(BaseException):
     """Базовое исключение Parser Service"""
 
 
 # ====================== [ОШИБКИ ВАЛИДАЦИИ] ======================
-class ValidationError(ParserServiceException):
+class ValidationError(ParserServiceError):
     """Ошибка валидации"""
 
 
@@ -24,28 +24,28 @@ class LessonEmptyNameError(ValidationError):
     """Ошибка пустого названия пары"""
 
 
-class LessonOverlapError(ParserServiceException):
+class LessonOverlapError(ParserServiceError):
     """Ошибка пересечения пары"""
 
 
-class ScheduleForSomeGroupsError(ParserServiceException):
+class ScheduleForSomeGroupsError(ParserServiceError):
     """Ошибка передачи списка пар для нескольких групп"""
 
 
-class ScheduleForSomeDatesError(ParserServiceException):
+class ScheduleForSomeDatesError(ParserServiceError):
     """Ошибка передачи списка пар для нескольких дат"""
 
 
 # ====================== [ОШИБКИ ОТСУТСТВИЯ ДАННЫХ] ======================
-class NotFoundError(ParserServiceException):
+class NotFoundError(ParserServiceError):
     """Ошибка отсутствия данных"""
 
 
-class GroupNotFound(NotFoundError):
+class GroupNotFoundError(NotFoundError):
     """Ошибка отсутствия группы"""
 
 
-class CabinetNotFound(NotFoundError):
+class CabinetNotFoundError(NotFoundError):
     """Ошибка отсутствия кабинета"""
 
 
@@ -53,20 +53,20 @@ class LessonNotFoundError(NotFoundError):
     """Ошибка отсутствия пары"""
 
 
-class DayScheduleNotFound(NotFoundError):
+class DayScheduleNotFoundError(NotFoundError):
     """Ошибка отсутствия пар на указанную дату"""
 
 
-class SavingDayScheduleGroupNotFound(NotFoundError):
+class SavingDayScheduleGroupNotFoundError(NotFoundError):
     """Ошибка отсутствия группы в списке пар"""
 
 
-class SavingDayScheduleDateNotFound(NotFoundError):
+class SavingDayScheduleDateNotFoundError(NotFoundError):
     """Ошибка отсутствия даты в списке пар"""
 
 
 # ====================== [ОШИБКИ ПАРСИНГА] ======================
-class ParsingError(ParserServiceException):
+class ParsingError(ParserServiceError):
     """Ошибка парсинга"""
 
 

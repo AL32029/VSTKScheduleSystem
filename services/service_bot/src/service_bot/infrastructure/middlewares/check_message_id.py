@@ -24,7 +24,7 @@ class CheckMessagePanelMiddleware(BaseMiddleware):
 
         if user.message_panel_id != event.message.message_id:
             logger.warning(
-                "The message is not a control panel; the keyboard is being removed"
+                "The message is not a control panel; the keyboard is being removed",
             )
             try:
                 await event.message.edit_reply_markup(reply_markup=None)

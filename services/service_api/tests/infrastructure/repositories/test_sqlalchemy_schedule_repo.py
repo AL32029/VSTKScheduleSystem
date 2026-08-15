@@ -4,9 +4,9 @@ import pytest
 
 from service_api.domain.entities import CabinetDaySchedule, GroupDaySchedule
 from service_api.domain.exceptions import (
-    CabinetDayScheduleNotFound,
-    GroupDayScheduleNotFound,
-    ScheduleDateNotFound,
+    CabinetDayScheduleNotFoundError,
+    GroupDayScheduleNotFoundError,
+    ScheduleDateNotFoundError,
 )
 from tests.test_contains import (
     _CABINET_DAY_SCHEDULE_ITEM,
@@ -30,10 +30,10 @@ async def test_get_schedule_date(sqlalchemy_schedule_repo):
 
 async def test_get_schedule_date_not_found(sqlalchemy_schedule_repo):
     """Тест должен выдать ошибку ScheduleDateNotFound"""
-    with pytest.raises(ScheduleDateNotFound) as exc_info:
+    with pytest.raises(ScheduleDateNotFoundError) as exc_info:
         await sqlalchemy_schedule_repo.get_schedule_date("today")
 
-    assert exc_info.value.args[0] == str(ScheduleDateNotFound("today"))
+    assert exc_info.value.args[0] == str(ScheduleDateNotFoundError("today"))
 
 
 async def test_get_by_group(sqlalchemy_schedule_repo):
@@ -50,13 +50,13 @@ async def test_get_by_group(sqlalchemy_schedule_repo):
 async def test_get_by_group_not_found(sqlalchemy_schedule_repo):
     """Тест должен выдать ошибку GroupDayScheduleNotFound"""
     invalid_schedule_date = _DAY_SCHEDULE_DATE + datetime.timedelta(days=1)
-    with pytest.raises(GroupDayScheduleNotFound) as exc_info:
+    with pytest.raises(GroupDayScheduleNotFoundError) as exc_info:
         await sqlalchemy_schedule_repo.get_by_group(
             _GROUP_ITEM, "today", invalid_schedule_date, redirect=False
         )
 
     assert exc_info.value.args[0] == str(
-        GroupDayScheduleNotFound(_GROUP_ITEM, "today", invalid_schedule_date)
+        GroupDayScheduleNotFoundError(_GROUP_ITEM, "today", invalid_schedule_date)
     )
 
 
@@ -74,13 +74,13 @@ async def test_get_by_cabinet(sqlalchemy_schedule_repo):
 async def test_get_by_cabinet_not_found(sqlalchemy_schedule_repo):
     """Тест должен выдать ошибку CabinetDayScheduleNotFound"""
     invalid_schedule_date = _DAY_SCHEDULE_DATE + datetime.timedelta(days=1)
-    with pytest.raises(CabinetDayScheduleNotFound) as exc_info:
+    with pytest.raises(CabinetDayScheduleNotFoundError) as exc_info:
         await sqlalchemy_schedule_repo.get_by_cabinet(
             _CABINET_ITEM_NOT_SAVED, "today", invalid_schedule_date, redirect=False
         )
 
     assert exc_info.value.args[0] == str(
-        CabinetDayScheduleNotFound(
+        CabinetDayScheduleNotFoundError(
             _CABINET_ITEM_NOT_SAVED, "today", invalid_schedule_date
         )
     )

@@ -2,7 +2,7 @@ import logging
 
 from service_api.application.ports import CabinetRepository, CacheRepository
 from service_api.domain.entities import Cabinet
-from service_api.domain.exceptions import CacheItemNotFound
+from service_api.domain.exceptions import CacheItemNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class GetAllCabinetsUseCase:
             logger.info("Obtaining list of cabinets from the cache")
             cabinets = await self.cache_repo.get_all_cabinets_cache()
             logger.info("Obtaining list of cabinets has been retrieved from the cache")
-        except CacheItemNotFound:
+        except CacheItemNotFoundError:
             logger.warning("List of cabinets is not found in the cache")
 
             logger.info("Obtaining list of cabinets from the database")

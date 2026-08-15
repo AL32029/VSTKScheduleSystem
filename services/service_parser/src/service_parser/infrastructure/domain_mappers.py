@@ -5,8 +5,8 @@ from schedule_db_models import CabinetORM, GroupORM, LessonCabinetORM, LessonORM
 
 from service_parser.domain.entities import Cabinet, DaySchedule, Group, Lesson
 from service_parser.domain.exceptions import (
-    SavingDayScheduleDateNotFound,
-    SavingDayScheduleGroupNotFound,
+    SavingDayScheduleDateNotFoundError,
+    SavingDayScheduleGroupNotFoundError,
     ScheduleForSomeDatesError,
     ScheduleForSomeGroupsError,
 )
@@ -101,10 +101,12 @@ def lessons_orm_to_day_schedule_domain(
         schedule_lessons.append(lesson_orm_to_domain(lesson, check_redirect))
 
     if schedule_group is None:
-        raise SavingDayScheduleGroupNotFound("There is no group in the lessons list")
+        raise SavingDayScheduleGroupNotFoundError(
+            "There is no group in the lessons list"
+        )
 
     if schedule_date is None:
-        raise SavingDayScheduleDateNotFound("There is no date in the lessons list")
+        raise SavingDayScheduleDateNotFoundError("There is no date in the lessons list")
 
     if len(groups_found) > 1:
         raise ScheduleForSomeGroupsError(

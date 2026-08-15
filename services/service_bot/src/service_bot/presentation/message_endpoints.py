@@ -26,9 +26,9 @@ from service_bot.domain.context_vars import (
 from service_bot.domain.entities import User
 from service_bot.domain.exceptions import (
     CabinetAlreadyInsertedError,
-    CabinetNotFound,
+    CabinetNotFoundError,
     GroupAlreadyInsertedError,
-    GroupNotFound,
+    GroupNotFoundError,
 )
 from service_bot.infrastructure.template_engine_items import (
     TemplateKeyboardRenderer,
@@ -43,7 +43,7 @@ router = Router()
 
 
 async def delete_message_with_delay(
-    message: Message, request_id, update_id, user_id, message_id, delay: float = 7.5
+    message: Message, request_id, update_id, user_id, message_id, delay: float = 7.5,
 ):
     """Удаление сообщения спустя КД"""
     request_id_var.set(request_id)
@@ -132,10 +132,10 @@ async def message_add_schedule_item(
             schedule_item = await get_cabinet_use_case.execute(str(message.text))
             await subscribe_cabinet_use_case.execute(user, schedule_item)
     except (
-        GroupNotFound,
-        CabinetNotFound,
-        GroupAlreadyInsertedError,
-        CabinetAlreadyInsertedError,
+            GroupNotFoundError,
+            CabinetNotFoundError,
+            GroupAlreadyInsertedError,
+            CabinetAlreadyInsertedError,
     ) as e:
         error_message = await message.answer(text=f"⚠ {e!s}")
         asyncio.create_task(
@@ -145,12 +145,12 @@ async def message_add_schedule_item(
                 update_id_var.get(),
                 user_id_var.get(),
                 message_id_var.get(),
-            )
+            ),
         )
         return
 
     success_rendered_message = message_templater.render(
-        "success_added_schedule_item", user=user, schedule_item=schedule_item
+        "success_added_schedule_item", user=user, schedule_item=schedule_item,
     )
     success_message = await message.answer(text=success_rendered_message)
     asyncio.create_task(
@@ -160,7 +160,7 @@ async def message_add_schedule_item(
             update_id_var.get(),
             user_id_var.get(),
             message_id_var.get(),
-        )
+        ),
     )
 
     schedule_items = (
