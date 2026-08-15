@@ -8,6 +8,7 @@ from typing import Any
 
 import pytest
 from dishka import make_async_container
+from prometheus_client import CollectorRegistry
 from redis.asyncio import Redis
 from schedule_db_models import LessonCabinetORM, LessonORM
 from sqlalchemy.ext.asyncio import (
@@ -122,21 +123,16 @@ def redis_container() -> Generator[RedisContainer, Any, None]:
 # ====================== [ФИКСТУРА С ПРОВАЙДЕРАМИ] ======================
 @pytest.fixture(scope="function")
 async def test_container(request, session_with_test_data, redis_container):
+    global _TEST_METRICS_INSTANCE
     from dishka import Provider, Scope, provide
 
     # ====================== [ПРОВАЙДЕР СИСТЕМЫ] ======================
     class TestSystemSettingsProvider(Provider):
         scope = Scope.APP
 
-        _metrics_instance = None
-
         @provide
         def metrics_collector(self) -> "MetricsCollector":
-            if TestSystemSettingsProvider._metrics_instance is None:
-                TestSystemSettingsProvider._metrics_instance = (
-                    PrometheusMetricsCollector()
-                )
-            return TestSystemSettingsProvider._metrics_instance
+            return PrometheusMetricsCollector(registry=CollectorRegistry())
 
     # ====================== [ПРОВАЙДЕР БД] ======================
     class TestDatabaseProvider(Provider):

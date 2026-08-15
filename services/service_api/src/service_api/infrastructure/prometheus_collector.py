@@ -1,10 +1,11 @@
-from prometheus_client import Counter, Gauge, Histogram
+from prometheus_client import REGISTRY, Counter, Gauge, Histogram
 
 from service_api.application.ports.metrics_collector import MetricsCollector
 
 
 class PrometheusMetricsCollector(MetricsCollector):
-    def __init__(self):
+    def __init__(self, registry=None):
+        self._registry = registry or REGISTRY
         self._counters: dict[str, Counter] = {}
         self._gauges: dict[str, Gauge] = {}
         self._histograms: dict[str, Histogram] = {}
@@ -43,18 +44,24 @@ class PrometheusMetricsCollector(MetricsCollector):
 
     def _get_counter(self, name: str, doc: str = "Counter", **labels) -> Counter:
         if name not in self._counters:
-            self._counters[name] = Counter(name, doc, list(labels.keys()))
+            self._counters[name] = Counter(
+                name, doc, list(labels.keys()), registry=self._registry
+            )
 
         return self._counters[name]
 
     def _get_gauge(self, name: str, doc: str = "Gauge", **labels) -> Gauge:
         if name not in self._gauges:
-            self._gauges[name] = Gauge(name, doc, list(labels.keys()))
+            self._gauges[name] = Gauge(
+                name, doc, list(labels.keys()), registry=self._registry
+            )
 
         return self._gauges[name]
 
     def _get_histogram(self, name: str, doc: str = "Histogram", **labels) -> Histogram:
         if name not in self._histograms:
-            self._histograms[name] = Histogram(name, doc, list(labels.keys()))
+            self._histograms[name] = Histogram(
+                name, doc, list(labels.keys()), registry=self._registry
+            )
 
         return self._histograms[name]
