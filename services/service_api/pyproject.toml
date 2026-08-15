@@ -24,7 +24,7 @@ watchfiles = "^1.2.0"
 aiofiles = "^25.1.0"
 prometheus-client = "^0.26.0"
 python-json-logger = "^4.1.0"
-system-managers = {path = "../../libs/system_managers"}
+system-managers = { path = "../../libs/system_managers" }
 
 
 [tool.poetry.group.dev.dependencies]
