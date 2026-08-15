@@ -10,7 +10,7 @@ import pytest
 from dishka import make_async_container
 from httpx import AsyncClient
 from redis.asyncio import Redis
-from sqlalchemy import text, NullPool
+from sqlalchemy import NullPool, text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
