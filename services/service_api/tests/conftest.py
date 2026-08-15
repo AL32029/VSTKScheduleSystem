@@ -128,9 +128,15 @@ async def test_container(request, session_with_test_data, redis_container):
     class TestSystemSettingsProvider(Provider):
         scope = Scope.APP
 
+        _metrics_instance = None
+
         @provide
         def metrics_collector(self) -> "MetricsCollector":
-            return PrometheusMetricsCollector()
+            if TestSystemSettingsProvider._metrics_instance is None:
+                TestSystemSettingsProvider._metrics_instance = (
+                    PrometheusMetricsCollector()
+                )
+            return TestSystemSettingsProvider._metrics_instance
 
     # ====================== [ПРОВАЙДЕР БД] ======================
     class TestDatabaseProvider(Provider):
