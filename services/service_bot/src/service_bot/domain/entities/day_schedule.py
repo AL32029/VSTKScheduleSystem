@@ -11,11 +11,12 @@ from .lesson import CabinetLesson, Lesson
 @dataclass
 class DaySchedule:
     """Сущность расписания для кабинета/группы на конкретную дату"""
+
     date: datetime.date
 
-    schedule_item: 'Group | Cabinet'
+    schedule_item: "Group | Cabinet"
 
-    lessons: list['Lesson | CabinetLesson']
+    lessons: list["Lesson | CabinetLesson"]
 
     @property
     def lessons_count(self) -> int:
@@ -33,13 +34,19 @@ class DaySchedule:
         return count
 
     def __post_init__(self):
-        if (isinstance(self.schedule_item, Group) and
-                not all(type(lesson) == Lesson for lesson in self.lessons)):
-            raise InvalidDayScheduleLessonType('Lessons should only accept objects of type Lesson when '
-                                               'the type of lessons is Group')
-        elif (isinstance(self.schedule_item, Cabinet) and
-              not all(type(lesson) == CabinetLesson for lesson in self.lessons)):
-            raise InvalidDayScheduleLessonType('Lessons should only accept objects of type CabinetLesson when '
-                                               'the type of lessons is Cabinet')
+        if isinstance(self.schedule_item, Group) and not all(
+            type(lesson) is Lesson for lesson in self.lessons
+        ):
+            raise InvalidDayScheduleLessonType(
+                "Lessons should only accept objects of type Lesson when "
+                "the type of lessons is Group"
+            )
+        elif isinstance(self.schedule_item, Cabinet) and not all(
+            type(lesson) is CabinetLesson for lesson in self.lessons
+        ):
+            raise InvalidDayScheduleLessonType(
+                "Lessons should only accept objects of type CabinetLesson when "
+                "the type of lessons is Cabinet"
+            )
 
         self.lessons = sorted(self.lessons, key=lambda x: x.start)

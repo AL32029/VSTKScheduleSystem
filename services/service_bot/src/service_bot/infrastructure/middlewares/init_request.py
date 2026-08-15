@@ -20,10 +20,10 @@ logger = logging.getLogger(__name__)
 
 class InitRequestMiddleware(BaseMiddleware):
     async def __call__(
-            self,
-            handler: Callable[[Update, dict[str, Any]], Awaitable[Any]],
-            event: Update,
-            data: dict[str, Any]
+        self,
+        handler: Callable[[Update, dict[str, Any]], Awaitable[Any]],
+        event: Update,
+        data: dict[str, Any],
     ):
         if not event.message and not event.callback_query:
             return
@@ -39,25 +39,41 @@ class InitRequestMiddleware(BaseMiddleware):
         start = time.perf_counter()
 
         if isinstance(instance, CallbackQuery):
-            request_type = f'Callback {instance.data}'
-            chat_id = instance.message.chat.id if instance.message and instance.message.chat else None
+            request_type = f"Callback {instance.data}"
+            chat_id = (
+                instance.message.chat.id
+                if instance.message and instance.message.chat
+                else None
+            )
             message_id_var.set(instance.message.message_id)
         else:
-            text_preview = textwrap.shorten(instance.text, width=48, placeholder='...') if instance.text else ''
-            request_type = f'Message {text_preview}'
+            text_preview = (
+                textwrap.shorten(instance.text, width=48, placeholder="...")
+                if instance.text
+                else ""
+            )
+            request_type = f"Message {text_preview}"
             chat_id = instance.chat.id if instance.chat else None
             message_id_var.set(instance.message_id)
 
-        logger.info('%s received', request_type, extra={
-            'request_type': request_type,
-            'chat_id': chat_id,
-        })
+        logger.info(
+            "%s received",
+            request_type,
+            extra={
+                "request_type": request_type,
+                "chat_id": chat_id,
+            },
+        )
 
         response = await handler(event, data)
 
         duration_ms = (time.perf_counter() - start) * 1000
-        logger.info('%s completed', request_type, extra={
-            'request_type': request_type,
-            'duration_ms': duration_ms,
-        })
+        logger.info(
+            "%s completed",
+            request_type,
+            extra={
+                "request_type": request_type,
+                "duration_ms": duration_ms,
+            },
+        )
         return response

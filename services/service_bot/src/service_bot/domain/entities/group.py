@@ -4,6 +4,7 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class Group:
     """Сущность группы"""
+
     index: str
     number: str
 

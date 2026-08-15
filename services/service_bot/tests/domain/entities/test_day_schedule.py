@@ -1,4 +1,3 @@
-
 from service_bot.domain.entities import (
     Cabinet,
     CabinetLesson,
@@ -15,11 +14,13 @@ from tests.test_contains import (
 )
 
 
-# ====================== [ТЕСТЫ СУЩНОСТИ DAYSCHEDULE (для группы)] ======================
+# ====================== [ТЕСТЫ СУЩНОСТИ DAYSCHEDULE (для группы)] =====================
 def test_group_day_schedule_creation():
     group_item = Group(_GROUP_NUMBERS[0][0], _GROUP_NUMBERS[0][1])
-    lessons = [Lesson(start, end, name, (Cabinet(x[0], x[1]) for x in cabinets))
-               for start, end, name, cabinets in _LESSON_VALUES]
+    lessons = [
+        Lesson(start, end, name, (Cabinet(x[0], x[1]) for x in cabinets))
+        for start, end, name, cabinets in _LESSON_VALUES
+    ]
 
     day_schedule = DaySchedule(_SCHEDULE_DATE, group_item, lessons)
 
@@ -31,12 +32,19 @@ def test_group_day_schedule_creation():
     assert day_schedule.pairs_count == day_schedule.lessons_count / 2
 
 
-# ====================== [ТЕСТЫ СУЩНОСТИ DAYSCHEDULE (для кабинета)] ======================
+# ===================== [ТЕСТЫ СУЩНОСТИ DAYSCHEDULE (для кабинета)] ===================
 def test_cabinet_day_schedule_creation():
     cabinet_item = Cabinet(_CABINET_NUMBERS[0][0], _CABINET_NUMBERS[0][1])
-    lessons = [CabinetLesson(start=start, end=end, group=group, name=name,
-                             cabinets=(Cabinet(x[0], x[1]) for x in cabinets))
-               for start, end, group, name, cabinets in _CABINET_LESSON_VALUES]
+    lessons = [
+        CabinetLesson(
+            start=start,
+            end=end,
+            group=group,
+            name=name,
+            cabinets=(Cabinet(x[0], x[1]) for x in cabinets),
+        )
+        for start, end, group, name, cabinets in _CABINET_LESSON_VALUES
+    ]
 
     day_schedule = DaySchedule(_SCHEDULE_DATE, cabinet_item, lessons)
 

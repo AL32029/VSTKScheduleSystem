@@ -14,12 +14,13 @@ from service_bot.domain.entities import (
 
 class ScheduleItem(BaseModel):
     """Pydantic-схема группы/кабинета"""
+
     index: str
     number: str
 
-    def to_domain(self, item_type: Literal['group', 'cabinet']) -> 'Group | Cabinet':
+    def to_domain(self, item_type: Literal["group", "cabinet"]) -> "Group | Cabinet":
         """Конвертация схемы в сущность Group/Cabinet"""
-        if item_type == 'group':
+        if item_type == "group":
             return Group(self.index, self.number)
         else:
             return Cabinet(self.index, self.number)
@@ -27,45 +28,55 @@ class ScheduleItem(BaseModel):
 
 class LessonItem(BaseModel):
     """Pydantic-схема урока для DayScheduleItem"""
+
     start: datetime.time
     end: datetime.time
 
-    group: 'ScheduleItem | None' = Field(default=None)
+    group: "ScheduleItem | None" = Field(default=None)
     name: str
 
-    cabinets: list['ScheduleItem']
+    cabinets: list["ScheduleItem"]
 
-    def to_domain(self, item_type: Literal['group', 'cabinet']) -> 'Lesson | CabinetLesson':
+    def to_domain(
+        self, item_type: Literal["group", "cabinet"]
+    ) -> "Lesson | CabinetLesson":
         """Конвертация схемы в сущность Lesson/CabinetLesson"""
-        if item_type == 'group':
+        if item_type == "group":
             return Lesson(
                 start=self.start,
                 end=self.end,
                 name=self.name,
-                cabinets=cast(list['Cabinet'], [x.to_domain('cabinet') for x in self.cabinets])
+                cabinets=cast(
+                    list["Cabinet"], [x.to_domain("cabinet") for x in self.cabinets]
+                ),
             )
         else:
             return CabinetLesson(
                 start=self.start,
                 end=self.end,
-                group=cast('Group', self.group.to_domain('group')),
+                group=cast("Group", self.group.to_domain("group")),
                 name=self.name,
-                cabinets=cast(list['Cabinet'], [x.to_domain('cabinet') for x in self.cabinets])
+                cabinets=cast(
+                    list["Cabinet"], [x.to_domain("cabinet") for x in self.cabinets]
+                ),
             )
 
 
 class DayScheduleItem(BaseModel):
     """Pydantic-схема расписания пар для группы/кабинета"""
+
     date: datetime.date
 
-    group: 'ScheduleItem | None' = Field(default=None)
-    cabinet: 'ScheduleItem | None' = Field(default=None)
+    group: "ScheduleItem | None" = Field(default=None)
+    cabinet: "ScheduleItem | None" = Field(default=None)
 
-    lessons: list['LessonItem']
+    lessons: list["LessonItem"]
 
-    def to_domain(self, schedule_type: Literal['group', 'cabinet']) -> 'DaySchedule':
+    def to_domain(self, schedule_type: Literal["group", "cabinet"]) -> "DaySchedule":
         return DaySchedule(
             date=self.date,
-            schedule_item=(self.group if schedule_type == 'group' else self.cabinet).to_domain(schedule_type),
-            lessons=[x.to_domain(schedule_type) for x in self.lessons]
+            schedule_item=(
+                self.group if schedule_type == "group" else self.cabinet
+            ).to_domain(schedule_type),
+            lessons=[x.to_domain(schedule_type) for x in self.lessons],
         )

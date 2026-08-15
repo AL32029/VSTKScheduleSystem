@@ -4,8 +4,8 @@ from .schedule_repository import ScheduleRepository
 from .user_repository import UserRepository
 
 __all__ = [
-    'CabinetRepository',
-    'GroupRepository',
-    'ScheduleRepository',
-    'UserRepository'
+    "CabinetRepository",
+    "GroupRepository",
+    "ScheduleRepository",
+    "UserRepository",
 ]

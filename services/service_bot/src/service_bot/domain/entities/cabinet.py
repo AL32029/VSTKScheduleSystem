@@ -4,6 +4,7 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class Cabinet:
     """Сущность кабинета"""
+
     index: str
     number: str
 

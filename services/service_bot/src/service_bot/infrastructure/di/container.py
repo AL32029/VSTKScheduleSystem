@@ -20,7 +20,7 @@ from .providers import (
 )
 
 
-def get_dishka_container() -> 'AsyncContainer':
+def get_dishka_container() -> "AsyncContainer":
     bot_settings = BotSettings()
     api_settings = APISettings()
     base_system_settings = BaseSystemSettings()
@@ -41,8 +41,8 @@ def get_dishka_container() -> 'AsyncContainer':
             APISettings: api_settings,
             BaseSystemSettings: base_system_settings,
             DatabaseSettings: database_settings,
-            RedisSettings: redis_settings
-        }
+            RedisSettings: redis_settings,
+        },
     )
 
     return container

@@ -9,10 +9,12 @@ logger = logging.getLogger(__name__)
 class SubscribeCabinetUseCase:
     """UseCase подписки на кабинет"""
 
-    def __init__(self, repo: 'UserRepository'):
+    def __init__(self, repo: "UserRepository"):
         self.repo = repo
 
-    async def execute(self, user: 'User', cabinet: 'Cabinet'):
-        logger.info('Subscribing to the %s cabinet', str(cabinet))
+    async def execute(self, user: "User", cabinet: "Cabinet"):
+        logger.info("Subscribing to the %s cabinet", str(cabinet))
         await self.repo.subscribe_cabinet(user, cabinet)
-        logger.info('The subscription to the %s cabinet has been completed', str(cabinet))
+        logger.info(
+            "The subscription to the %s cabinet has been completed", str(cabinet)
+        )

@@ -7,9 +7,9 @@ from .models import (
 )
 
 __all__ = [
-    'Base',
-    'CabinetSubscribesORM',
-    'GroupSubscribesORM',
-    'UserMetadataORM',
-    'UserORM'
+    "Base",
+    "CabinetSubscribesORM",
+    "GroupSubscribesORM",
+    "UserMetadataORM",
+    "UserORM",
 ]
