@@ -29,69 +29,108 @@ logger = logging.getLogger(__name__)
 
 
 class SQLAlchemyScheduleRepository(ScheduleRepository):
-    def __init__(self, session: 'AsyncSession'):
+    def __init__(self, session: "AsyncSession"):
         self.session = session
 
-    async def get_schedule_date(self, schedule_type: Literal['today', 'tomorrow']) -> datetime.date:
-        logger.debug('Requesting schedule date for %s from database', schedule_type)
+    async def get_schedule_date(
+        self, schedule_type: Literal["today", "tomorrow"]
+    ) -> datetime.date:
+        logger.debug("Requesting schedule date for %s from database", schedule_type)
         today = datetime.datetime.now(system_settings.TIMEZONE).date()
 
-        stmt = (
-            select(func.max(LessonORM.date) if schedule_type == 'today' else func.min(LessonORM.date)).
-            where(
-                (LessonORM.date <= today) if schedule_type == 'today' else (LessonORM.date > today)
-            )
+        stmt = select(
+            func.max(LessonORM.date)
+            if schedule_type == "today"
+            else func.min(LessonORM.date)
+        ).where(
+            (LessonORM.date <= today)
+            if schedule_type == "today"
+            else (LessonORM.date > today)
         )
 
         date: datetime.date | None = await self.session.scalar(stmt)
 
         if date is None:
-            logger.debug('Schedule date for %s not found in database', schedule_type)
+            logger.debug("Schedule date for %s not found in database", schedule_type)
             raise ScheduleDateNotFound(schedule_type)
 
-        logger.debug('Schedule date for %s found: %s', schedule_type, date.isoformat())
+        logger.debug("Schedule date for %s found: %s", schedule_type, date.isoformat())
         return date
 
-    async def get_by_group(self, group: 'Group', schedule_type: Literal['today', 'tomorrow'],
-                           schedule_date: datetime.date, redirect: bool = True) -> 'GroupDaySchedule':
-        logger.debug('Requesting schedule for group %s on %s from database', group.number, schedule_date.isoformat())
+    async def get_by_group(
+        self,
+        group: "Group",
+        schedule_type: Literal["today", "tomorrow"],
+        schedule_date: datetime.date,
+        redirect: bool = True,
+    ) -> "GroupDaySchedule":
+        logger.debug(
+            "Requesting schedule for group %s on %s from database",
+            group.number,
+            schedule_date.isoformat(),
+        )
         stmt = (
-            select(LessonORM).
-            where(LessonORM.group_index == group.index, LessonORM.date == schedule_date).
-            order_by(LessonORM.start)
+            select(LessonORM)
+            .where(
+                LessonORM.group_index == group.index, LessonORM.date == schedule_date
+            )
+            .order_by(LessonORM.start)
         )
 
         lessons: Iterable[LessonORM] = (await self.session.scalars(stmt)).all()
 
         if not lessons:
-            logger.debug('Schedule for group %s on %s not found in database', group.number, schedule_date.isoformat())
+            logger.debug(
+                "Schedule for group %s on %s not found in database",
+                group.number,
+                schedule_date.isoformat(),
+            )
             raise GroupDayScheduleNotFound(group, schedule_type, schedule_date)
 
-        logger.debug('Retrieved %d lessons for group %s on %s from database', len(lessons), group.number,
-                     schedule_date.isoformat())
+        logger.debug(
+            "Retrieved %d lessons for group %s on %s from database",
+            len(lessons),
+            group.number,
+            schedule_date.isoformat(),
+        )
         return lessons_orm_to_group_day_schedule_domain(lessons, redirect)
 
-    async def get_by_cabinet(self, cabinet: 'Cabinet', schedule_type: Literal['today', 'tomorrow'],
-                             schedule_date: datetime.date, redirect: bool = True) -> 'CabinetDaySchedule':
-        logger.debug('Requesting schedule for cabinet %s on %s from database', cabinet.number,
-                     schedule_date.isoformat())
+    async def get_by_cabinet(
+        self,
+        cabinet: "Cabinet",
+        schedule_type: Literal["today", "tomorrow"],
+        schedule_date: datetime.date,
+        redirect: bool = True,
+    ) -> "CabinetDaySchedule":
+        logger.debug(
+            "Requesting schedule for cabinet %s on %s from database",
+            cabinet.number,
+            schedule_date.isoformat(),
+        )
         stmt = (
-            select(LessonORM).
-            join(LessonCabinetORM).
-            where(
+            select(LessonORM)
+            .join(LessonCabinetORM)
+            .where(
                 LessonORM.date == schedule_date,
-                LessonCabinetORM.cabinet_id == cabinet.index
-            ).
-            order_by(LessonORM.start)
+                LessonCabinetORM.cabinet_id == cabinet.index,
+            )
+            .order_by(LessonORM.start)
         )
 
         lessons: Iterable[LessonORM] = (await self.session.scalars(stmt)).all()
 
         if not lessons:
-            logger.debug('Schedule for cabinet %s on %s not found in database', cabinet.number,
-                         schedule_date.isoformat())
+            logger.debug(
+                "Schedule for cabinet %s on %s not found in database",
+                cabinet.number,
+                schedule_date.isoformat(),
+            )
             raise CabinetDayScheduleNotFound(cabinet, schedule_type, schedule_date)
 
-        logger.debug('Retrieved %d lessons for cabinet %s on %s from database', len(lessons), cabinet.number,
-                     schedule_date.isoformat())
+        logger.debug(
+            "Retrieved %d lessons for cabinet %s on %s from database",
+            len(lessons),
+            cabinet.number,
+            schedule_date.isoformat(),
+        )
         return lessons_orm_to_cabinet_day_schedule_domain(cabinet, lessons, redirect)

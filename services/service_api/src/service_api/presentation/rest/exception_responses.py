@@ -10,8 +10,5 @@ async def api_exception_handler(request: Request, exc: Exception) -> JSONRespons
 
     return JSONResponse(
         status_code=exc.status_code,
-        content={
-            'status': False,
-            'error': exc.to_api_error()
-        }
+        content={"status": False, "error": exc.to_api_error()},
     )

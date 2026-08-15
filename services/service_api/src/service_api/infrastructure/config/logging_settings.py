@@ -10,7 +10,9 @@ from pydantic_settings import (
 
 
 class LoggingSettings(BaseSettings):
-    model_config = SettingsConfigDict(json_file=os.getenv('LOGGING_SETTINGS_PATH', '/app/env/logging.json'))
+    model_config = SettingsConfigDict(
+        json_file=os.getenv("LOGGING_SETTINGS_PATH", "/app/env/logging.json")
+    )
 
     version: int = Field(default=1)
 
@@ -18,40 +20,41 @@ class LoggingSettings(BaseSettings):
 
     filters: dict = Field(default_factory=dict)
 
-    formatters: dict = Field(default_factory=lambda: {
-        'default': {
-            'format': '[%(asctime)s] %(levelname)s - %(name)s - %(message)s'
+    formatters: dict = Field(
+        default_factory=lambda: {
+            "default": {"fmt": "[%(asctime)s] %(levelname)s - %(name)s - %(message)s"}
         }
-    })
+    )
 
-    handlers: dict = Field(default_factory=lambda: {
-        'default': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'default',
-            'stream': 'ext://sys.stdout'
+    handlers: dict = Field(
+        default_factory=lambda: {
+            "default": {
+                "class": "logging.StreamHandler",
+                "formatter": "default",
+                "stream": "ext://sys.stdout",
+            }
         }
-    })
+    )
 
     loggers: dict = Field(default_factory=dict)
 
-    root: dict = Field(default_factory=lambda: {
-        'handlers': ['default'],
-        'level': 'DEBUG'
-    })
+    root: dict = Field(
+        default_factory=lambda: {"handlers": ["default"], "level": "DEBUG"}
+    )
 
     @classmethod
     def settings_customise_sources(
-            cls,
-            settings_cls: type[BaseSettings],
-            init_settings: PydanticBaseSettingsSource,
-            env_settings: PydanticBaseSettingsSource,
-            dotenv_settings: PydanticBaseSettingsSource,
-            file_secret_settings: PydanticBaseSettingsSource,
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
         return (
             init_settings,
             JsonConfigSettingsSource(settings_cls),
             env_settings,
             dotenv_settings,
-            file_secret_settings
+            file_secret_settings,
         )

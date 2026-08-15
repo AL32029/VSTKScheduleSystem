@@ -1,9 +1,8 @@
 import asyncio
-import logging
 import logging.config
-import time
 from zoneinfo import ZoneInfo
 
+import time
 from httpx import AsyncClient
 from redis.asyncio import Redis
 

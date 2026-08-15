@@ -19,8 +19,9 @@ class APISchemas(BaseModel):
     """Базовая модель схем API"""
 
 
-class ResponseSchema[T: 'APISchemas'](BaseModel):
+class ResponseSchema[T: "APISchemas"](BaseModel):
     """Модель схемы успешного ответа API"""
+
     success: bool = True
     data: T | Iterable[T]
 
@@ -29,11 +30,11 @@ class ScheduleItemSchema(APISchemas):
     index: str
     number: str
 
-    def to_domain(self, domain_type: Literal['group', 'cabinet']) -> 'Group | Cabinet':
-        if domain_type == 'group':
-            return Group(**self.model_dump(mode='json'))
+    def to_domain(self, domain_type: Literal["group", "cabinet"]) -> "Group | Cabinet":
+        if domain_type == "group":
+            return Group(**self.model_dump(mode="json"))
         else:
-            return Cabinet(**self.model_dump(mode='json'))
+            return Cabinet(**self.model_dump(mode="json"))
 
     def __hash__(self):
         return hash(self.index)
@@ -45,14 +46,14 @@ class GroupLessonSchema(APISchemas):
 
     name: str
 
-    cabinets: Iterable['ScheduleItemSchema']
+    cabinets: Iterable["ScheduleItemSchema"]
 
-    def to_domain(self) -> 'GroupLesson':
+    def to_domain(self) -> "GroupLesson":
         return GroupLesson(
             start=self.start,
             end=self.end,
             name=self.name,
-            cabinets=[cast('Cabinet', x.to_domain('cabinet')) for x in self.cabinets]
+            cabinets=[cast("Cabinet", x.to_domain("cabinet")) for x in self.cabinets],
         )
 
     def __hash__(self):
@@ -63,19 +64,19 @@ class CabinetLessonSchema(APISchemas):
     start: datetime.time
     end: datetime.time
 
-    group: 'ScheduleItemSchema'
+    group: "ScheduleItemSchema"
 
     name: str
 
-    cabinets: Iterable['ScheduleItemSchema']
+    cabinets: Iterable["ScheduleItemSchema"]
 
-    def to_domain(self) -> 'CabinetLesson':
+    def to_domain(self) -> "CabinetLesson":
         return CabinetLesson(
             start=self.start,
             end=self.end,
-            group=cast('Group', self.group.to_domain('group')),
+            group=cast("Group", self.group.to_domain("group")),
             name=self.name,
-            cabinets=[cast('Cabinet', x.to_domain('cabinet')) for x in self.cabinets]
+            cabinets=[cast("Cabinet", x.to_domain("cabinet")) for x in self.cabinets],
         )
 
     def __hash__(self):
@@ -83,60 +84,84 @@ class CabinetLessonSchema(APISchemas):
 
 
 class GroupDayScheduleSchema(APISchemas):
-    group: 'ScheduleItemSchema'
+    group: "ScheduleItemSchema"
 
     date: datetime.date
 
-    lessons: Iterable['GroupLessonSchema']
+    lessons: Iterable["GroupLessonSchema"]
 
     @computed_field
     @property
     def lessons_count(self) -> int:
-        return len([lesson
-                    for lesson in self.lessons
-                    if lesson.name.strip().lower() not in _IGNORED_LESSONS])
+        return len(
+            [
+                lesson
+                for lesson in self.lessons
+                if lesson.name.strip().lower() not in _IGNORED_LESSONS
+            ]
+        )
 
     @computed_field
     @property
     def pairs_count(self) -> float:
         return self.lessons_count / 2
 
-    def to_domain(self) -> 'GroupDaySchedule':
+    def to_domain(self) -> "GroupDaySchedule":
         return GroupDaySchedule(
-            group=cast(Group, self.group.to_domain('group')),
+            group=cast(Group, self.group.to_domain("group")),
             date=self.date,
-            lessons=[lesson.to_domain() for lesson in self.lessons]
+            lessons=[lesson.to_domain() for lesson in self.lessons],
         )
 
     def __hash__(self):
-        return hash((self.group, self.date, tuple(self.lessons), self.lessons_count, self.pairs_count))
+        return hash(
+            (
+                self.group,
+                self.date,
+                tuple(self.lessons),
+                self.lessons_count,
+                self.pairs_count,
+            )
+        )
 
 
 class CabinetDayScheduleSchema(APISchemas):
-    cabinet: 'ScheduleItemSchema'
+    cabinet: "ScheduleItemSchema"
 
     date: datetime.date
 
-    lessons: Iterable['CabinetLessonSchema']
+    lessons: Iterable["CabinetLessonSchema"]
 
     @computed_field
     @property
     def lessons_count(self) -> int:
-        return len([lesson
-                    for lesson in self.lessons
-                    if lesson.name.strip().lower() not in _IGNORED_LESSONS])
+        return len(
+            [
+                lesson
+                for lesson in self.lessons
+                if lesson.name.strip().lower() not in _IGNORED_LESSONS
+            ]
+        )
 
     @computed_field
     @property
     def pairs_count(self) -> float:
         return self.lessons_count / 2
 
-    def to_domain(self) -> 'CabinetDaySchedule':
+    def to_domain(self) -> "CabinetDaySchedule":
         return CabinetDaySchedule(
-            cabinet=cast(Cabinet, self.cabinet.to_domain('cabinet')),
+            cabinet=cast(Cabinet, self.cabinet.to_domain("cabinet")),
             date=self.date,
-            lessons=[lesson.to_domain() for lesson in self.lessons]
+            lessons=[lesson.to_domain() for lesson in self.lessons],
         )
 
     def __hash__(self):
-        return hash((self.cabinet, self.date, tuple(self.lessons), self.lessons_count, self.pairs_count))
+        return hash(
+            (
+                self.cabinet,
+                self.date,
+                tuple(self.lessons),
+                self.lessons_count,
+                self.pairs_count,
+            )
+        )

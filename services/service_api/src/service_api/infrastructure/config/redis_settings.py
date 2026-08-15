@@ -5,30 +5,43 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class RedisSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=os.getenv('REDIS_SETTINGS_ENV', '/vault/secrets/redis.env'),
-                                      env_prefix='REDIS_', extra='ignore')
+class DevRedisSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="REDIS_", extra="forbid")
 
-    SSL_CERT_FILE: str = Field(default='/vault/secrets/redis-tls.crt')
-    SSL_KEY_FILE: str = Field(default='/vault/secrets/redis-tls.key')
-    SSL_CA_CERT_FILE: str = Field(default='/vault/secrets/redis-tls.ca')
+    HOST: str
+    PORT: int
+
+    DB_NUMBER: int
+
+
+class ProdRedisSettings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=os.getenv("REDIS_SETTINGS_ENV", "/vault/secrets/redis.env"),
+        env_prefix="REDIS_",
+        extra="forbid",
+    )
+
+    HOST: str
+    PORT: int
+
+    DB_NUMBER: int
+
+    SSL_CERT_REQS: Literal["none", "optional", "required"] = Field("required")
+
+    SSL_CERT_FILE: str = Field("/vault/secrets/redis-tls.crt")
+    SSL_KEY_FILE: str = Field("/vault/secrets/redis-tls.key")
+    SSL_CA_CERT_FILE: str = Field("/vault/secrets/redis-tls.ca")
+
+    SSL_CHECK_HOSTNAME: bool = Field(True)
+
+
+class RedisSettings:
+    def __init__(self, mode: Literal["dev", "prod"] = "dev"):
+        self.mode: Literal["dev", "prod"] = mode
+
+        self.dev: "DevRedisSettings" = DevRedisSettings()
+        self.prod: "ProdRedisSettings" = ProdRedisSettings()
 
     @property
-    def HOST(self) -> str:
-        return os.getenv('REDIS_HOST')
-
-    @property
-    def PORT(self) -> int:
-        return int(os.getenv('REDIS_PORT'))
-
-    @property
-    def DB_NUMBER(self) -> int:
-        return int(os.getenv('REDIS_DB_NUMBER'))
-
-    @property
-    def SSL_CERT_REQS(self) -> Literal['none', 'optional', 'required']:
-        return os.getenv('REDIS_SSL_CERT_REQS')
-
-    @property
-    def SSL_CHECK_HOSTNAME(self) -> bool:
-        return os.getenv('REDIS_SSL_CHECK_HOSTNAME')
+    def config(self) -> "DevRedisSettings | ProdRedisSettings":
+        return self.dev if self.mode == "dev" else self.prod

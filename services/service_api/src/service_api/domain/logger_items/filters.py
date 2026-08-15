@@ -44,6 +44,7 @@ class PathFilter(logging.Filter):
             return True
         return True
 
+
 class MethodFilter(logging.Filter):
     def filter(self, record):
         try:

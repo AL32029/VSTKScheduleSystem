@@ -12,65 +12,79 @@ from service_api.domain.entities import (
 
 class CacheRepository(ABC):
     @abstractmethod
-    async def get_group_cache(self, group_number: str) -> 'Group':
+    async def get_group_cache(self, group_number: str) -> "Group":
         """Получение группы из кэша"""
         raise NotImplementedError
 
     @abstractmethod
-    async def set_group_cache(self, group_item: 'Group', ttl: int = 21600) -> None:
+    async def set_group_cache(self, group_item: "Group", ttl: int = 21600) -> None:
         """Сохранение группы в кэш"""
         raise NotImplementedError
 
     @abstractmethod
-    async def get_all_groups_cache(self) -> list['Group']:
+    async def get_all_groups_cache(self) -> list["Group"]:
         """Получение всех групп из кэша"""
         raise NotImplementedError
 
     @abstractmethod
-    async def set_all_groups_cache(self, group_items: Iterable['Group'], ttl: int = 21600) -> None:
+    async def set_all_groups_cache(
+        self, group_items: Iterable["Group"], ttl: int = 21600
+    ) -> None:
         """Сохранение всех групп в кэш"""
         raise NotImplementedError
 
     @abstractmethod
-    async def get_cabinet_cache(self, cabinet_number: str) -> 'Cabinet':
+    async def get_cabinet_cache(self, cabinet_number: str) -> "Cabinet":
         """Получение кабинета из кэша"""
         raise NotImplementedError
 
     @abstractmethod
-    async def set_cabinet_cache(self, cabinet_item: 'Cabinet', ttl: int = 604800) -> None:
+    async def set_cabinet_cache(
+        self, cabinet_item: "Cabinet", ttl: int = 604800
+    ) -> None:
         """Сохранение группы в кэш"""
         raise NotImplementedError
 
     @abstractmethod
-    async def get_all_cabinets_cache(self) -> list['Cabinet']:
+    async def get_all_cabinets_cache(self) -> list["Cabinet"]:
         """Получение всех кабинетов из кэша"""
         raise NotImplementedError
 
     @abstractmethod
-    async def set_all_cabinets_cache(self, cabinet_items: Iterable['Cabinet'], ttl: int = 604800) -> None:
+    async def set_all_cabinets_cache(
+        self, cabinet_items: Iterable["Cabinet"], ttl: int = 604800
+    ) -> None:
         """Сохранение всех кабинетов в кэш"""
         raise NotImplementedError
 
     @abstractmethod
-    async def get_group_day_schedule(self, schedule_to: Literal['today', 'tomorrow'],
-                                     group_number: str) -> 'GroupDaySchedule':
+    async def get_group_day_schedule(
+        self, schedule_to: Literal["today", "tomorrow"], group_number: str
+    ) -> "GroupDaySchedule":
         """Получение расписания для группы из кэша"""
         raise NotImplementedError
 
     @abstractmethod
-    async def set_group_day_schedule(self, schedule_to: Literal['today', 'tomorrow'],
-                                     day_schedule: 'GroupDaySchedule') -> None:
+    async def set_group_day_schedule(
+        self,
+        schedule_to: Literal["today", "tomorrow"],
+        day_schedule: "GroupDaySchedule",
+    ) -> None:
         """Сохранение расписания для группы в кэш"""
         raise NotImplementedError
 
     @abstractmethod
-    async def get_cabinet_day_schedule(self, cabinet_number: str,
-                                       schedule_to: Literal['today', 'tomorrow']) -> 'CabinetDaySchedule':
+    async def get_cabinet_day_schedule(
+        self, cabinet_number: str, schedule_to: Literal["today", "tomorrow"]
+    ) -> "CabinetDaySchedule":
         """Получение расписания для кабинета из кэша"""
         raise NotImplementedError
 
     @abstractmethod
-    async def set_cabinet_day_schedule(self, schedule_to: Literal['today', 'tomorrow'],
-                                       day_schedule: 'CabinetDaySchedule') -> None:
+    async def set_cabinet_day_schedule(
+        self,
+        schedule_to: Literal["today", "tomorrow"],
+        day_schedule: "CabinetDaySchedule",
+    ) -> None:
         """Сохранение расписания для кабинета в кэш"""
         raise NotImplementedError

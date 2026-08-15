@@ -8,24 +8,24 @@ logger = logging.getLogger(__name__)
 
 
 class GetAllGroupsUseCase:
-    def __init__(self, group_repo: 'GroupRepository', cache_repo: 'CacheRepository'):
+    def __init__(self, group_repo: "GroupRepository", cache_repo: "CacheRepository"):
         self.group_repo = group_repo
         self.cache_repo = cache_repo
 
-    async def execute(self) -> list['Group']:
+    async def execute(self) -> list["Group"]:
         try:
-            logger.info('Obtaining list of groups from the cache')
+            logger.info("Obtaining list of groups from the cache")
             groups = await self.cache_repo.get_all_groups_cache()
-            logger.info('List of groups has been retrieved from the cache')
+            logger.info("List of groups has been retrieved from the cache")
         except CacheItemNotFound:
-            logger.warning('List of groups is not found in the cache')
+            logger.warning("List of groups is not found in the cache")
 
-            logger.info('Obtaining list of groups from the database')
+            logger.info("Obtaining list of groups from the database")
             groups = await self.group_repo.get_all()
-            logger.info('List of groups was retrieved from the database')
+            logger.info("List of groups was retrieved from the database")
 
-            logger.info('Saving list of groups to the cache')
+            logger.info("Saving list of groups to the cache")
             await self.cache_repo.set_all_groups_cache(groups)
-            logger.info('List of groups has been saved to the cache')
+            logger.info("List of groups has been saved to the cache")
 
         return groups

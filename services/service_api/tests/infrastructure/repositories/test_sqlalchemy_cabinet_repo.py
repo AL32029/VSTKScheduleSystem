@@ -5,7 +5,7 @@ from service_api.domain.exceptions import CabinetNotFound
 from tests.test_contains import _CABINET_ITEM, _CABINET_ITEM_NOT_SAVED, _CABINET_ITEMS
 
 
-# ===================== [ТЕСТЫ РЕПОЗИТОРИЯ SQLAlchemyCabinetRepository] =====================
+# =================== [ТЕСТЫ РЕПОЗИТОРИЯ SQLAlchemyCabinetRepository] ==================
 async def test_get_by_number(sqlalchemy_cabinet_repo):
     """Тест должен получить сущность Cabinet из базы данных"""
     cabinet = await sqlalchemy_cabinet_repo.get_by_number(_CABINET_ITEM.number)
@@ -21,7 +21,9 @@ async def test_get_by_number_not_found(sqlalchemy_cabinet_repo):
     with pytest.raises(CabinetNotFound) as exc_info:
         await sqlalchemy_cabinet_repo.get_by_number(_CABINET_ITEM_NOT_SAVED.number)
 
-    assert exc_info.value.args != f'Cabinet with number {_CABINET_ITEM_NOT_SAVED.number!r} not found'
+    assert exc_info.value.args != (
+        f"Cabinet with number {_CABINET_ITEM_NOT_SAVED.number!r} not found"
+    )
 
 
 async def test_get_all(sqlalchemy_cabinet_repo):

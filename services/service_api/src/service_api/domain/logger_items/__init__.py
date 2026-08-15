@@ -7,9 +7,9 @@ from .filters import (
 )
 
 __all__ = [
-    'ClientIPFilter',
-    'MethodFilter',
-    'PathFilter',
-    'RequestIDFilter',
-    'UserAgentFilter'
+    "ClientIPFilter",
+    "MethodFilter",
+    "PathFilter",
+    "RequestIDFilter",
+    "UserAgentFilter",
 ]

@@ -22,6 +22,8 @@ patterns = { path = "../../libs/patterns" }
 tzdata = "^2026.3"
 watchfiles = "^1.2.0"
 aiofiles = "^25.1.0"
+prometheus-client = "^0.26.0"
+python-json-logger = "^4.1.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -30,7 +32,7 @@ pytest-asyncio = "^1.4.0"
 testcontainers = "^4.15.0"
 pytest-cov = "^7.1.0"
 alembic = "^1.18.5"
-ruff = "^0.16.1"
+ruff = "^0.15.14"
 httpx = "^0.28.1"
 
 [build-system]
@@ -43,3 +45,6 @@ addopts = "--asyncio-mode=auto"
 
 [tool.coverage.run]
 source = ["src/service_api"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
