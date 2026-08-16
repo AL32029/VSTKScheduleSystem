@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import hashlib
 import re
@@ -6,6 +7,7 @@ from re import Pattern
 from typing import Any, ClassVar, Literal
 from zoneinfo import ZoneInfo
 
+import httpx
 import numpy
 from bs4 import BeautifulSoup
 from httpx import AsyncClient
@@ -23,6 +25,7 @@ from service_parser.domain.entities import (
 )
 from service_parser.domain.exceptions import (
     FetchingTableError,
+    FetchingTimedOutError,
     ParsingDateError,
     ParsingDayScheduleError,
     ParsingGroupsError,
@@ -113,9 +116,27 @@ class HTTPXScheduleProvider(ScheduleProvider):
         return group_lessons
 
     async def _fetch_html(self, url: str) -> str:
-        response = await self.client.get(url)
+        _max_reties = 3
 
-        response.raise_for_status()
+        response = None
+
+        for attempt in range(_max_reties):
+            try:
+                response = await self.client.get(url)
+
+                response.raise_for_status()
+
+                break
+            except (httpx.TimeoutException, TimeoutError) as e:
+                if attempt == _max_reties - 1:
+                    raise FetchingTimedOutError(
+                        f"It was not possible to retrieve information "
+                        f"from the website {url} — the timeout "
+                        f"has expired"
+                    ) from e
+
+                await asyncio.sleep(2**attempt)
+                continue
 
         return response.text
 

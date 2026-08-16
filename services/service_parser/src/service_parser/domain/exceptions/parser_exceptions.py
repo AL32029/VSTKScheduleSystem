@@ -70,6 +70,10 @@ class ParsingError(ParserServiceError):
     """Ошибка парсинга"""
 
 
+class FetchingTimedOutError(ParsingError):
+    """Ошибка истечения количества попыток соединения с сайтом"""
+
+
 class FetchingTableError(ParsingError):
     """Ошибка извлечения таблицы"""
 

@@ -1,11 +1,13 @@
+import asyncio
 import logging
 from typing import cast
 
+import httpx
 from httpx import AsyncClient, HTTPStatusError
 
 from service_bot.application.ports import CabinetRepository
 from service_bot.domain.entities import Cabinet
-from service_bot.domain.exceptions import CabinetNotFoundError
+from service_bot.domain.exceptions import APIRequestTimedOutError, CabinetNotFoundError
 
 from .schemas import ScheduleItem
 
@@ -21,8 +23,23 @@ class HTTPXCabinetRepository(CabinetRepository):
     async def get_by_number(self, cabinet_number: str) -> "Cabinet":
         """Получение кабинета по его номеру"""
         request = f"/cabinets/{cabinet_number}"
+        _max_reties = 3
+
         logger.debug("Requesting cabinet by number %s from API", cabinet_number)
-        resp = await self.client.get(request)
+
+        resp = None
+
+        for attempt in range(_max_reties):
+            try:
+                resp = await self.client.get(request)
+
+                break
+            except (httpx.TimeoutException, TimeoutError) as e:
+                if attempt == _max_reties - 1:
+                    raise APIRequestTimedOutError(request) from e
+
+                await asyncio.sleep(2**attempt)
+                continue
 
         response_json: dict = resp.json()
 
@@ -49,7 +66,8 @@ class HTTPXCabinetRepository(CabinetRepository):
 
         cabinet_json = response_json.get("data")
         cabinet = cast(
-            "Cabinet", ScheduleItem.model_validate(cabinet_json).to_domain("cabinet"),
+            "Cabinet",
+            ScheduleItem.model_validate(cabinet_json).to_domain("cabinet"),
         )
         logger.info("Cabinet %s retrieved from API", cabinet.number)
         return cabinet
@@ -57,8 +75,24 @@ class HTTPXCabinetRepository(CabinetRepository):
     async def get_all(self) -> list["Cabinet"]:
         """Получение списка всех кабинетов"""
         request = "/cabinets/"
+
+        _max_reties = 3
+
         logger.debug("Requesting all cabinets from API")
-        resp = await self.client.get(request)
+
+        resp = None
+
+        for attempt in range(_max_reties):
+            try:
+                resp = await self.client.get(request)
+
+                break
+            except (httpx.TimeoutException, TimeoutError) as e:
+                if attempt == _max_reties - 1:
+                    raise APIRequestTimedOutError(request) from e
+
+                await asyncio.sleep(2**attempt)
+                continue
 
         response_json: dict = resp.json()
 

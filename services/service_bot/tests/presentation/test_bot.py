@@ -37,7 +37,12 @@ from service_bot.infrastructure.template_engine_items import (
     TemplateKeyboardRenderer,
     TemplateMessageRenderer,
 )
-from service_bot.presentation import UserStates, callback_router, message_router
+from service_bot.presentation import (
+    UserStates,
+    callback_router,
+    exception_router,
+    message_router,
+)
 from tests.test_contains import (
     _CABINET_DAY_SCHEDULE,
     _CABINET_ITEM,
@@ -53,6 +58,7 @@ def create_app(container: AsyncContainer, dispatcher: Dispatcher) -> None:
 
     dispatcher.include_router(message_router)
     dispatcher.include_router(callback_router)
+    dispatcher.include_router(exception_router)
 
     dispatcher.update.middleware.register(InitRequestMiddleware())
     dispatcher.message.middleware.register(DeleteMessageMiddleware())

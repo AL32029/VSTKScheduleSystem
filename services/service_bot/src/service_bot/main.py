@@ -17,7 +17,7 @@ from service_bot.infrastructure.middlewares import (
     InitRequestMiddleware,
     InitUserDatabaseMiddleware,
 )
-from service_bot.presentation import callback_router, message_router
+from service_bot.presentation import callback_router, exception_router, message_router
 
 logging.config.dictConfig(LoggingSettings().model_dump(mode="json"))
 
@@ -89,6 +89,7 @@ async def create_app(
 
     dp.include_router(message_router)
     dp.include_router(callback_router)
+    dp.include_router(exception_router)
 
     dp.update.middleware.register(InitRequestMiddleware())
     dp.message.middleware.register(DeleteMessageMiddleware())

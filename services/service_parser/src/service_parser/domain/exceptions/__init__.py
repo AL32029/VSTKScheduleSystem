@@ -2,6 +2,7 @@ from .parser_exceptions import (
     CabinetNotFoundError,
     DayScheduleNotFoundError,
     FetchingTableError,
+    FetchingTimedOutError,
     GroupNotFoundError,
     GroupNumberFormatError,
     GroupParserPositionError,
@@ -42,4 +43,5 @@ __all__ = [
     "ScheduleForSomeDatesError",
     "ScheduleForSomeGroupsError",
     "ScheduleUnchangedError",
+    "FetchingTimedOutError",
 ]
