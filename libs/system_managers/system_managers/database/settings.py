@@ -8,7 +8,7 @@ class BaseDevDatabaseSettings(BaseSettings):
     HOST: str
     PORT: int
 
-    USER: str
+    USER: str | None = Field(None)
     PASSWORD: str | None = Field(None)
 
     BASE: str
