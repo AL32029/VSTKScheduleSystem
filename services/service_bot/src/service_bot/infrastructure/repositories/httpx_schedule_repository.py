@@ -1,12 +1,15 @@
+import asyncio
 import datetime
 import logging
 from typing import Literal, cast
 
+import httpx
 from httpx import AsyncClient, HTTPStatusError
 
 from service_bot.application.ports import ScheduleRepository
 from service_bot.domain.entities import Cabinet, DaySchedule, Group
 from service_bot.domain.exceptions import (
+    APIRequestTimedOutError,
     CabinetNotFoundError,
     GroupNotFoundError,
     ScheduleDateNotFoundError,
@@ -33,19 +36,35 @@ class HTTPXScheduleRepository(ScheduleRepository):
     ) -> "DaySchedule":
         """Получение расписания на конкретную дату"""
         request = f"/schedule/{schedule_for}"
+
+        _max_reties = 3
+
         logger.debug(
             "Requesting %s schedule for %s (%s) from API",
             schedule_for,
             schedule_item,
             schedule_to,
         )
-        resp = await self.client.get(
-            request,
-            params={
-                f"{schedule_for}_number": schedule_item,
-                "schedule_to": schedule_to,
-            },
-        )
+
+        resp = None
+
+        for attempt in range(_max_reties):
+            try:
+                resp = await self.client.get(
+                    request,
+                    params={
+                        f"{schedule_for}_number": schedule_item,
+                        "schedule_to": schedule_to,
+                    },
+                )
+
+                break
+            except (httpx.TimeoutException, TimeoutError) as e:
+                if attempt == _max_reties - 1:
+                    raise APIRequestTimedOutError(request) from e
+
+                await asyncio.sleep(2**attempt)
+                continue
 
         response_json: dict = resp.json()
 

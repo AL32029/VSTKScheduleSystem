@@ -4,6 +4,17 @@ from typing import Literal
 from .base_exceptions import DataRequestError
 
 
+class APIRequestTimedOutError(DataRequestError):
+    """Ошибка истечения количества попыток соединения с сайтом"""
+
+    def __init__(self, endpoint: str):
+        self.endpoint = endpoint
+        super().__init__(
+            "При попытке получения информации из API произошла ошибка: "
+            "истекло время ожидания"
+        )
+
+
 class UserNotFoundError(DataRequestError):
     """Ошибка отсутствия пользователя"""
 
@@ -12,6 +23,7 @@ class GroupNotFoundError(DataRequestError):
     """Ошибка отсутствия группы"""
 
     def __init__(self, group_number: str):
+        self.group_number = group_number
         super().__init__(f"Группа {group_number} не найдена")
 
 
@@ -61,7 +73,7 @@ class ScheduleForGroupNotFoundError(DataRequestError):
         self.schedule_to = schedule_to
         self.schedule_date = schedule_date
         super().__init__(
-            f"Для кабинета {group!s} отсутствуют пары на "
+            f"Для группы {group!s} отсутствуют пары на "
             f"{'сегодня' if schedule_to == 'today' else 'завтра'} "
             f"({schedule_date.strftime('%d.%m.%Y г.')})",
         )

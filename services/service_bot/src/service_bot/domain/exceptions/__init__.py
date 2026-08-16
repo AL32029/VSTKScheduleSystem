@@ -10,6 +10,7 @@ from .data_validation_exceptions import (
     UserMetadataMissingError,
 )
 from .request_data_exceptions import (
+    APIRequestTimedOutError,
     CabinetNotFoundError,
     CabinetUnsubscribeNotFoundError,
     GroupNotFoundError,
@@ -36,4 +37,5 @@ __all__ = [
     "ScheduleForGroupNotFoundError",
     "UserMetadataMissingError",
     "UserNotFoundError",
+    "APIRequestTimedOutError",
 ]

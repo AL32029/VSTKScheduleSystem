@@ -2,7 +2,6 @@ import asyncio
 import logging
 
 from aiogram import Router
-from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command, StateFilter, or_f
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
@@ -24,50 +23,17 @@ from service_bot.domain.context_vars import (
     user_id_var,
 )
 from service_bot.domain.entities import User
-from service_bot.domain.exceptions import (
-    CabinetAlreadyInsertedError,
-    CabinetNotFoundError,
-    GroupAlreadyInsertedError,
-    GroupNotFoundError,
-)
 from service_bot.infrastructure.template_engine_items import (
     TemplateKeyboardRenderer,
     TemplateMessageRenderer,
 )
 
+from .actions import delete_message_with_delay
 from .user_states import UserStates
 
 logger = logging.getLogger(__name__)
 
 router = Router()
-
-
-async def delete_message_with_delay(
-    message: Message, request_id, update_id, user_id, message_id, delay: float = 7.5,
-):
-    """Удаление сообщения спустя КД"""
-    request_id_var.set(request_id)
-    update_id_var.set(update_id)
-    user_id_var.set(user_id)
-    message_id_var.set(message_id)
-
-    logger.info(
-        "The task of deleting the message with ID %s is scheduled "
-        "for %s seconds from now",
-        message.message_id,
-        delay,
-    )
-    await asyncio.sleep(delay)
-    try:
-        logger.info("Deleting a message with ID %s", message.message_id)
-        await message.delete()
-        logger.info("The message with ID %s has been deleted", message.message_id)
-    except TelegramBadRequest as e:
-        logger.warning(
-            "Error while deleting message with ID %s - %s",
-            message.message_id,
-            e.message,
-        )
 
 
 @router.message(or_f(Command("start"), StateFilter(None)))
@@ -82,11 +48,13 @@ async def message_open_main_menu(
     all_cabinets_use_case: FromDishka["GetAllCabinetsUseCase"],
 ):
     """Обработчик команды /start и при State = None"""
+    is_student = user.user_type == "student"
+
     schedule_items = (
         await all_groups_use_case.execute()
-        if user.user_type == "student" and user.group_subscribes
+        if is_student and user.group_subscribes
         else await all_cabinets_use_case.execute()
-        if user.user_type == "teacher" and user.cabinet_subscribes
+        if not is_student and user.cabinet_subscribes
         else []
     )
 
@@ -104,6 +72,7 @@ async def message_open_main_menu(
     logger.info("The message with the main menu has been sent")
 
     user.message_panel_id = panel.message_id
+    return None
 
 
 @router.message(StateFilter(UserStates.add_schedule_item))
@@ -124,33 +93,17 @@ async def message_add_schedule_item(
     """Обработчик сообщения подписки на группу/кабинет"""
     is_student = user.user_type == "student"
 
-    try:
-        if is_student:
-            schedule_item = await get_group_use_case.execute(str(message.text))
-            await subscribe_group_use_case.execute(user, schedule_item)
-        else:
-            schedule_item = await get_cabinet_use_case.execute(str(message.text))
-            await subscribe_cabinet_use_case.execute(user, schedule_item)
-    except (
-            GroupNotFoundError,
-            CabinetNotFoundError,
-            GroupAlreadyInsertedError,
-            CabinetAlreadyInsertedError,
-    ) as e:
-        error_message = await message.answer(text=f"⚠ {e!s}")
-        asyncio.create_task(
-            delete_message_with_delay(
-                error_message,
-                request_id_var.get(),
-                update_id_var.get(),
-                user_id_var.get(),
-                message_id_var.get(),
-            ),
-        )
-        return
+    if is_student:
+        schedule_item = await get_group_use_case.execute(str(message.text))
+        await subscribe_group_use_case.execute(user, schedule_item)
+    else:
+        schedule_item = await get_cabinet_use_case.execute(str(message.text))
+        await subscribe_cabinet_use_case.execute(user, schedule_item)
 
     success_rendered_message = message_templater.render(
-        "success_added_schedule_item", user=user, schedule_item=schedule_item,
+        "success_added_schedule_item",
+        user=user,
+        schedule_item=schedule_item,
     )
     success_message = await message.answer(text=success_rendered_message)
     asyncio.create_task(
@@ -188,4 +141,4 @@ async def message_add_schedule_item(
         reply_markup=rendered_keyboard,
     )
     logger.info("The message has been changed to the main menu")
-    return
+    return None
