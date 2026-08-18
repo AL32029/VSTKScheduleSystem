@@ -8,7 +8,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 import pytest
-from dishka import make_async_container
+from dishka import Scope, make_async_container
 from httpx import AsyncClient
 from redis.asyncio import Redis
 from sqlalchemy import NullPool, text
@@ -24,8 +24,11 @@ from testcontainers.community.redis import RedisContainer
 from service_parser.application.ports import (
     CabinetRepository,
     GroupRepository,
+    ScheduleProvider,
     ScheduleRepository,
 )
+from service_parser.application.services import ScheduleParserUseCase
+from service_parser.infrastructure.clients import HTTPXScheduleProvider
 from service_parser.infrastructure.di import HTTPXClientProvider
 from service_parser.infrastructure.repositories import (
     SQLAlchemyCabinetRepository,
@@ -139,12 +142,37 @@ async def test_container(request, async_engine, redis_container):  # noqa: ARG00
         ) -> ScheduleRepository:
             return SQLAlchemyScheduleRepository(session)
 
+        @provide
+        async def httpx_schedule_provider(
+            self, httpx_client: AsyncClient, redis_client: Redis, timezone: ZoneInfo
+        ) -> ScheduleProvider:
+            return HTTPXScheduleProvider(
+                httpx_client, redis_client, timezone, "tomorrow"
+            )
+
+    # ====================== [ПРОВАЙДЕР USECASE'ов] ======================
+    class TestUseCasesProvider(Provider):
+        scope = Scope.REQUEST
+
+        @provide
+        async def schedule_parser_use_case(
+            self,
+            group_repo: GroupRepository,
+            cabinet_repo: CabinetRepository,
+            schedule_repo: ScheduleRepository,
+            schedule_provider: ScheduleProvider,
+        ) -> "ScheduleParserUseCase":
+            return ScheduleParserUseCase(
+                group_repo, cabinet_repo, schedule_repo, schedule_provider
+            )
+
     container = make_async_container(
         TestSystemProvider(),
         HTTPXClientProvider(),
         TestRedisProvider(),
         TestDatabaseProvider(),
         TestRepositoriesProvide(),
+        TestUseCasesProvider(),
     )
     await container.get(AsyncClient)
     yield container
@@ -164,3 +192,45 @@ async def test_container(request, async_engine, redis_container):  # noqa: ARG00
             await conn.execute(text(f'DELETE FROM "{table}";'))
         await conn.execute(text("SET session_replication_role = 'origin';"))
         await conn.commit()
+
+
+# ======================== [ФИКСТУРА СЕССИИ БД] =========================
+@pytest.fixture
+async def sqlalchemy_session(test_container) -> AsyncIterable[AsyncSession]:
+    """Сессия базы данных"""
+    async with test_container(scope=Scope.REQUEST) as container:
+        yield await container.get(AsyncSession)
+
+
+# ===================== [ФИКСТУРЫ ДЛЯ РЕПОЗИТОРИЕВ] =====================
+@pytest.fixture
+async def sqlalchemy_group_repo(test_container) -> AsyncIterable["GroupRepository"]:
+    """Репозиторий GroupRepository"""
+    async with test_container(scope=Scope.REQUEST) as container:
+        yield await container.get(GroupRepository)
+
+
+@pytest.fixture
+async def sqlalchemy_cabinet_repo(test_container) -> AsyncIterable["CabinetRepository"]:
+    """Репозиторий CabinetRepository"""
+    async with test_container(scope=Scope.REQUEST) as container:
+        yield await container.get(CabinetRepository)
+
+
+@pytest.fixture
+async def sqlalchemy_schedule_repo(
+    test_container,
+) -> AsyncIterable["ScheduleRepository"]:
+    """Репозиторий ScheduleRepository"""
+    async with test_container(scope=Scope.REQUEST) as container:
+        yield await container.get(ScheduleRepository)
+
+
+# ===================== [ФИКСТУРЫ ДЛЯ ПРОВАЙДЕРОВ] =====================
+@pytest.fixture
+async def schedule_parser_use_case(
+    test_container,
+) -> AsyncIterable["ScheduleParserUseCase"]:
+    """UseCase ScheduleParserUseCase"""
+    async with test_container(scope=Scope.REQUEST) as container:
+        yield await container.get(ScheduleParserUseCase)

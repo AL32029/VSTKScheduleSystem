@@ -3,6 +3,7 @@ import logging.config
 import time
 from zoneinfo import ZoneInfo
 
+from dishka import Scope
 from httpx import AsyncClient
 from redis.asyncio import Redis
 
@@ -28,9 +29,9 @@ async def main():
     start_time = time.perf_counter()
 
     try:
-        async with container() as cont:
+        async with container(scope=Scope.REQUEST) as cont:
             client = await cont.get(AsyncClient)
-            redis_client = await cont.get(Redis)
+            redis_client = await cont.get(Redis, component="redis_main")
 
             group_repo = await cont.get(GroupRepository)
             cabinet_repo = await cont.get(CabinetRepository)
@@ -63,8 +64,8 @@ async def main():
                     logger.exception("Failed to process schedule for %s", schedule_type)
                     continue
 
-            total_duration = (time.perf_counter() - start_time) * 1000
-            logger.info("Schedule parser cron job completed (%.2f ms)", total_duration)
+        total_duration = (time.perf_counter() - start_time) * 1000
+        logger.info("Schedule parser cron job completed (%.2f ms)", total_duration)
 
     except Exception:
         logger.exception("Fatal error in schedule parser cron job")

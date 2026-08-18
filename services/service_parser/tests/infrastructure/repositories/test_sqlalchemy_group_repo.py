@@ -40,7 +40,7 @@ async def test_delete_group(sqlalchemy_group_repo, group):
 
     group_item = await sqlalchemy_group_repo.get_by_index(group.index)
 
-    await sqlalchemy_group_repo.delete(group_item)
+    await sqlalchemy_group_repo.deactivate([group_item])
 
     with pytest.raises(GroupNotFoundError):
         await sqlalchemy_group_repo.get_by_index(group.index)

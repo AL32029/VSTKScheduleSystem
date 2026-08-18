@@ -1,4 +1,3 @@
-import datetime
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import time
@@ -39,16 +38,15 @@ class Lesson:
 
 
 class DaySchedule:
-    def __init__(self, date: datetime.date, group: "str | Group"):
-        self._date = date
+    def __init__(self, group: "str | Group"):
         self._group = group if isinstance(group, Group) else Group(group)
         self._lessons: list[Lesson] = []
 
     @classmethod
     def from_existing(
-        cls, date: datetime.date, group: "str | Group", lessons: Iterable["Lesson"]
+        cls, group: "str | Group", lessons: Iterable["Lesson"]
     ) -> "DaySchedule":
-        instance = cls(date, group if isinstance(group, Group) else Group(group))
+        instance = cls(group if isinstance(group, Group) else Group(group))
         for lesson in lessons:
             instance._add_lesson_internal(lesson)
         return instance
@@ -68,10 +66,6 @@ class DaySchedule:
 
         self._lessons.append(new_lesson)
         return new_lesson
-
-    @property
-    def date(self) -> datetime.date:
-        return self._date
 
     @property
     def group(self) -> "Group":
@@ -101,11 +95,10 @@ class DaySchedule:
         if not isinstance(other, DaySchedule):
             raise NotImplementedError
 
-        return (self.date, self.group, self.lessons) == (
-            other.date,
+        return (self.group, self.lessons) == (
             other.group,
             other.lessons,
         )
 
     def __hash__(self):
-        return hash((self.date, self.group, self.lessons))
+        return hash((self.group, self.lessons))

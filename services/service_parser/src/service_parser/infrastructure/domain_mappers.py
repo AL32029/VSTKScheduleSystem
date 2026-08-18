@@ -82,13 +82,13 @@ def lesson_domain_in_orm(
 
 
 def lessons_orm_to_day_schedule_domain(
-    schedule: Iterable["LessonORM"], check_redirect: bool = False
+    lessons_orm: Iterable["LessonORM"], check_redirect: bool = False
 ) -> "DaySchedule":
     groups_found: set[Group] = set()
     schedule_dates: set[datetime.date] = set()
 
     schedule_lessons, schedule_group, schedule_date = [], None, None
-    for lesson in sorted(schedule, key=lambda x: x.start):
+    for lesson in sorted(lessons_orm, key=lambda x: x.start):
         groups_found.add(group_orm_to_domain(lesson.group))
         schedule_dates.add(lesson.date)
 
@@ -120,4 +120,4 @@ def lessons_orm_to_day_schedule_domain(
             f"{', '.join(str(schedule_date) for schedule_date in schedule_dates)}"
         )
 
-    return DaySchedule.from_existing(schedule_date, schedule_group, schedule_lessons)
+    return DaySchedule.from_existing(schedule_group, schedule_lessons)

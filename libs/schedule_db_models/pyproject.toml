@@ -1,6 +1,6 @@
 [project]
 name = "schedule-db-models"
-version = "0.0.1dev"
+version = "0.0.2dev1"
 description = "SQLAlchemy model for microservices \"Parser Service\" and \"Schedule API Service\""
 authors = [
     {name = "Nikita Bondarev",email = "nikitabondarevvitebsk@gmail.com"}
@@ -15,3 +15,6 @@ dependencies = [
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "C", "N", "UP", "B", "A", "SIM", "ARG", "PT"]

@@ -1,8 +1,8 @@
 import logging
 from collections.abc import AsyncIterable, AsyncIterator
-from typing import cast
+from typing import Annotated, cast
 
-from dishka import Provider, Scope, provide
+from dishka import FromComponent, Provider, Scope, provide
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -32,6 +32,7 @@ from service_api.application.services import (
 )
 from service_api.infrastructure.config import (
     DatabaseSettings,
+    RedisARQSettings,
     RedisSettings,
     SystemSettings,
 )
@@ -58,10 +59,8 @@ class SystemSettingsProvider(Provider):
         return PrometheusMetricsCollector()
 
     @provide
-    def watchfiles_manager(
-        self, db_settings: "DatabaseSettings", redis_settings: "RedisSettings"
-    ) -> "WatchFilesManager":
-        return WatchFilesManager(db_settings.config, redis_settings.config)
+    def watchfiles_manager(self) -> "WatchFilesManager":
+        return WatchFilesManager()
 
 
 class DatabaseProvider(Provider):
@@ -101,38 +100,70 @@ class DatabaseProvider(Provider):
             metrics.inc_gauge("database_active_sessions_count")
             try:
                 yield session
-
                 await session.commit()
             finally:
                 await session.aclose()
-
                 metrics.dec_gauge("database_active_sessions_count")
 
 
 class RedisProvider(Provider):
     scope = Scope.APP
+    component = "redis_main"
 
     @provide
-    def redis_settings(self, settings: "SystemSettings") -> "RedisSettings":
+    def redis_settings(
+        self, settings: Annotated["SystemSettings", FromComponent("")]
+    ) -> "RedisSettings":
         return RedisSettings(settings.SYSTEM_MODE)
 
     @provide
     def redis_client_manager(self, settings: "RedisSettings") -> "RedisClientManager":
-        logger.debug("Creating RedisClientManager")
-        return RedisClientManager(settings.config)
+        logger.debug("Creating RedisClientManager for main redis")
+        return RedisClientManager(settings.config, "main")
 
     @provide(scope=Scope.REQUEST)
     async def provide_redis_client(
         self,
         manager: "RedisClientManager",
-        metrics: "MetricsCollector",
+        metrics: Annotated["MetricsCollector", FromComponent("")],
     ) -> AsyncIterator[Redis]:
         client = await manager.get_client()
-        metrics.inc_gauge("redis_active_sessions_count")
+        metrics.inc_gauge("redis_active_sessions_count", redis_type="main")
         try:
             yield client
         finally:
-            metrics.dec_gauge("redis_active_sessions_count")
+            metrics.dec_gauge("redis_active_sessions_count", redis_type="main")
+
+
+class RedisARQProvider(Provider):
+    scope = Scope.APP
+    component = "redis_arq"
+
+    @provide
+    def redis_settings(
+        self, settings: Annotated["SystemSettings", FromComponent("")]
+    ) -> "RedisARQSettings":
+        return RedisARQSettings(settings.SYSTEM_MODE)
+
+    @provide
+    def redis_client_manager(
+        self, settings: "RedisARQSettings"
+    ) -> "RedisClientManager":
+        logger.debug("Creating RedisClientManager for ARQ")
+        return RedisClientManager(settings.config, "arq")
+
+    @provide(scope=Scope.REQUEST)
+    async def provide_redis_client(
+        self,
+        manager: "RedisClientManager",
+        metrics: Annotated["MetricsCollector", FromComponent("")],
+    ) -> AsyncIterator[Redis]:
+        client = await manager.get_client()
+        metrics.inc_gauge("redis_active_sessions_count", redis_type="arq")
+        try:
+            yield client
+        finally:
+            metrics.dec_gauge("redis_active_sessions_count", redis_type="arq")
 
 
 class RepositoriesProvider(Provider):
@@ -157,7 +188,10 @@ class RepositoriesProvider(Provider):
         return SQLAlchemyScheduleRepository(session)
 
     @provide
-    async def redis_cache_repository(self, redis_client: Redis) -> "CacheRepository":
+    async def redis_cache_repository(
+        self,
+        redis_client: Annotated[Redis, FromComponent("redis_main")],
+    ) -> "CacheRepository":
         return RedisCacheRepository(redis_client)
 
 

@@ -7,7 +7,7 @@ from .schedule_repository import ScheduleRepository
 __all__ = [
     "CabinetRepository",
     "GroupRepository",
-    "ScheduleProvider",
     "ScheduleRepository",
+    "ScheduleProvider",
     "MetricsCollector",
 ]

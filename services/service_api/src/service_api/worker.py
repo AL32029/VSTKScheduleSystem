@@ -1,0 +1,20 @@
+from dishka.integrations.arq import setup_dishka
+
+from service_api.infrastructure.arq_worker_tasks import clear_cache
+from service_api.infrastructure.arq_worker_tasks.config import (
+    _dishka_container,
+    _redis_manager,
+)
+
+
+class WorkerSettings:
+    functions = [clear_cache]
+    redis_settings = _redis_manager.arq_settings
+    queue_name = "cache"
+
+    max_jobs = 20
+    job_timeout = 600
+    keep_result = 3600
+
+
+setup_dishka(container=_dishka_container, worker_settings=WorkerSettings)
