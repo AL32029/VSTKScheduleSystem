@@ -21,6 +21,7 @@ from testcontainers.community.postgres import PostgresContainer
 from testcontainers.community.redis import RedisContainer
 
 from service_api.application.ports import MetricsCollector
+from service_api.infrastructure.config import SystemSettings
 from service_api.infrastructure.di.providers import (
     RepositoriesProvider,
     UseCasesProvider,
@@ -128,6 +129,10 @@ async def test_container(request, session_with_test_data, redis_container):  # n
     # ====================== [ПРОВАЙДЕР СИСТЕМЫ] ======================
     class TestSystemSettingsProvider(Provider):
         scope = Scope.APP
+
+        @provide
+        def system_settings(self) -> "SystemSettings":
+            return SystemSettings()
 
         @provide
         def metrics_collector(self) -> "MetricsCollector":
