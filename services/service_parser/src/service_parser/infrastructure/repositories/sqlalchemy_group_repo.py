@@ -22,12 +22,12 @@ class SQLAlchemyGroupRepository(GroupRepository):
         self.session = session
 
     async def save(self, groups: Iterable["Group"]) -> None:
-        group_list = list(groups)
+        group_list = set(groups)
         logger.debug("Saving %d groups to database", len(group_list))
         stmt = (
             update(GroupORM)
             .values(is_active=True)
-            .where(GroupORM.index.in_(group.index for group in groups))
+            .where(GroupORM.index.in_(group.index for group in group_list))
         )
 
         await self.session.execute(stmt)
@@ -52,15 +52,16 @@ class SQLAlchemyGroupRepository(GroupRepository):
         logger.debug("%d groups saved to database", len(group_list))
 
     async def deactivate(self, groups: Iterable["Group"]) -> None:
-        logger.debug("Deactivating %s groups from database", len(list(groups)))
+        group_list = set(groups)
+        logger.debug("Deactivating %s groups from database", len(group_list))
         stmt = (
             update(GroupORM)
             .values(is_active=False)
-            .where(GroupORM.index.in_(group.index for group in groups))
+            .where(GroupORM.index.in_(group.index for group in group_list))
         )
         await self.session.execute(stmt)
         await self.session.commit()
-        logger.debug("%s groups deactivated from database", len(list(groups)))
+        logger.debug("%s groups deactivated from database", len(group_list))
 
     async def get_by_index(self, group_index: str) -> "Group | None":
         logger.debug("Requesting group by index %s from database", group_index)
