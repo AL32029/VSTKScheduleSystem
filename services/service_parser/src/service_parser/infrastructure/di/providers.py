@@ -1,10 +1,11 @@
 import logging
 from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator
-from typing import Any, cast
+from typing import Annotated, Any, cast
 from zoneinfo import ZoneInfo
 
 import httpx
-from dishka import Provider, Scope, provide
+from arq import ArqRedis
+from dishka import FromComponent, Provider, Scope, provide
 from httpx import AsyncClient
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import (
@@ -12,7 +13,7 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
 )
-from system_managers import DatabaseEngineManager, RedisClientManager, WatchFilesManager
+from system_managers import DatabaseEngineManager, RedisClientManager
 
 from service_parser.application.ports import (
     CabinetRepository,
@@ -22,6 +23,7 @@ from service_parser.application.ports import (
 )
 from service_parser.infrastructure.config import (
     DatabaseSettings,
+    RedisARQSettings,
     RedisSettings,
     SystemSettings,
 )
@@ -51,14 +53,6 @@ class SystemSettingsProvider(Provider):
     @provide
     def metrics_collector(self) -> "MetricsCollector":
         return PrometheusMetricsCollector()
-
-    @provide
-    def watchfiles_manager(
-        self,
-        db_settings: "DatabaseSettings",
-        redis_settings: "RedisSettings",
-    ) -> "WatchFilesManager":
-        return WatchFilesManager(db_settings.config, redis_settings.config)
 
 
 class DatabaseProvider(Provider):
@@ -108,28 +102,62 @@ class DatabaseProvider(Provider):
 
 class RedisProvider(Provider):
     scope = Scope.APP
+    component = "redis_main"
 
     @provide
-    def redis_settings(self, settings: "SystemSettings") -> "RedisSettings":
+    def redis_settings(
+        self, settings: Annotated["SystemSettings", FromComponent("")]
+    ) -> "RedisSettings":
         return RedisSettings(settings.SYSTEM_MODE)
 
     @provide
     def redis_client_manager(self, settings: "RedisSettings") -> "RedisClientManager":
-        logger.debug("Creating RedisClientManager")
-        return RedisClientManager(settings.config)
+        logger.debug("Creating RedisClientManager for main redis")
+        return RedisClientManager(settings.config, "main")
 
-    @provide
+    @provide(scope=Scope.REQUEST)
     async def provide_redis_client(
         self,
         manager: "RedisClientManager",
-        metrics: "MetricsCollector",
+        metrics: Annotated["MetricsCollector", FromComponent("")],
     ) -> AsyncIterator[Redis]:
         client = await manager.get_client()
-        metrics.inc_gauge("redis_active_sessions_count")
+        metrics.inc_gauge("redis_active_sessions_count", redis_type="main")
         try:
             yield client
         finally:
-            metrics.dec_gauge("redis_active_sessions_count")
+            metrics.dec_gauge("redis_active_sessions_count", redis_type="main")
+
+
+class RedisARQProvider(Provider):
+    scope = Scope.APP
+    component = "redis_arq"
+
+    @provide
+    def redis_settings(
+        self, settings: Annotated["SystemSettings", FromComponent("")]
+    ) -> "RedisARQSettings":
+        return RedisARQSettings(settings.SYSTEM_MODE)
+
+    @provide
+    def redis_client_manager(
+        self, settings: "RedisARQSettings"
+    ) -> "RedisClientManager":
+        logger.debug("Creating RedisClientManager for ARQ")
+        return RedisClientManager(settings.config, "arq")
+
+    @provide(scope=Scope.REQUEST)
+    async def provide_redis_client(
+        self,
+        manager: "RedisClientManager",
+        metrics: Annotated["MetricsCollector", FromComponent("")],
+    ) -> AsyncIterator[ArqRedis]:
+        client = await manager.get_client()
+        metrics.inc_gauge("redis_active_sessions_count", redis_type="arq")
+        try:
+            yield client
+        finally:
+            metrics.dec_gauge("redis_active_sessions_count", redis_type="arq")
 
 
 class RepositoriesProvider(Provider):

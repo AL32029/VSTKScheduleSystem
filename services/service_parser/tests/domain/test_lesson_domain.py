@@ -123,9 +123,8 @@ def test_lesson_entity_equal_hash(
 # ====================== [ТЕСТЫ СУЩНОСТИ DAYSCHEDULE] ======================
 def test_create_empty_day_schedule_entity():
     """Тест должен корректно создать сущность DaySchedule без lessons"""
-    day_schedule = DaySchedule(_DAY_SCHEDULE_DATE, _GROUP_NUMBER)
+    day_schedule = DaySchedule(_GROUP_NUMBER)
 
-    assert day_schedule.date == _DAY_SCHEDULE_DATE
     assert isinstance(day_schedule.group, Group)
     assert not day_schedule.lessons
 
@@ -133,9 +132,8 @@ def test_create_empty_day_schedule_entity():
 @pytest.mark.parametrize("lessons", _NON_OVERLAPPING_LESSON_PAIRS)
 def test_create_day_schedule_entity(lessons: tuple[Lesson, Lesson]):
     """Тест должен корректно создать сущность DaySchedule с lessons"""
-    day_schedule = DaySchedule.from_existing(_DAY_SCHEDULE_DATE, _GROUP_NUMBER, lessons)
+    day_schedule = DaySchedule.from_existing(_GROUP_NUMBER, lessons)
 
-    assert day_schedule.date == _DAY_SCHEDULE_DATE
     assert isinstance(day_schedule.group, Group)
     assert day_schedule.lessons
     assert len(day_schedule.lessons) == len(lessons)
@@ -148,9 +146,7 @@ def test_create_day_schedule_entity_with_overlap_lessons(
 ):
     """Тест должен выдать ошибку LessonOverlapError"""
     with pytest.raises(LessonOverlapError) as exc_info:
-        DaySchedule.from_existing(
-            _DAY_SCHEDULE_DATE, _GROUP_NUMBER, (existing_lesson, new_lesson)
-        )
+        DaySchedule.from_existing(_GROUP_NUMBER, (existing_lesson, new_lesson))
 
     assert exc_info.value.args[0] == (
         f"The lesson overlaps with the lesson {existing_lesson.name!r} "
@@ -162,7 +158,7 @@ def test_create_day_schedule_entity_with_overlap_lessons(
 def test_day_schedule_entity_add_lesson(
     start: dt.time, end: dt.time, name: str, cabinets: tuple[Cabinet, ...]
 ):
-    day_schedule = DaySchedule(_DAY_SCHEDULE_DATE, _GROUP_NUMBER)
+    day_schedule = DaySchedule(_GROUP_NUMBER)
 
     day_schedule.add_lesson(start, end, name, cabinets)
 
@@ -179,23 +175,15 @@ def test_day_schedule_entity_add_lesson(
 
 def test_day_schedule_entity_equal():
     """Тест должен проверить равенство двух равных сущностей DaySchedule"""
-    first_day_schedule = DaySchedule.from_existing(
-        _DAY_SCHEDULE_DATE, _GROUP_NUMBER, _LESSON_PAIRS
-    )
-    second_day_schedule = DaySchedule.from_existing(
-        _DAY_SCHEDULE_DATE, _GROUP_NUMBER, _LESSON_PAIRS
-    )
+    first_day_schedule = DaySchedule.from_existing(_GROUP_NUMBER, _LESSON_PAIRS)
+    second_day_schedule = DaySchedule.from_existing(_GROUP_NUMBER, _LESSON_PAIRS)
 
     assert first_day_schedule == second_day_schedule
 
 
 def test_day_schedule_entity_equal_hash():
     """Тест должен проверить равенство хэша двух равных сущностей DaySchedule"""
-    first_day_schedule = DaySchedule.from_existing(
-        _DAY_SCHEDULE_DATE, _GROUP_NUMBER, _LESSON_PAIRS
-    )
-    second_day_schedule = DaySchedule.from_existing(
-        _DAY_SCHEDULE_DATE, _GROUP_NUMBER, _LESSON_PAIRS
-    )
+    first_day_schedule = DaySchedule.from_existing(_GROUP_NUMBER, _LESSON_PAIRS)
+    second_day_schedule = DaySchedule.from_existing(_GROUP_NUMBER, _LESSON_PAIRS)
 
     assert hash(first_day_schedule) == hash(second_day_schedule)

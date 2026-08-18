@@ -1,9 +1,11 @@
 from dishka import make_async_container
 
 from service_parser.infrastructure.config import SystemSettings
-from service_parser.infrastructure.di import (
+
+from .providers import (
     DatabaseProvider,
     HTTPXClientProvider,
+    RedisARQProvider,
     RedisProvider,
     RepositoriesProvider,
     SystemSettingsProvider,
@@ -16,6 +18,7 @@ def get_dishka_container():
     return make_async_container(
         DatabaseProvider(),
         RedisProvider(),
+        RedisARQProvider(),
         RepositoriesProvider(),
         HTTPXClientProvider(),
         SystemSettingsProvider(),

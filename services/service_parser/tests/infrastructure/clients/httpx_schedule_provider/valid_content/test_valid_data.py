@@ -7,12 +7,8 @@ from service_parser.domain.entities import Group, GroupParser
 
 def test_extract_schedule_dates(schedule_provider, html_matrix):
     """Тест должен извлечь из матрицы расписания 1 дату расписания - 31.12.2099"""
-    schedule_dates = schedule_provider._extract_dates(html_matrix)
+    schedule_date = schedule_provider._extract_dates(html_matrix)
 
-    assert schedule_dates
-    assert len(schedule_dates) == 1
-
-    schedule_date = schedule_dates[0]
     assert isinstance(schedule_date, datetime.date)
     assert schedule_date == datetime.date(2099, 12, 31)
 
@@ -51,30 +47,29 @@ def test_extract_schedule_groups(schedule_provider, html_matrix):
 
 
 def test_extract_schedule_lessons(
-    schedule_provider, html_matrix, schedule_dates, schedule_times, schedule_groups
+    schedule_provider, html_matrix, schedule_times, schedule_groups
 ):
     """Тест должен извлечь расписание из матрицы"""
     schedule = schedule_provider._extract_lessons(
-        html_matrix, schedule_dates, schedule_times, schedule_groups
+        html_matrix, schedule_times, schedule_groups
     )
 
     assert schedule
     assert len(schedule.keys()) == 64
     assert len(set(schedule.keys())) == 64
     assert all(isinstance(group, Group) for group in schedule)
-    assert all(len(day_schedules) == 1 for day_schedules in schedule.values())
     assert all(
         day_schedule.lessons
         == tuple(sorted(day_schedule.lessons, key=lambda x: x.start))
-        for day_schedules in schedule.values()
-        if day_schedules
-        for day_schedule in day_schedules
-        if day_schedule.lessons
+        for day_schedule in schedule.values()
+        if day_schedule
     )
 
 
-async def test_get_schedule_for_groups(schedule_provider, httpx_mock):
+async def test_get_schedule_for_groups(schedule_provider, httpx_mock, redis_client):
     """Тест должен провести полный цикл парсинга расписания"""
+    await redis_client.delete('schedule_table:hash:tomorrow')
+
     async with aiofiles.open("./tests/fixtures/schedule.html", "rb") as f:
         httpx_mock.add_response(
             method="GET",
@@ -82,18 +77,16 @@ async def test_get_schedule_for_groups(schedule_provider, httpx_mock):
             content=await f.read(),
         )
 
-    schedule = await schedule_provider.get_schedule_for_groups()
+    schedule, schedule_date = await schedule_provider.get_schedule_for_groups()
 
     assert schedule
     assert len(schedule.keys()) == 64
     assert len(set(schedule.keys())) == 64
     assert all(isinstance(group, Group) for group in schedule)
-    assert all(len(day_schedules) == 1 for day_schedules in schedule.values())
+    assert isinstance(schedule_date, datetime.date)
     assert all(
         day_schedule.lessons
         == tuple(sorted(day_schedule.lessons, key=lambda x: x.start))
-        for day_schedules in schedule.values()
-        if day_schedules
-        for day_schedule in day_schedules
-        if day_schedule.lessons
+        for day_schedule in schedule.values()
+        if day_schedule
     )

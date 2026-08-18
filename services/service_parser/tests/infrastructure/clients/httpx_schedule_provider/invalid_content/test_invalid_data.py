@@ -152,11 +152,10 @@ def test_extract_lessons_error(
     table = schedule_provider._fetch_table(request.getfixturevalue(html_fixture))
     matrix = schedule_provider._parse_table_to_matrix(table)
 
-    dates = schedule_provider._extract_dates(matrix)
     times = schedule_provider._extract_times(matrix)
     groups = schedule_provider._extract_groups(matrix)
 
     with pytest.raises(ParsingDayScheduleError) as exc_info:
-        schedule_provider._extract_lessons(matrix, dates, times, groups)
+        schedule_provider._extract_lessons(matrix, times, groups)
 
     assert exc_info.value.args[0] == expected_message

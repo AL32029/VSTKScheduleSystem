@@ -88,24 +88,37 @@ class DatabaseEngineManager:
         if self._engine is not None:
             await self._dispose_engine(self._engine, delay)
 
+    @property
+    def watchfiles_ssl_files(self) -> set[str]:
+        if isinstance(self._config, BaseProdDatabaseSettings):
+            return {
+                path
+                for path in [
+                    self._config.SSL_CA_CERT_FILE,
+                    self._config.SSL_CERT_FILE,
+                    self._config.SSL_KEY_FILE,
+                ]
+                if path
+            }
+
+        return set()
+
     async def _build_engine(self):
         logger.info("The database engine has begun to be assembled")
 
         engine_url = await self._build_engine_url()
 
-        if isinstance(self._config, BaseProdDatabaseSettings):
-            ssl_context = self._load_ssl_context()
-            engine = create_async_engine(
-                engine_url,
-                pool_pre_ping=True,
-                pool_size=5,
-                max_overflow=10,
-                connect_args={"ssl": ssl_context},
-            )
-        else:
-            engine = create_async_engine(
-                engine_url, pool_pre_ping=True, pool_size=5, max_overflow=10
-            )
+        if_prod = isinstance(self._config, BaseProdDatabaseSettings)
+
+        ssl_context = self._load_ssl_context() if if_prod else None
+        engine = create_async_engine(
+            engine_url,
+            pool_pre_ping=True,
+            pool_size=5,
+            max_overflow=10,
+            connect_args={"ssl": ssl_context} if if_prod else {},
+        )
+
         logger.info("The database engine has been successfully created")
         return engine
 

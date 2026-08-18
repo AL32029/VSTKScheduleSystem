@@ -22,7 +22,7 @@ class SQLAlchemyCabinetRepository(CabinetRepository):
         self.session = session
 
     async def save(self, cabinets: Iterable["Cabinet"]) -> None:
-        cabinet_list = list(cabinets)
+        cabinet_list = set(cabinets)
         logger.debug("Saving %d cabinets to database", len(cabinet_list))
         stmt = (
             insert(CabinetORM)

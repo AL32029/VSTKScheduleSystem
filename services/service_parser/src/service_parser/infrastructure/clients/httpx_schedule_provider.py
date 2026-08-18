@@ -2,14 +2,15 @@ import asyncio
 import datetime
 import hashlib
 import re
-from collections import defaultdict
+from collections.abc import Iterable
+from datetime import date
 from re import Pattern
-from typing import Any, ClassVar, Literal
+from typing import Any, ClassVar, Literal, cast
 from zoneinfo import ZoneInfo
 
 import httpx
 import numpy
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from httpx import AsyncClient
 from numpy import argwhere, dtype, ndarray, vectorize
 from patterns import CABINET_NUMBER
@@ -75,7 +76,9 @@ class HTTPXScheduleProvider(ScheduleProvider):
         self.timezone = timezone
         self.schedule_type = schedule_type
 
-    async def get_schedule_for_groups(self) -> dict["Group", list["DaySchedule"]]:
+    async def get_schedule_for_groups(
+        self,
+    ) -> tuple[dict[Group, DaySchedule], date | tuple[date, date]]:
         html = await self._fetch_html(
             self._SCHEDULE_SITE_URL.format(schedule_type=self.schedule_type)
         )
@@ -86,9 +89,9 @@ class HTTPXScheduleProvider(ScheduleProvider):
 
         matrix = self._parse_table_to_matrix(table)
 
-        date_list = self._extract_dates(matrix)
+        schedule_date = self._extract_dates(matrix)
 
-        dates_hash = hashlib.md5(str(date_list).encode("utf-8")).hexdigest()
+        dates_hash = hashlib.md5(str(schedule_date).encode("utf-8")).hexdigest()
 
         check_hash = hashlib.md5(
             table_hash.encode("utf-8") + dates_hash.encode("utf-8")
@@ -111,9 +114,9 @@ class HTTPXScheduleProvider(ScheduleProvider):
 
         groups = self._extract_groups(matrix)
 
-        group_lessons = self._extract_lessons(matrix, date_list, lessons_time, groups)
+        group_lessons = self._extract_lessons(matrix, lessons_time, groups)
 
-        return group_lessons
+        return group_lessons, schedule_date
 
     async def _fetch_html(self, url: str) -> str:
         _max_reties = 3
@@ -141,7 +144,7 @@ class HTTPXScheduleProvider(ScheduleProvider):
         return response.text
 
     @staticmethod
-    def _fetch_table(html: str) -> "BeautifulSoup":
+    def _fetch_table(html: str) -> "Tag":
         soup = BeautifulSoup(html, "lxml")
         table = soup.find("table", class_="excel")
 
@@ -155,7 +158,7 @@ class HTTPXScheduleProvider(ScheduleProvider):
 
     @staticmethod
     def _parse_table_to_matrix(
-        table: "BeautifulSoup",
+        table: "Tag",
     ) -> ndarray[tuple[int, int], dtype[Any]]:
         rows_raw = [tr.find_all("td") for tr in table.find_all("tr")]
         rows_count = len(rows_raw)
@@ -196,7 +199,7 @@ class HTTPXScheduleProvider(ScheduleProvider):
 
     def _extract_dates(
         self, matrix: ndarray[tuple[int, int], dtype[Any]]
-    ) -> tuple[datetime.date, ...]:
+    ) -> datetime.date | tuple[datetime.date, datetime.date]:
         match_func = vectorize(
             lambda s: (
                 s
@@ -215,12 +218,12 @@ class HTTPXScheduleProvider(ScheduleProvider):
                 "with a predefined format"
             )
 
-        date_list: list[datetime.date] = []
+        _date_list: set[datetime.date] = set()
 
         for m_mask in matrix_mask:
-            if date := self._DATE_WORD_PATTERN.findall(m_mask):
-                for d in date:
-                    date_list.append(
+            if schedule_date := self._DATE_WORD_PATTERN.findall(m_mask):
+                for d in schedule_date:
+                    _date_list.add(
                         datetime.date(
                             day=int(d[1]),
                             month=int(self._MONTH_TO_NUMBER[d[2]]),
@@ -228,38 +231,101 @@ class HTTPXScheduleProvider(ScheduleProvider):
                         )
                     )
 
-            if date := self._DATE_NUMBERED_PATTERN.findall(m_mask):
-                for d in date:
-                    date_list.append(
+            if schedule_date := self._DATE_NUMBERED_PATTERN.findall(m_mask):
+                for d in schedule_date:
+                    _date_list.add(
                         datetime.date(day=int(d[1]), month=int(d[2]), year=int(d[3]))
                     )
 
-        date_list = sorted(date_list, key=lambda x: x)
-
-        date_full_list = [
-            date_list[0] + datetime.timedelta(days=i)
-            for i in range((date_list[-1] - date_list[0]).days + 1)
-        ]
-
-        today = datetime.datetime.now(self.timezone).date()
-
-        date_list = list(
-            filter(
-                lambda x: (
-                    x
-                    and ((x == today) if self.schedule_type == "today" else (x > today))
-                ),
-                date_full_list,
-            )
+        date_list: tuple[datetime.date, ...] = tuple(
+            sorted(_date_list, key=lambda x: x)
         )
 
-        if not date_list:
+        _date_list_result = (
+            cast(
+                datetime.date | tuple[datetime.date, datetime.date],
+                (
+                    date_list[0]
+                    if len(date_list) == 1
+                    else (date_list[0], date_list[-1])
+                    if len(date_list) > 2
+                    else date_list
+                ),
+            )
+            if date_list
+            else None
+        )
+
+        if not _date_list_result:
             raise ParsingDateError(
                 "The schedule table does not contain the schedule date after "
                 "checking the items for date compliance"
             )
 
-        return tuple(date_list)
+        today = datetime.datetime.now(self.timezone).date()
+        _date_list_result = self._filter_and_reduce_dates(
+            date_list, today, self.schedule_type
+        )
+
+        if not _date_list_result:
+            raise ParsingDateError(
+                "The schedule table does not contain the schedule date after "
+                "checking the items for date compliance"
+            )
+
+        return _date_list_result
+
+    @staticmethod
+    def _expand_dates(dates: Iterable[date]) -> date | list[date] | None:
+        _dates = sorted(dates)
+        if not _dates:
+            return None
+
+        if len(_dates) == 1:
+            return _dates[0]
+
+        if len(_dates) > 2:
+            start, end = _dates[0], _dates[-1]
+            return [
+                start + datetime.timedelta(days=i)
+                for i in range((end - start).days + 1)
+            ]
+
+        return _dates
+
+    def _filter_and_reduce_dates(
+        self,
+        date_list: tuple[datetime.date, ...],
+        today: datetime.date,
+        schedule_type: str,
+    ) -> datetime.date | tuple[datetime.date, datetime.date] | None:
+        tomorrow = today + datetime.timedelta(days=1)
+
+        if len(date_list) == 2:
+            start, end = date_list[0], date_list[1]
+            dates_for_filter = [
+                start + datetime.timedelta(days=i)
+                for i in range((end - start).days + 1)
+            ]
+        else:
+            expanded = self._expand_dates(date_list)
+            if expanded is None:
+                return None
+            elif isinstance(expanded, datetime.date):
+                dates_for_filter = [expanded]
+            else:
+                dates_for_filter = expanded
+
+        if schedule_type == "today":
+            filtered = [d for d in dates_for_filter if d == today]
+        else:
+            filtered = [d for d in dates_for_filter if d >= tomorrow]
+
+        if not filtered:
+            return None
+        if len(filtered) == 1:
+            return filtered[0]
+        return (filtered[0], filtered[-1])
 
     def _extract_times(
         self, matrix: ndarray[tuple[int, int], dtype[Any]]
@@ -315,11 +381,10 @@ class HTTPXScheduleProvider(ScheduleProvider):
     def _extract_lessons(  # noqa: C901
         self,
         matrix: ndarray[tuple[int, int], dtype[Any]],
-        date_list: tuple[datetime.date, ...],
         lessons_time: tuple[tuple[datetime.time, datetime.time], ...],
         groups: tuple["GroupParser", ...],
-    ) -> dict["Group", list["DaySchedule"]]:
-        group_lessons: dict[Group, list[DaySchedule]] = defaultdict(list["DaySchedule"])
+    ) -> dict["Group", "DaySchedule"]:
+        group_lessons: dict[Group, DaySchedule] = {}
 
         lessons_count = len(lessons_time)
 
@@ -365,13 +430,8 @@ class HTTPXScheduleProvider(ScheduleProvider):
                 if not lessons:
                     continue
 
-                group_lessons[group.group].extend(
-                    [
-                        DaySchedule.from_existing(
-                            date, group.group, sorted(lessons, key=lambda x: x.start)
-                        )
-                        for date in date_list
-                    ]
+                group_lessons[group.group] = DaySchedule.from_existing(
+                    group.group, sorted(lessons, key=lambda x: x.start)
                 )
 
         if not group_lessons:

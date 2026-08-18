@@ -3,6 +3,7 @@ from dishka.integrations.fastapi import FastapiProvider
 
 from .providers import (
     DatabaseProvider,
+    RedisARQProvider,
     RedisProvider,
     RepositoriesProvider,
     SystemSettingsProvider,
@@ -16,6 +17,7 @@ def get_dishka_container() -> "AsyncContainer":
         SystemSettingsProvider(),
         DatabaseProvider(),
         RedisProvider(),
+        RedisARQProvider(),
         RepositoriesProvider(),
         UseCasesProvider(),
         FastapiProvider(),

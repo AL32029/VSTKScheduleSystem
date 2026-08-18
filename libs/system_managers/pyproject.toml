@@ -1,6 +1,6 @@
 [project]
 name = "system-managers"
-version = "0.0.4dev"
+version = "0.0.5dev9"
 description = "Managers for microservices"
 authors = [
     { name = "Nikita Bondarev", email = "nikitabondarevvitebsk@gmail.com" }
@@ -13,9 +13,10 @@ pydantic-settings = ">=2.15.0,<3.0.0"
 sqlalchemy = ">=2.0.52,<3.0.0"
 aiofiles = ">=25.1.0,<26.0.0"
 cryptography = ">=50.0.0,<51.0.0"
-redis = ">=8.1.0,<9.0.0"
+redis = "<6.0"
 watchfiles = "^1.2.0"
 python-json-logger = "^4.2.0"
+arq = "^0.28.0"
 
 
 [build-system]

@@ -61,6 +61,11 @@ class RedisCacheRepository(CacheRepository):
             "Group %s saved to cache with TTL %s seconds", group_item.number, ttl
         )
 
+    async def delete_group_cache(self, group_keys: Iterable[str]) -> None:
+        logger.debug("Removing %s groups from cache", len(set(group_keys)))
+        await self.redis_repo.hdel("group", *set(group_keys))
+        logger.debug("%s groups was removed from cache", len(set(group_keys)))
+
     async def get_all_groups_cache(self) -> list["Group"]:
         logger.debug('Request HGET group field "all" for groups list')
         groups = await self.redis_repo.hget("group", "all")
@@ -86,9 +91,15 @@ class RedisCacheRepository(CacheRepository):
         }
 
         logger.debug("Saving %d groups to cache", len(items))
-        await self.redis_repo.hsetex("group", mapping=items_to_set)
+        await self.redis_repo.hset("group", mapping=items_to_set)
         await self.redis_repo.hexpire("group", ttl, *items_to_set.keys())
         logger.debug("%d groups saved to cache with TTL %s seconds", len(items), ttl)
+
+    async def delete_all_groups_cache(self) -> None:
+        logger.debug("Removing all groups from cache")
+        keys = set((await self.redis_repo.hgetall("group")).keys())
+        await self.redis_repo.hdel("group", *keys)
+        logger.debug("All groups was removed from cache")
 
     async def get_cabinet_cache(self, cabinet_number: str) -> "Cabinet":
         logger.debug("Request HGET cabinet for %s", cabinet_number)
@@ -119,6 +130,11 @@ class RedisCacheRepository(CacheRepository):
             "Cabinet %s saved to cache with TTL %s seconds", cabinet_item.number, ttl
         )
 
+    async def delete_cabinet_cache(self, cabinet_keys: Iterable[str]) -> None:
+        logger.debug("Removing %s cabinets from cache", len(set(cabinet_keys)))
+        await self.redis_repo.hdel("cabinet", *set(cabinet_keys))
+        logger.debug("%s groups was removed from cache", len(set(cabinet_keys)))
+
     async def get_all_cabinets_cache(self) -> list["Cabinet"]:
         logger.debug('Request HGET cabinet field "all" for cabinets list')
         cabinets = await self.redis_repo.hget("cabinet", "all")
@@ -146,9 +162,15 @@ class RedisCacheRepository(CacheRepository):
         }
 
         logger.debug("Saving %d cabinets to cache", len(items))
-        await self.redis_repo.hsetex("cabinet", mapping=items_to_set)
+        await self.redis_repo.hset("cabinet", mapping=items_to_set)
         await self.redis_repo.hexpire("cabinet", ttl, *items_to_set.keys())
         logger.debug("%d cabinets saved to cache with TTL %s seconds", len(items), ttl)
+
+    async def delete_all_cabinets_cache(self) -> None:
+        logger.debug("Removing all cabinets from cache")
+        keys = set((await self.redis_repo.hgetall("cabinet")).keys())
+        await self.redis_repo.hdel("cabinet", *keys)
+        logger.debug("All cabinets was removed from cache")
 
     async def get_group_day_schedule(
         self, schedule_to: Literal["today", "tomorrow"], group_number: str
@@ -198,7 +220,7 @@ class RedisCacheRepository(CacheRepository):
             await self.set_all_cabinets_cache(cabinets_to_save)
 
         field = f"group:{day_schedule.group.index}:{schedule_to}"
-        await self.redis_repo.hsetex(
+        await self.redis_repo.hset(
             "schedule",
             field,
             group_day_schedule_to_schema(day_schedule).model_dump_json(
@@ -218,6 +240,20 @@ class RedisCacheRepository(CacheRepository):
             day_schedule.group.number,
             schedule_to,
         )
+
+    async def delete_group_day_schedule_cache(
+        self, items: dict[Literal["today", "tomorrow"], Iterable[str]]
+    ) -> None:
+        logger.debug("Removing schedules for groups from cache")
+        schedule_items = {
+            (schedule_to, group)
+            for schedule_to, groups in items.items()
+            if groups
+            for group in groups
+        }
+        keys = {f"group:{group}:{schedule_to}" for schedule_to, group in schedule_items}
+        await self.redis_repo.hdel("schedule", *keys)
+        logger.debug("Schedules for groups was removed from cache")
 
     async def get_cabinet_day_schedule(
         self, cabinet_number: str, schedule_to: Literal["today", "tomorrow"]
@@ -277,7 +313,7 @@ class RedisCacheRepository(CacheRepository):
             await self.set_all_cabinets_cache(cabinets_to_save)
 
         field = f"cabinet:{day_schedule.cabinet.index}:{schedule_to}"
-        await self.redis_repo.hsetex(
+        await self.redis_repo.hset(
             "schedule",
             field,
             cabinet_day_schedule_to_schema(day_schedule).model_dump_json(
@@ -297,3 +333,20 @@ class RedisCacheRepository(CacheRepository):
             day_schedule.cabinet.number,
             schedule_to,
         )
+
+    async def delete_cabinet_day_schedule_cache(
+        self, items: dict[Literal["today", "tomorrow"], Iterable[str]]
+    ) -> None:
+        logger.debug("Removing schedules for cabinets from cache")
+        schedule_items = {
+            (schedule_to, cabinet)
+            for schedule_to, cabinets in items.items()
+            if cabinets
+            for cabinet in cabinets
+        }
+        keys = {
+            f"cabinet:{cabinet}:{schedule_to}"
+            for schedule_to, cabinet in schedule_items
+        }
+        await self.redis_repo.hdel("schedule", *keys)
+        logger.debug("Schedules for cabinets was removed from cache")

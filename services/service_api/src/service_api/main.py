@@ -3,6 +3,7 @@ import logging
 import logging.config
 from contextlib import asynccontextmanager
 
+from dishka import AsyncContainer
 from dishka.integrations.fastapi import setup_dishka
 from fastapi import FastAPI
 from prometheus_client import make_asgi_app
@@ -11,6 +12,7 @@ from system_managers import (
     RedisClientManager,
     WatchFilesManager,
 )
+from system_managers.watch_files.item_models import WatchFilesItem
 
 from service_api.domain.exceptions import APIServiceError
 from service_api.infrastructure.config import LoggingSettings, SystemSettings
@@ -32,7 +34,7 @@ logger = logging.getLogger("service_api")
 
 @asynccontextmanager
 async def lifespan(app: "FastAPI"):  # noqa: C901
-    container = app.state.dishka_container
+    container: AsyncContainer = app.state.dishka_container
 
     system_settings: SystemSettings = await container.get(SystemSettings)
     logger.info("Starting application in %s mode", system_settings.SYSTEM_MODE)
@@ -40,17 +42,32 @@ async def lifespan(app: "FastAPI"):  # noqa: C901
     watch_files_task: asyncio.Task | None = None
 
     db_manager: DatabaseEngineManager = await container.get(DatabaseEngineManager)
-    redis_client: RedisClientManager = await container.get(RedisClientManager)
+    redis_client: RedisClientManager = await container.get(
+        RedisClientManager, component="redis_main"
+    )
 
-    await db_manager.rotate()
-    await redis_client.rotate()
+    await db_manager.get_engine()
+    await redis_client.get_client()
 
     if system_settings.SYSTEM_MODE == "prod":
         watch_files_manager: WatchFilesManager = await container.get(WatchFilesManager)
 
+        items_to_watch = [
+            WatchFilesItem(
+                name="Database Engine Manager",
+                path_list=db_manager.watchfiles_ssl_files,
+                rotation_action=db_manager.rotate,
+            ),
+            WatchFilesItem(
+                name="Redis Client Manager",
+                path_list=redis_client.watchfiles_ssl_files,
+                rotation_action=redis_client.rotate,
+            ),
+        ]
+
         try:
             watch_files_task = asyncio.create_task(
-                watch_files_manager.watch(db_manager, redis_client)
+                watch_files_manager.watch(items_to_watch)
             )
             logger.info("Watchfiles task started")
         except Exception:

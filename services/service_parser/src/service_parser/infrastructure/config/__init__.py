@@ -1,6 +1,6 @@
 from .database_settings import DatabaseSettings
 from .logging_settings import LoggingSettings
-from .redis_settings import RedisSettings
+from .redis_settings import RedisARQSettings, RedisSettings
 from .system_settings import SystemSettings, system_settings
 
 __all__ = [
@@ -9,4 +9,5 @@ __all__ = [
     "LoggingSettings",
     "RedisSettings",
     "system_settings",
+    'RedisARQSettings',
 ]

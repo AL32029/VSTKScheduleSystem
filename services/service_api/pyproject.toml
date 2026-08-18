@@ -16,7 +16,7 @@ asyncpg = "^0.31.0"
 pydantic = "^2.13.4"
 pydantic-settings = "^2.14.2"
 dishka = "^1.10.1"
-redis = "^8.1.0"
+redis = "<6.0"
 schedule-db-models = { path = "../../libs/schedule_db_models" }
 patterns = { path = "../../libs/patterns" }
 tzdata = "^2026.3"
@@ -25,6 +25,7 @@ aiofiles = "^25.1.0"
 prometheus-client = "^0.26.0"
 python-json-logger = "^4.1.0"
 system-managers = { path = "../../libs/system_managers" }
+arq = "^0.28.0"
 
 
 [tool.poetry.group.dev.dependencies]
