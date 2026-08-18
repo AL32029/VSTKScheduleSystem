@@ -21,6 +21,8 @@ COPY --from=patterns . /libs/patterns
 
 COPY --from=schedule_db_models . /libs/schedule_db_models
 
+COPY --from=system_managers . /libs/system_managers
+
 COPY --from=builder requirements.txt /app/requirements.txt
 
 RUN pip install --no-cache-dir --disable-pip-version-check \
