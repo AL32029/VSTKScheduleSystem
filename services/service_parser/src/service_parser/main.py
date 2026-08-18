@@ -11,6 +11,7 @@ from service_parser.application.ports import (
     CabinetRepository,
     GroupRepository,
     ScheduleRepository,
+    TasksRepository,
 )
 from service_parser.application.services import ScheduleParserUseCase
 from service_parser.infrastructure.clients import HTTPXScheduleProvider
@@ -36,6 +37,7 @@ async def main():
             group_repo = await cont.get(GroupRepository)
             cabinet_repo = await cont.get(CabinetRepository)
             day_schedule_repo = await cont.get(ScheduleRepository)
+            tasks_repo = await cont.get(TasksRepository)
             timezone = await cont.get(ZoneInfo)
 
             for schedule_type in ["today", "tomorrow"]:
@@ -49,11 +51,11 @@ async def main():
                     timezone=timezone,
                 )
                 use_case = ScheduleParserUseCase(
-                    group_repo, cabinet_repo, day_schedule_repo, provider
+                    group_repo, cabinet_repo, day_schedule_repo, tasks_repo, provider
                 )
 
                 try:
-                    await use_case.execute()
+                    await use_case.execute(schedule_type)
                     duration = (time.perf_counter() - type_start) * 1000
                     logger.info(
                         "Schedule for %s processed successfully (%.2f ms)",

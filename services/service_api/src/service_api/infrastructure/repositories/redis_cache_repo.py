@@ -65,7 +65,7 @@ class RedisCacheRepository(CacheRepository):
     async def delete_group_cache(self, group_keys: Iterable[str]) -> None:
         keys = set(group_keys)
         logger.debug("Removing %s groups from cache", len(keys))
-        await self.redis_repo.hdel("group", *keys)
+        await self.redis_repo.hdel("group", *keys, "all")
         logger.debug("%s groups was removed from cache", len(keys))
 
     async def get_all_groups_cache(self) -> list["Group"]:
@@ -133,7 +133,7 @@ class RedisCacheRepository(CacheRepository):
 
     async def delete_cabinet_cache(self, cabinet_keys: Iterable[str]) -> None:
         logger.debug("Removing %s cabinets from cache", len(set(cabinet_keys)))
-        await self.redis_repo.hdel("cabinet", *set(cabinet_keys))
+        await self.redis_repo.hdel("cabinet", *set(cabinet_keys), "all")
         logger.debug("%s groups was removed from cache", len(set(cabinet_keys)))
 
     async def get_all_cabinets_cache(self) -> list["Cabinet"]:
@@ -242,17 +242,12 @@ class RedisCacheRepository(CacheRepository):
         )
 
     async def delete_group_day_schedule_cache(
-        self, items: dict[Literal["today", "tomorrow"], Iterable[str]]
+        self, schedule_to: Literal["today", "tomorrow"], items: Iterable[str]
     ) -> None:
         logger.debug("Removing schedules for groups from cache")
-        schedule_items = {
-            (schedule_to, group)
-            for schedule_to, groups in items.items()
-            if groups
-            for group in groups
-        }
-        keys = {f"group:{group}:{schedule_to}" for schedule_to, group in schedule_items}
-        await self.redis_repo.hdel("schedule", *keys)
+        await self.redis_repo.hdel(
+            "schedule", *{f"group:{group}:{schedule_to}" for group in items}
+        )
         logger.debug("Schedules for groups was removed from cache")
 
     async def get_cabinet_day_schedule(
@@ -335,18 +330,10 @@ class RedisCacheRepository(CacheRepository):
         )
 
     async def delete_cabinet_day_schedule_cache(
-        self, items: dict[Literal["today", "tomorrow"], Iterable[str]]
+        self, schedule_to: Literal["today", "tomorrow"], items: Iterable[str]
     ) -> None:
         logger.debug("Removing schedules for cabinets from cache")
-        schedule_items = {
-            (schedule_to, cabinet)
-            for schedule_to, cabinets in items.items()
-            if cabinets
-            for cabinet in cabinets
-        }
-        keys = {
-            f"cabinet:{cabinet}:{schedule_to}"
-            for schedule_to, cabinet in schedule_items
-        }
-        await self.redis_repo.hdel("schedule", *keys)
+        await self.redis_repo.hdel(
+            "schedule", *{f"cabinet:{cabinet}:{schedule_to}" for cabinet in items}
+        )
         logger.debug("Schedules for cabinets was removed from cache")

@@ -20,6 +20,7 @@ from service_parser.application.ports import (
     GroupRepository,
     MetricsCollector,
     ScheduleRepository,
+    TasksRepository,
 )
 from service_parser.infrastructure.config import (
     DatabaseSettings,
@@ -31,6 +32,7 @@ from service_parser.infrastructure.prometheus_collector import (
     PrometheusMetricsCollector,
 )
 from service_parser.infrastructure.repositories import (
+    ARQTasksRepository,
     SQLAlchemyCabinetRepository,
     SQLAlchemyGroupRepository,
     SQLAlchemyScheduleRepository,
@@ -180,6 +182,12 @@ class RepositoriesProvider(Provider):
         self, session: "AsyncSession"
     ) -> "ScheduleRepository":
         return SQLAlchemyScheduleRepository(session)
+
+    @provide
+    async def arq_tasks_repository(
+        self, client: Annotated[ArqRedis, FromComponent("redis_arq")]
+    ) -> "TasksRepository":
+        return ARQTasksRepository(client)
 
 
 class HTTPXClientProvider(Provider):

@@ -1,3 +1,5 @@
+import logging.config
+
 from dishka.integrations.arq import setup_dishka
 
 from service_api.infrastructure.arq_worker_tasks import clear_cache
@@ -5,6 +7,9 @@ from service_api.infrastructure.arq_worker_tasks.config import (
     _dishka_container,
     _redis_manager,
 )
+from service_api.infrastructure.config import LoggingSettings
+
+logging.config.dictConfig(LoggingSettings().model_dump(mode="json"))
 
 
 class WorkerSettings:
