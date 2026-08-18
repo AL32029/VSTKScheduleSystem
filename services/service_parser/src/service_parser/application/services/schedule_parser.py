@@ -75,7 +75,7 @@ class ScheduleParserUseCase:
 
     @staticmethod
     def _extract_changed_entities(
-        changes: dict[date, dict[str, dict[str, set["Group" | "Cabinet"]]]],
+        changes: dict[date, dict[str, dict[str, set["Group | Cabinet"]]]],
     ) -> tuple[set[str], set[str]]:
         groups = set()
         cabinets = set()
