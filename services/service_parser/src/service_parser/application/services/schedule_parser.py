@@ -1,10 +1,13 @@
 from collections.abc import Iterable
+from datetime import date
+from typing import Literal
 
 from service_parser.application.ports import (
     CabinetRepository,
     GroupRepository,
     ScheduleProvider,
     ScheduleRepository,
+    TasksRepository,
 )
 from service_parser.domain.entities import Cabinet, DaySchedule, Group
 from service_parser.domain.exceptions import ScheduleUnchangedError
@@ -16,14 +19,16 @@ class ScheduleParserUseCase:
         group_repo: "GroupRepository",
         cabinet_repo: "CabinetRepository",
         schedule_repo: "ScheduleRepository",
+        tasks_repo: "TasksRepository",
         schedule_provider: "ScheduleProvider",
     ) -> None:
         self.group_repo = group_repo
         self.cabinet_repo = cabinet_repo
         self.schedule_repo = schedule_repo
+        self.tasks_repo = tasks_repo
         self.schedule_provider = schedule_provider
 
-    async def execute(self) -> None:
+    async def execute(self, schedule_to: Literal["today", "tomorrow"]) -> None:
         try:
             schedule, date_list = await self.schedule_provider.get_schedule_for_groups()
         except ScheduleUnchangedError:
@@ -33,7 +38,13 @@ class ScheduleParserUseCase:
             return
 
         await self._save_metadata(schedule)
-        await self.schedule_repo.save(list(schedule.values()), date_list)
+
+        changes = await self.schedule_repo.save(list(schedule.values()), date_list)
+        groups_clear, cabinets_clear = self._extract_changed_entities(changes)
+
+        await self.tasks_repo.send_clear_cache_task(
+            groups_clear, cabinets_clear, schedule_to
+        )
 
     async def _save_metadata(self, schedule: dict["Group", "DaySchedule"]) -> None:
         await self._update_groups(schedule.keys())
@@ -61,3 +72,23 @@ class ScheduleParserUseCase:
 
         if cabinets:
             await self.cabinet_repo.save(cabinets)
+
+    @staticmethod
+    def _extract_changed_entities(
+        changes: dict[date, dict[str, dict[str, set["Group | Cabinet"]]]],
+    ) -> tuple[set[str], set[str]]:
+        groups = set()
+        cabinets = set()
+
+        for entity_changes in changes.values():
+            group_data = entity_changes.get("group", {})
+            for category in ("new", "update", "remove"):
+                for group in group_data.get(category, set()):
+                    groups.add(group.index)
+
+            cabinet_data = entity_changes.get("cabinet", {})
+            for category in ("new", "update", "remove"):
+                for cabinet in cabinet_data.get(category, set()):
+                    cabinets.add(cabinet.number)
+
+        return groups, cabinets

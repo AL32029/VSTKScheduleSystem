@@ -11,4 +11,4 @@ async def test_schedule_provider_use_case(
             content=await f.read(),
         )
 
-    await schedule_parser_use_case.execute()
+    await schedule_parser_use_case.execute('tomorrow')

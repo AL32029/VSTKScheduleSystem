@@ -384,31 +384,27 @@ class HTTPXScheduleProvider(ScheduleProvider):
         lessons_time: tuple[tuple[datetime.time, datetime.time], ...],
         groups: tuple["GroupParser", ...],
     ) -> dict["Group", "DaySchedule"]:
-        group_lessons: dict[Group, DaySchedule] = {}
+        group_day_schedules: dict[Group, DaySchedule] = {}
 
         lessons_count = len(lessons_time)
 
         for group in groups:
             lessons: list[Lesson] = []
-            for l_idx, (lesson, cabinets) in enumerate(
-                matrix[
-                    group.pos_y + 1 : group.pos_y + lessons_count,
-                    group.pos_x : group.pos_x + 2,
-                ]
-            ):
-                if group.group in group_lessons and lesson is None:
-                    break
 
-                if lessons and (lesson is None or not lesson.strip()):
-                    break
+            group_lessons = [
+                lesson
+                for l_idx, lesson in enumerate(
+                    matrix[
+                        group.pos_y + 1 : group.pos_y + 1 + lessons_count,
+                        group.pos_x : group.pos_x + 2,
+                    ]
+                )
+                if self._LESSONS_TIME_PATTERN.match(matrix[group.pos_y + 1 + l_idx, 1])
+            ]
 
+            for l_idx, (lesson, cabinets) in enumerate(group_lessons):
                 if lesson is None or not lesson.strip():
                     continue
-
-                if not self._LESSONS_TIME_PATTERN.match(
-                    matrix[group.pos_y + 1 + l_idx, 1]
-                ):
-                    break
 
                 cabinets = tuple(cabinets.split("/")) if cabinets else ()
 
@@ -416,10 +412,11 @@ class HTTPXScheduleProvider(ScheduleProvider):
                     Lesson(
                         start=lessons_time[l_idx][0],
                         end=lessons_time[l_idx][1],
-                        name=lesson,
+                        name=' '.join(lesson.split()),
                         cabinets=tuple(Cabinet(cab) for cab in cabinets),
                     )
                 )
+
             if lessons:
                 while lessons and lessons[-1].name.lower() == "обед":
                     lessons.pop()
@@ -430,13 +427,13 @@ class HTTPXScheduleProvider(ScheduleProvider):
                 if not lessons:
                     continue
 
-                group_lessons[group.group] = DaySchedule.from_existing(
+                group_day_schedules[group.group] = DaySchedule.from_existing(
                     group.group, sorted(lessons, key=lambda x: x.start)
                 )
 
-        if not group_lessons:
+        if not group_day_schedules:
             raise ParsingDayScheduleError(
                 "The schedule table does not contain any pairs"
             )
 
-        return group_lessons
+        return group_day_schedules

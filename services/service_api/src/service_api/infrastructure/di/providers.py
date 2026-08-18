@@ -191,8 +191,9 @@ class RepositoriesProvider(Provider):
     async def redis_cache_repository(
         self,
         redis_client: Annotated[Redis, FromComponent("redis_main")],
+        system_settings: "SystemSettings",
     ) -> "CacheRepository":
-        return RedisCacheRepository(redis_client)
+        return RedisCacheRepository(redis_client, system_settings.timezone)
 
 
 class UseCasesProvider(Provider):

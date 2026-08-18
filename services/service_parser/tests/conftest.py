@@ -8,6 +8,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 import pytest
+from arq import ArqRedis
 from dishka import Scope, make_async_container
 from httpx import AsyncClient
 from redis.asyncio import Redis
@@ -26,11 +27,13 @@ from service_parser.application.ports import (
     GroupRepository,
     ScheduleProvider,
     ScheduleRepository,
+    TasksRepository,
 )
 from service_parser.application.services import ScheduleParserUseCase
 from service_parser.infrastructure.clients import HTTPXScheduleProvider
 from service_parser.infrastructure.di import HTTPXClientProvider
 from service_parser.infrastructure.repositories import (
+    ARQTasksRepository,
     SQLAlchemyCabinetRepository,
     SQLAlchemyGroupRepository,
     SQLAlchemyScheduleRepository,
@@ -84,7 +87,7 @@ def redis_container() -> Generator[RedisContainer, Any, None]:
 
 # ====================== [ФИКСТУРА С ПРОВАЙДЕРАМИ] ======================
 @pytest.fixture
-async def test_container(request, async_engine, redis_container):  # noqa: ARG001
+async def test_container(request, async_engine, redis_container):  # noqa: ARG001, C901
     from dishka import Provider, Scope, provide
 
     # ====================== [ПРОВАЙДЕР СИСТЕМА] ======================
@@ -120,6 +123,12 @@ async def test_container(request, async_engine, redis_container):  # noqa: ARG00
             port = redis_container.get_exposed_port(6379)
             yield Redis.from_url(f"redis://{host}:{port}")
 
+        @provide
+        async def arq_redis_client(self) -> AsyncIterable[ArqRedis]:
+            host = redis_container.get_container_host_ip()
+            port = redis_container.get_exposed_port(6379)
+            yield ArqRedis.from_url(f"redis://{host}:{port}/1")
+
     # ====================== [ПРОВАЙДЕР РЕПОЗИТОРИЕВ] ======================
     class TestRepositoriesProvide(Provider):
         scope = Scope.REQUEST
@@ -127,25 +136,31 @@ async def test_container(request, async_engine, redis_container):  # noqa: ARG00
         @provide
         async def sqlalchemy_cabinet_repository(
             self, session: AsyncSession
-        ) -> CabinetRepository:
+        ) -> "CabinetRepository":
             return SQLAlchemyCabinetRepository(session)
 
         @provide
         async def sqlalchemy_group_repository(
             self, session: AsyncSession
-        ) -> GroupRepository:
+        ) -> "GroupRepository":
             return SQLAlchemyGroupRepository(session)
 
         @provide
         async def sqlalchemy_schedule_repository(
             self, session: AsyncSession
-        ) -> ScheduleRepository:
+        ) -> "ScheduleRepository":
             return SQLAlchemyScheduleRepository(session)
+
+        @provide
+        async def arq_tasks_repository(
+            self, arq_redis_client: ArqRedis
+        ) -> "TasksRepository":
+            return ARQTasksRepository(arq_redis_client)
 
         @provide
         async def httpx_schedule_provider(
             self, httpx_client: AsyncClient, redis_client: Redis, timezone: ZoneInfo
-        ) -> ScheduleProvider:
+        ) -> "ScheduleProvider":
             return HTTPXScheduleProvider(
                 httpx_client, redis_client, timezone, "tomorrow"
             )
@@ -157,13 +172,18 @@ async def test_container(request, async_engine, redis_container):  # noqa: ARG00
         @provide
         async def schedule_parser_use_case(
             self,
-            group_repo: GroupRepository,
-            cabinet_repo: CabinetRepository,
-            schedule_repo: ScheduleRepository,
-            schedule_provider: ScheduleProvider,
+            group_repo: "GroupRepository",
+            cabinet_repo: "CabinetRepository",
+            schedule_repo: "ScheduleRepository",
+            tasks_repository: "TasksRepository",
+            schedule_provider: "ScheduleProvider",
         ) -> "ScheduleParserUseCase":
             return ScheduleParserUseCase(
-                group_repo, cabinet_repo, schedule_repo, schedule_provider
+                group_repo,
+                cabinet_repo,
+                schedule_repo,
+                tasks_repository,
+                schedule_provider,
             )
 
     container = make_async_container(

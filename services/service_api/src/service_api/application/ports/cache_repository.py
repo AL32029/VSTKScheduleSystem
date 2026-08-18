@@ -95,7 +95,7 @@ class CacheRepository(ABC):
 
     @abstractmethod
     async def delete_group_day_schedule_cache(
-        self, items: dict[Literal["today", "tomorrow"], Iterable[str]]
+        self, schedule_to: Literal["today", "tomorrow"], items: Iterable[str]
     ) -> None:
         """Удаление расписания для групп из кэша"""
         raise NotImplementedError
@@ -118,7 +118,7 @@ class CacheRepository(ABC):
 
     @abstractmethod
     async def delete_cabinet_day_schedule_cache(
-        self, items: dict[Literal["today", "tomorrow"], Iterable[str]]
+        self, schedule_to: Literal["today", "tomorrow"], items: Iterable[str]
     ) -> None:
         """Удаление расписания для кабинетов из кэша"""
         raise NotImplementedError
