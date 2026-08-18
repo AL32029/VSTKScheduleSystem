@@ -1,6 +1,6 @@
 from dishka import FromDishka
 from dishka.integrations.fastapi import inject
-from fastapi import APIRouter
+from fastapi import APIRouter, Path
 
 from service_api.application.services import GetAllCabinetsUseCase, GetCabinetUseCase
 from service_api.infrastructure.mappers import (
@@ -17,7 +17,8 @@ cabinet_router = APIRouter(prefix="/cabinets", tags=["Cabinet Items"])
 @cabinet_router.get("/{cabinet_number}", response_model=ResponseSchema)
 @inject
 async def get_cabinet_by_number(
-    cabinet_number: str, repo: FromDishka["GetCabinetUseCase"]
+    repo: FromDishka["GetCabinetUseCase"],
+    cabinet_number: str = Path(min_length=1, max_length=64),
 ) -> "ResponseSchema":
     schema = schedule_domain_to_schema(await repo.execute(cabinet_number))
 

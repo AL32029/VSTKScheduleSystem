@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from dishka import AsyncContainer
 from dishka.integrations.fastapi import setup_dishka
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import make_asgi_app
 from system_managers import (
     DatabaseEngineManager,
@@ -119,6 +120,7 @@ def create_app(container=None) -> "FastAPI":
     app.add_exception_handler(APIServiceError, api_exception_handler)
 
     app.add_middleware(InitRequestMiddleware)
+    app.add_middleware(CORSMiddleware, allow_methods=["GET"], allow_headers=["*"])
 
     app.mount("/metrics", make_asgi_app())
 

@@ -19,11 +19,11 @@ class ProdRedisSettings(BaseProdRedisSettings):
 
 class RedisSettings:
     def __init__(self, mode: Literal["dev", "prod"] = "dev"):
-        self.mode: Literal["dev", "prod"] = mode
-
-        self.dev: BaseDevRedisSettings = DevRedisSettings()
-        self.prod: BaseProdRedisSettings = ProdRedisSettings()
+        self.mode = mode
+        self._config: DevRedisSettings | ProdRedisSettings = (
+            DevRedisSettings() if mode == "dev" else ProdRedisSettings()
+        )
 
     @property
-    def config(self) -> "BaseDevRedisSettings | BaseProdRedisSettings":
-        return self.dev if self.mode == "dev" else self.prod
+    def config(self) -> DevRedisSettings | ProdRedisSettings:
+        return self._config

@@ -55,7 +55,7 @@ jobs:
 
       - name: Run pytest for ${{ matrix.service }}
         if: fromJSON(needs.changes.outputs[matrix.service]) == true
-        run: poetry run pytest ./tests
+        run: poetry run pytest ./tests --cov --cov-fail-under=75
         working-directory: services/service_${{ matrix.service }}
         env:
           TESTCONTAINERS_RYUK_DISABLED: "true"
