@@ -145,6 +145,7 @@ async def test_container(request, session_with_test_data, redis_container):  # n
     # ====================== [ПРОВАЙДЕР REDIS] ======================
     class TestRedisProvider(Provider):
         scope = Scope.REQUEST
+        component = "redis_main"
 
         @provide
         async def redis_client(self) -> AsyncGenerator[Redis, Any]:
