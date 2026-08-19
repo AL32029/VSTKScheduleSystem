@@ -144,6 +144,10 @@ class TestBot(AsyncBotTestMixin):
             # Открытие главного меню
             await client.send_command("start")
 
+            user_item = await user_repo.get_by_id(client.user_id)
+
+            await user_repo.update_metadata(user_item, "grouping_lessons", False)
+
             main_menu_message = client.get_last_message().response
 
             # Открытие страницы с добавлением группы
@@ -154,7 +158,6 @@ class TestBot(AsyncBotTestMixin):
                 self.client.capture.get_last_request().response,
             )
 
-            user_item = await user_repo.get_by_id(client.user_id)
             add_schedule_item_text = templater.render(
                 "add_schedule_item",
                 user=user_item,
@@ -218,6 +221,10 @@ class TestBot(AsyncBotTestMixin):
 
             # Открытие главного меню
             await client.send_command("start")
+
+            user_item = await user_repo.get_by_id(client.user_id)
+
+            await user_repo.update_metadata(user_item, "grouping_lessons", False)
 
             main_menu_message = client.get_last_message().response
 
@@ -509,6 +516,7 @@ class TestBot(AsyncBotTestMixin):
                 match_params={
                     "group_number": _GROUP_DAY_SCHEDULE.schedule_item.index,
                     "schedule_to": "tomorrow",
+                    "grouping_lessons": "false",
                 },
                 json={
                     "success": True,
@@ -537,6 +545,8 @@ class TestBot(AsyncBotTestMixin):
             user = await user_repo.save(client.user_id)
 
             await user_repo.subscribe_group(user, _GROUP_DAY_SCHEDULE.schedule_item)
+
+            await user_repo.update_metadata(user, "grouping_lessons", False)
 
             # Открытие главного меню
             await client.send_command("start")
@@ -578,6 +588,7 @@ class TestBot(AsyncBotTestMixin):
                 match_params={
                     "group_number": _GROUP_DAY_SCHEDULE.schedule_item.index,
                     "schedule_to": "tomorrow",
+                    "grouping_lessons": "false",
                 },
                 status_code=404,
                 json={
@@ -600,6 +611,8 @@ class TestBot(AsyncBotTestMixin):
             user = await user_repo.save(client.user_id)
 
             await user_repo.subscribe_group(user, _GROUP_DAY_SCHEDULE.schedule_item)
+
+            await user_repo.update_metadata(user, "grouping_lessons", False)
 
             # Открытие главного меню
             await client.send_command("start")
@@ -635,6 +648,7 @@ class TestBot(AsyncBotTestMixin):
                 match_params={
                     "cabinet_number": _CABINET_DAY_SCHEDULE.schedule_item.index,
                     "schedule_to": "tomorrow",
+                    "grouping_lessons": "false",
                 },
                 status_code=404,
                 json={
@@ -659,6 +673,8 @@ class TestBot(AsyncBotTestMixin):
             await user_repo.update_metadata(user, "user_type", "teacher")
 
             await user_repo.subscribe_cabinet(user, _CABINET_DAY_SCHEDULE.schedule_item)
+
+            await user_repo.update_metadata(user, "grouping_lessons", False)
 
             # Открытие главного меню
             await client.send_command("start")
@@ -696,6 +712,7 @@ class TestBot(AsyncBotTestMixin):
                 match_params={
                     "group_number": _GROUP_DAY_SCHEDULE.schedule_item.index,
                     "schedule_to": "tomorrow",
+                    "grouping_lessons": "false",
                 },
                 status_code=404,
                 json={
@@ -720,6 +737,7 @@ class TestBot(AsyncBotTestMixin):
                 match_params={
                     "group_number": _GROUP_DAY_SCHEDULE.schedule_item.index,
                     "schedule_to": "today",
+                    "grouping_lessons": "false",
                 },
                 json={
                     "success": True,
@@ -748,6 +766,8 @@ class TestBot(AsyncBotTestMixin):
             user = await user_repo.save(client.user_id)
 
             await user_repo.subscribe_group(user, _GROUP_DAY_SCHEDULE.schedule_item)
+
+            await user_repo.update_metadata(user, "grouping_lessons", False)
 
             # Открытие главного меню
             await client.send_command("start")
@@ -794,6 +814,7 @@ class TestBot(AsyncBotTestMixin):
                 match_params={
                     "cabinet_number": _CABINET_DAY_SCHEDULE.schedule_item.index,
                     "schedule_to": "tomorrow",
+                    "grouping_lessons": "false",
                 },
                 status_code=404,
                 json={
@@ -818,6 +839,7 @@ class TestBot(AsyncBotTestMixin):
                 match_params={
                     "cabinet_number": _CABINET_DAY_SCHEDULE.schedule_item.index,
                     "schedule_to": "today",
+                    "grouping_lessons": "false",
                 },
                 json={
                     "success": True,
@@ -851,6 +873,8 @@ class TestBot(AsyncBotTestMixin):
             await user_repo.update_metadata(user, "user_type", "teacher")
 
             await user_repo.subscribe_cabinet(user, _CABINET_DAY_SCHEDULE.schedule_item)
+
+            await user_repo.update_metadata(user, "grouping_lessons", False)
 
             # Открытие главного меню
             await client.send_command("start")
@@ -899,6 +923,7 @@ class TestBot(AsyncBotTestMixin):
                 match_params={
                     "group_number": _GROUP_DAY_SCHEDULE.schedule_item.index,
                     "schedule_to": "tomorrow",
+                    "grouping_lessons": "false",
                 },
                 json={
                     "success": True,
@@ -926,6 +951,7 @@ class TestBot(AsyncBotTestMixin):
                 match_params={
                     "group_number": _GROUP_DAY_SCHEDULE.schedule_item.index,
                     "schedule_to": "today",
+                    "grouping_lessons": "false",
                 },
                 json={
                     "success": True,
@@ -954,6 +980,8 @@ class TestBot(AsyncBotTestMixin):
             user = await user_repo.save(client.user_id)
 
             await user_repo.subscribe_group(user, _GROUP_DAY_SCHEDULE.schedule_item)
+
+            await user_repo.update_metadata(user, "grouping_lessons", False)
 
             # Открытие главного меню
             await client.send_command("start")
@@ -1028,6 +1056,7 @@ class TestBot(AsyncBotTestMixin):
                 match_params={
                     "group_number": _GROUP_DAY_SCHEDULE.schedule_item.index,
                     "schedule_to": "tomorrow",
+                    "grouping_lessons": "false",
                 },
                 json={
                     "success": False,
@@ -1049,6 +1078,8 @@ class TestBot(AsyncBotTestMixin):
             user = await user_repo.save(client.user_id)
 
             await user_repo.subscribe_group(user, _GROUP_DAY_SCHEDULE.schedule_item)
+
+            await user_repo.update_metadata(user, "grouping_lessons", False)
 
             # Открытие главного меню
             await client.send_command("start")
@@ -1084,6 +1115,7 @@ class TestBot(AsyncBotTestMixin):
                 match_params={
                     "cabinet_number": _CABINET_DAY_SCHEDULE.schedule_item.index,
                     "schedule_to": "tomorrow",
+                    "grouping_lessons": "false",
                 },
                 json={
                     "success": False,
@@ -1107,6 +1139,8 @@ class TestBot(AsyncBotTestMixin):
             await user_repo.update_metadata(user, "user_type", "teacher")
 
             await user_repo.subscribe_cabinet(user, _CABINET_DAY_SCHEDULE.schedule_item)
+
+            await user_repo.update_metadata(user, "grouping_lessons", False)
 
             # Открытие главного меню
             await client.send_command("start")
@@ -1145,6 +1179,7 @@ class TestBot(AsyncBotTestMixin):
                 match_params={
                     "group_number": _GROUP_DAY_SCHEDULE.schedule_item.index,
                     "schedule_to": "tomorrow",
+                    "grouping_lessons": "false",
                 },
                 json={
                     "success": True,
@@ -1173,6 +1208,8 @@ class TestBot(AsyncBotTestMixin):
             user = await user_repo.save(client.user_id)
 
             await user_repo.subscribe_group(user, _GROUP_DAY_SCHEDULE.schedule_item)
+
+            await user_repo.update_metadata(user, "grouping_lessons", False)
 
             user_repo.session.expire_all()
 
@@ -1231,6 +1268,7 @@ class TestBot(AsyncBotTestMixin):
                 match_params={
                     "cabinet_number": _CABINET_DAY_SCHEDULE.schedule_item.index,
                     "schedule_to": "tomorrow",
+                    "grouping_lessons": "false",
                 },
                 json={
                     "success": True,
@@ -1264,6 +1302,8 @@ class TestBot(AsyncBotTestMixin):
             await user_repo.update_metadata(user, "user_type", "teacher")
 
             await user_repo.subscribe_cabinet(user, _CABINET_DAY_SCHEDULE.schedule_item)
+
+            await user_repo.update_metadata(user, "grouping_lessons", False)
 
             user_repo.session.expire_all()
 
@@ -1322,6 +1362,7 @@ class TestBot(AsyncBotTestMixin):
                 match_params={
                     "group_number": _GROUP_DAY_SCHEDULE.schedule_item.index,
                     "schedule_to": "tomorrow",
+                    "grouping_lessons": "false",
                 },
                 json={
                     "success": True,
@@ -1350,6 +1391,8 @@ class TestBot(AsyncBotTestMixin):
             user = await user_repo.save(client.user_id)
 
             await user_repo.subscribe_group(user, _GROUP_DAY_SCHEDULE.schedule_item)
+
+            await user_repo.update_metadata(user, "grouping_lessons", False)
 
             user_repo.session.expire_all()
 
@@ -1412,6 +1455,7 @@ class TestBot(AsyncBotTestMixin):
                 match_params={
                     "cabinet_number": _CABINET_DAY_SCHEDULE.schedule_item.index,
                     "schedule_to": "tomorrow",
+                    "grouping_lessons": "false",
                 },
                 json={
                     "success": True,
@@ -1445,6 +1489,8 @@ class TestBot(AsyncBotTestMixin):
             await user_repo.update_metadata(user, "user_type", "teacher")
 
             await user_repo.subscribe_cabinet(user, _CABINET_DAY_SCHEDULE.schedule_item)
+
+            await user_repo.update_metadata(user, "grouping_lessons", False)
 
             user_repo.session.expire_all()
 

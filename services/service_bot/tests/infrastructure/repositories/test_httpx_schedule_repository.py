@@ -20,6 +20,7 @@ async def test_get_group_day_schedule(httpx_mock, client, httpx_schedule_reposit
         match_params={
             "group_number": _GROUP_DAY_SCHEDULE.schedule_item.number,
             "schedule_to": "tomorrow",
+            "grouping_lessons": "false",
         },
         json={
             "success": True,
@@ -45,9 +46,7 @@ async def test_get_group_day_schedule(httpx_mock, client, httpx_schedule_reposit
     )
 
     schedule = await httpx_schedule_repository.get_day_schedule(
-        _GROUP_DAY_SCHEDULE.schedule_item.number,
-        "tomorrow",
-        "group",
+        _GROUP_DAY_SCHEDULE.schedule_item.number, "tomorrow", "group", False
     )
 
     assert schedule == _GROUP_DAY_SCHEDULE
@@ -64,6 +63,7 @@ async def test_get_group_day_schedule_error_group_not_found(
         match_params={
             "group_number": _GROUP_DAY_SCHEDULE.schedule_item.number,
             "schedule_to": "tomorrow",
+            "grouping_lessons": "false",
         },
         status_code=404,
         json={
@@ -79,9 +79,7 @@ async def test_get_group_day_schedule_error_group_not_found(
 
     with pytest.raises(GroupNotFoundError) as exc_info:
         await httpx_schedule_repository.get_day_schedule(
-            _GROUP_DAY_SCHEDULE.schedule_item.number,
-            "tomorrow",
-            "group",
+            _GROUP_DAY_SCHEDULE.schedule_item.number, "tomorrow", "group", False
         )
 
     assert exc_info.value.args[0] == str(
@@ -100,6 +98,7 @@ async def test_get_cabinet_day_schedule_error_cabinet_not_found(
         match_params={
             "cabinet_number": _CABINET_DAY_SCHEDULE.schedule_item.number,
             "schedule_to": "tomorrow",
+            "grouping_lessons": "false",
         },
         status_code=404,
         json={
@@ -115,9 +114,7 @@ async def test_get_cabinet_day_schedule_error_cabinet_not_found(
 
     with pytest.raises(CabinetNotFoundError) as exc_info:
         await httpx_schedule_repository.get_day_schedule(
-            _CABINET_DAY_SCHEDULE.schedule_item.number,
-            "tomorrow",
-            "cabinet",
+            _CABINET_DAY_SCHEDULE.schedule_item.number, "tomorrow", "cabinet", False
         )
 
     assert exc_info.value.args[0] == str(
@@ -136,6 +133,7 @@ async def test_get_day_schedule_error_schedule_date_not_found(
         match_params={
             "group_number": _GROUP_DAY_SCHEDULE.schedule_item.number,
             "schedule_to": "tomorrow",
+            "grouping_lessons": "false",
         },
         status_code=404,
         json={
@@ -150,9 +148,7 @@ async def test_get_day_schedule_error_schedule_date_not_found(
 
     with pytest.raises(ScheduleDateNotFoundError) as exc_info:
         await httpx_schedule_repository.get_day_schedule(
-            _GROUP_DAY_SCHEDULE.schedule_item.number,
-            "tomorrow",
-            "group",
+            _GROUP_DAY_SCHEDULE.schedule_item.number, "tomorrow", "group", False
         )
 
     assert exc_info.value.args[0] == str(ScheduleDateNotFoundError("tomorrow"))
@@ -169,6 +165,7 @@ async def test_get_group_day_schedule_error_schedule_date_not_found(
         match_params={
             "group_number": _GROUP_DAY_SCHEDULE.schedule_item.number,
             "schedule_to": "tomorrow",
+            "grouping_lessons": "false",
         },
         status_code=404,
         json={
@@ -189,9 +186,7 @@ async def test_get_group_day_schedule_error_schedule_date_not_found(
 
     with pytest.raises(ScheduleForGroupNotFoundError) as exc_info:
         await httpx_schedule_repository.get_day_schedule(
-            _GROUP_DAY_SCHEDULE.schedule_item.number,
-            "tomorrow",
-            "group",
+            _GROUP_DAY_SCHEDULE.schedule_item.number, "tomorrow", "group", False
         )
 
     assert exc_info.value.args[0] == str(
@@ -214,6 +209,7 @@ async def test_get_cabinet_day_schedule_error_schedule_date_not_found(
         match_params={
             "cabinet_number": _CABINET_DAY_SCHEDULE.schedule_item.number,
             "schedule_to": "tomorrow",
+            "grouping_lessons": "false",
         },
         status_code=404,
         json={
@@ -234,9 +230,7 @@ async def test_get_cabinet_day_schedule_error_schedule_date_not_found(
 
     with pytest.raises(ScheduleForCabinetNotFoundError) as exc_info:
         await httpx_schedule_repository.get_day_schedule(
-            _CABINET_DAY_SCHEDULE.schedule_item.number,
-            "tomorrow",
-            "cabinet",
+            _CABINET_DAY_SCHEDULE.schedule_item.number, "tomorrow", "cabinet", False
         )
 
     assert exc_info.value.args[0] == str(

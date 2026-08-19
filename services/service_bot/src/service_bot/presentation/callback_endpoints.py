@@ -233,9 +233,7 @@ async def callback_day_schedule(
             updated_time = datetime.datetime.now(time_zone)
 
         day_schedule = await day_schedule_use_case.execute(
-            schedule_item,
-            schedule_action,
-            schedule_for,
+            schedule_item, schedule_action, schedule_for, user.grouping_lessons
         )
 
         rendered_text = message_templater.render(
