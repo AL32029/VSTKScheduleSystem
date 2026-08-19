@@ -11,6 +11,7 @@ class ScheduleRepository(ABC):
         schedule_item: str,
         schedule_to: Literal["today", "tomorrow"],
         schedule_for: Literal["group", "cabinet"],
+        grouping_lessons: bool,
     ) -> "DaySchedule":
         """Получение расписания"""
         raise NotImplementedError

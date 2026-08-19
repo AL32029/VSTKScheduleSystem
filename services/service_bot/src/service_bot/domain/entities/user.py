@@ -80,11 +80,6 @@ class User:
         """Статус наличия админ-прав"""
         return cast("bool", self.metadata.get("is_admin"))
 
-    @is_admin.setter
-    def is_admin(self, new_status: bool) -> None:
-        """Изменение статуса наличия админ-прав"""
-        self.update_metadata("is_admin", new_status)
-
     @property
     def message_panel_id(self) -> int | None:
         """ID сообщения с панелью управления"""
@@ -96,6 +91,21 @@ class User:
         logger.info("Changing the control panel ID")
         self.update_metadata("message_panel_id", message_id)
         logger.info("The control panel ID has been changed")
+
+    @property
+    def grouping_lessons(self) -> bool:
+        """Статус группировки расписания"""
+        return cast("bool", self.metadata.get("grouping_lessons"))
+
+    @grouping_lessons.setter
+    def grouping_lessons(self, new_status: bool) -> None:
+        """Изменение статуса группировки расписания"""
+        logger.info(
+            "Switching the grouping lessons status to %s",
+            "enabled" if new_status else "disabled",
+        )
+        self.update_metadata("grouping_lessons", new_status)
+        logger.info("The grouping lessons has been switched")
 
     def update_metadata(self, key: str, value: Any) -> None:
         """Обновление метаданных по ключу"""

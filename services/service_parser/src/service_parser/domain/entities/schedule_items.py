@@ -8,10 +8,33 @@ from service_parser.domain.exceptions import (
 )
 
 
-@dataclass(frozen=True)
-class Group:
-    index: str
-    number: str
+class ScheduleItem:
+    __slots__ = ("index", "number")
+
+    def __init__(self, number: str):
+        index = ITEM_INDEX.sub("", number.lower())
+        object.__setattr__(self, "index", index)
+        object.__setattr__(self, "number", number)
+
+    def __eq__(self, other) -> bool:
+        if type(self) is not type(other):
+            return NotImplemented
+
+        return self.index == other.index
+
+    def __hash__(self) -> int:
+        return hash(self.index)
+
+    def __str__(self) -> str:
+        return self.number
+
+
+class Cabinet(ScheduleItem):
+    """Сущность кабинета"""
+
+
+class Group(ScheduleItem):
+    """Сущность группы"""
 
     def __init__(self, number: str):
         _number = number.upper().strip()
@@ -19,20 +42,7 @@ class Group:
         if not GROUP_NUMBER.match(_number):
             raise GroupNumberFormatError(f"Invalid group number: {number!r}")
 
-        object.__setattr__(self, "index", ITEM_INDEX.sub("", _number.lower()))
-        object.__setattr__(self, "number", _number)
-
-    def __eq__(self, other):
-        if not isinstance(other, Group):
-            raise NotImplementedError
-
-        return self.index == other.index
-
-    def __hash__(self):
-        return hash(self.index)
-
-    def __str__(self):
-        return self.number
+        super().__init__(_number)
 
 
 @dataclass(frozen=True)

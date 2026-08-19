@@ -3,9 +3,8 @@ from dataclasses import dataclass
 
 from service_bot.domain.exceptions import InvalidDayScheduleLessonTypeError
 
-from .cabinet import Cabinet
-from .group import Group
 from .lesson import CabinetLesson, Lesson
+from .schedule_items import Cabinet, Group
 
 
 @dataclass

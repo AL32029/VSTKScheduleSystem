@@ -1,6 +1,8 @@
 import asyncio.exceptions
 import functools
+import locale
 import logging.config
+import platform
 
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.redis import RedisStorage
@@ -8,6 +10,7 @@ from dishka import AsyncContainer
 from dishka.integrations.aiogram import setup_dishka
 from redis.asyncio import Redis
 from system_managers import DatabaseEngineManager, RedisClientManager, WatchFilesManager
+from system_managers.watch_files.item_models import WatchFilesItem
 
 from service_bot.infrastructure.config import LoggingSettings, system_settings
 from service_bot.infrastructure.di.container import get_dishka_container
@@ -19,6 +22,12 @@ from service_bot.infrastructure.middlewares import (
 )
 from service_bot.presentation import callback_router, exception_router, message_router
 
+system = platform.system()
+if system == "Windows":
+    locale.setlocale(locale.LC_TIME, "Russian_Russia.1251")
+else:
+    locale.setlocale(locale.LC_TIME, "ru_RU.UTF-8")
+
 logging.config.dictConfig(LoggingSettings().model_dump(mode="json"))
 
 logger = logging.getLogger("service_bot")
@@ -28,16 +37,29 @@ async def on_startup(dispatcher: Dispatcher, container: AsyncContainer) -> None:
     db_manager: DatabaseEngineManager = await container.get(DatabaseEngineManager)
     redis_client: RedisClientManager = await container.get(RedisClientManager)
 
-    await db_manager.rotate()
-    await redis_client.rotate()
+    await db_manager.get_engine()
+    await redis_client.get_client()
 
     if system_settings.SYSTEM_MODE == "prod":
         watch_files_manager: WatchFilesManager = await container.get(WatchFilesManager)
 
+        items_to_watch = [
+            WatchFilesItem(
+                name="Database Engine Manager",
+                path_list=db_manager.watchfiles_ssl_files,
+                rotation_action=db_manager.rotate,
+            ),
+            WatchFilesItem(
+                name="Redis Client Manager",
+                path_list=redis_client.watchfiles_ssl_files,
+                rotation_action=redis_client.rotate,
+            ),
+        ]
+
         try:
             dispatcher["watch_files_manager"] = watch_files_manager
             dispatcher["watch_loop_task"] = asyncio.create_task(
-                watch_files_manager.watch(db_manager, redis_client)
+                watch_files_manager.watch(items_to_watch)
             )
             logger.info("Watchfiles task started")
         except Exception:

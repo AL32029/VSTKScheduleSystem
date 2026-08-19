@@ -1,5 +1,4 @@
 from collections.abc import Iterable
-from datetime import date
 from typing import Literal
 
 from service_parser.application.ports import (
@@ -45,6 +44,7 @@ class ScheduleParserUseCase:
         await self.tasks_repo.send_clear_cache_task(
             groups_clear, cabinets_clear, schedule_to
         )
+        await self.tasks_repo.send_notify_task(changes, schedule_to, date_list)
 
     async def _save_metadata(self, schedule: dict["Group", "DaySchedule"]) -> None:
         await self._update_groups(schedule.keys())
@@ -75,20 +75,22 @@ class ScheduleParserUseCase:
 
     @staticmethod
     def _extract_changed_entities(
-        changes: dict[date, dict[str, dict[str, set["Group | Cabinet"]]]],
+        changes: dict[
+            Literal["group", "cabinet"],
+            dict[Literal["new", "update", "remove"], set[str]],
+        ],
     ) -> tuple[set[str], set[str]]:
         groups = set()
         cabinets = set()
 
-        for entity_changes in changes.values():
-            group_data = entity_changes.get("group", {})
-            for category in ("new", "update", "remove"):
-                for group in group_data.get(category, set()):
-                    groups.add(group.index)
+        group_data = changes.get("group", {})
+        for category in ("new", "update", "remove"):
+            for group in group_data.get(category, set()):
+                groups.add(group)
 
-            cabinet_data = entity_changes.get("cabinet", {})
-            for category in ("new", "update", "remove"):
-                for cabinet in cabinet_data.get(category, set()):
-                    cabinets.add(cabinet.number)
+        cabinet_data = changes.get("cabinet", {})
+        for category in ("new", "update", "remove"):
+            for cabinet in cabinet_data.get(category, set()):
+                cabinets.add(cabinet)
 
         return groups, cabinets

@@ -2,8 +2,7 @@ import datetime
 from collections.abc import Iterable
 from dataclasses import dataclass
 
-from .cabinet import Cabinet
-from .group import Group
+from .schedule_items import Cabinet, Group
 
 
 @dataclass

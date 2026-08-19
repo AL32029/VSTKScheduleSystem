@@ -13,7 +13,8 @@ class TemplateKeyboardRenderer:
 
     @staticmethod
     def main_menu(
-        user: "User", items: Iterable["Group | Cabinet"] | None = None,
+        user: "User",
+        items: Iterable["Group | Cabinet"] | None = None,
     ) -> InlineKeyboardMarkup:
         """Шаблон клавиатуры главного меню"""
         builder = InlineKeyboardBuilder()
@@ -30,7 +31,8 @@ class TemplateKeyboardRenderer:
             for item in items:
                 if item.index in subscribed:
                     builder.button(
-                        text=str(item), callback_data=f"open_{item_type}_{item.index}",
+                        text=str(item),
+                        callback_data=f"open_{item_type}_{item.index}",
                     )
 
         builder.adjust(3)
@@ -67,7 +69,22 @@ class TemplateKeyboardRenderer:
 
         builder.row(
             InlineKeyboardButton(
-                text="🏠 В главное меню", callback_data="open_main_menu",
+                text="🏠 В главное меню",
+                callback_data="open_main_menu",
+            ),
+        )
+
+        return builder.as_markup()
+
+    @staticmethod
+    def delete_message() -> InlineKeyboardMarkup:
+        """Шаблон кнопки удаления сообщения"""
+        builder = InlineKeyboardBuilder()
+
+        builder.row(
+            InlineKeyboardButton(
+                text="❌ Удалить сообщение",
+                callback_data="delete_message",
             ),
         )
 
@@ -90,18 +107,31 @@ class TemplateKeyboardRenderer:
             ),
             (
                 InlineKeyboardButton(
-                    text="👨‍🎓 Тип профиля", callback_data="user_settings_profile_type",
+                    text="👨‍🎓 Тип профиля",
+                    callback_data="user_settings_profile_type",
                 )
                 if user.user_type == "student"
                 else InlineKeyboardButton(
-                    text="👨‍🏫 Тип профиля", callback_data="user_settings_profile_type",
+                    text="👨‍🏫 Тип профиля",
+                    callback_data="user_settings_profile_type",
                 )
             ),
         )
 
         builder.row(
             InlineKeyboardButton(
-                text="🏠 В главное меню", callback_data="open_main_menu",
+                text="📚 Группировка пар",
+                callback_data="user_settings_grouping_lessons",
+                style=(
+                    ButtonStyle.SUCCESS if user.grouping_lessons else ButtonStyle.DANGER
+                ),
+            ),
+        )
+
+        builder.row(
+            InlineKeyboardButton(
+                text="🏠 В главное меню",
+                callback_data="open_main_menu",
             ),
         )
 
@@ -138,7 +168,8 @@ class TemplateKeyboardRenderer:
                 callback_data=f"schedule_{schedule_for}_{item_index}_delete",
             ),
             InlineKeyboardButton(
-                text="🏠 В главное меню", callback_data="open_main_menu",
+                text="🏠 В главное меню",
+                callback_data="open_main_menu",
             ),
             width=2,
         )

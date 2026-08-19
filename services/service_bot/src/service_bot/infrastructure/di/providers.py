@@ -85,12 +85,8 @@ class SystemSettingsProvider(Provider):
         return PrometheusMetricsCollector()
 
     @provide
-    def watchfiles_manager(
-        self,
-        db_settings: "DatabaseSettings",
-        redis_settings: "RedisSettings",
-    ) -> "WatchFilesManager":
-        return WatchFilesManager(db_settings.config, redis_settings.config)
+    def watchfiles_manager(self) -> "WatchFilesManager":
+        return WatchFilesManager()
 
 
 class ClientProvider(Provider):
@@ -164,7 +160,7 @@ class RedisProvider(Provider):
     @provide
     def redis_client_manager(self, settings: "RedisSettings") -> "RedisClientManager":
         logger.debug("Creating RedisClientManager")
-        return RedisClientManager(settings.config)
+        return RedisClientManager(settings.config, 'main')
 
     @provide
     async def provide_redis_client(

@@ -1,0 +1,9 @@
+{% if schedule_item_type == 'group' %}
+<b>📆 Расписание для групп{% if schedule_items|length < 2 %}ы{% endif %} {% if action == 'new' %}опубликовано{% elif action == 'update' %}обновлено{% else %}удалено{% endif %}</b>
+
+Для групп{% if schedule_items|length < 2 %}ы{% endif %} <b>{{ schedule_items | map('string') | join(', ') }}</b> {% if action == 'new' %}опубликовано{% elif action == 'update' %}обновлено{% else %}удалено{% endif %} расписание на {% if schedule_to == 'today' %}сегодня{% else %}завтра{% endif %} (<b>{{ dates | map('ru_date', "%d.%m.%Y г.") | join(' - ') }}</b>)
+{% elif schedule_item_type == 'cabinet' %}
+<b>📆 Расписание для кабинет{% if schedule_items|length < 2 %}а{% else %}ов{% endif %} {% if action == 'new' %}опубликовано{% elif action == 'update' %}обновлено{% else %}удалено{% endif %}</b>
+
+Для кабинет{% if schedule_items|length < 2 %}а{% else %}ов{% endif %} <b>{{ schedule_items | map('string') | join(', ') }}</b> {% if action == 'new' %}опубликовано{% elif action == 'update' %}обновлено{% else %}удалено{% endif %} расписание на {% if schedule_to == 'today' %}сегодня{% else %}завтра{% endif %} (<b>{{ dates | map('ru_date', "%d.%m.%Y г.") | join(' - ') }}</b>)
+{% endif %}

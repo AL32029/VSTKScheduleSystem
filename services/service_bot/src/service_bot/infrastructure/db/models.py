@@ -60,6 +60,7 @@ class UserMetadataORM(Base):
 
     __table_args__ = (
         Index("idx_user_metadata_user_id_key", "user_id", "key", unique=True),
+        Index("idx_user_metadata_key_value_user_id", "key", "value", "user_id"),
     )
 
     def __hash__(self):

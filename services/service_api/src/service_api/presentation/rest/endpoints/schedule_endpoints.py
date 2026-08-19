@@ -2,7 +2,7 @@ from typing import Literal
 
 from dishka import FromDishka
 from dishka.integrations.fastapi import inject
-from fastapi import APIRouter, Path
+from fastapi import APIRouter, Query
 
 from service_api.application.services import (
     GetCabinetDayScheduleUseCase,
@@ -25,7 +25,7 @@ schedule_router = APIRouter(prefix="/schedule", tags=["Schedule Items"])
 async def get_group_day_schedule(
     schedule_to: Literal["today", "tomorrow"],
     use_case: FromDishka["GetGroupDayScheduleUseCase"],
-    group_number: str = Path(min_length=1, max_length=32),
+    group_number: str = Query(min_length=1, max_length=32),
 ) -> "ResponseSchema":
     schema = group_day_schedule_to_schema(
         await use_case.execute(group_number, schedule_to)
@@ -39,7 +39,7 @@ async def get_group_day_schedule(
 async def get_cabinet_day_schedule(
     schedule_to: Literal["today", "tomorrow"],
     use_case: FromDishka["GetCabinetDayScheduleUseCase"],
-    cabinet_number: str = Path(min_length=1, max_length=64),
+    cabinet_number: str = Query(min_length=1, max_length=64),
 ) -> "ResponseSchema":
     schema = cabinet_day_schedule_to_schema(
         await use_case.execute(cabinet_number, schedule_to)

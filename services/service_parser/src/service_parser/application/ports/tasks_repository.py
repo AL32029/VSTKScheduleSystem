@@ -3,8 +3,6 @@ from collections.abc import Iterable
 from datetime import date
 from typing import Literal
 
-from service_parser.domain.entities import Cabinet, Group
-
 
 class TasksRepository(ABC):
     @abstractmethod
@@ -21,12 +19,11 @@ class TasksRepository(ABC):
     async def send_notify_task(
         self,
         changes: dict[
-            date,
-            dict[
-                Literal["group", "cabinet"],
-                dict[Literal["new", "update", "remove"], set["Group | Cabinet"]],
-            ],
+            Literal["group", "cabinet"],
+            dict[Literal["new", "update", "remove"], set[str]],
         ],
+        schedule_to: Literal["today", "tomorrow"],
+        dates: date | tuple[date, date],
     ):
         """Отправка задачи на уведомление пользователей в бота"""
         raise NotImplementedError

@@ -2,12 +2,13 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import time
 
-from service_parser.domain.entities import Cabinet, Group
 from service_parser.domain.exceptions import (
     LessonEmptyNameError,
     LessonEndTimeError,
     LessonOverlapError,
 )
+
+from .schedule_items import Cabinet, Group
 
 
 @dataclass(frozen=True)

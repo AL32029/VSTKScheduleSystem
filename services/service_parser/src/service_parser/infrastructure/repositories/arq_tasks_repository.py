@@ -5,7 +5,6 @@ from typing import Literal
 from arq import ArqRedis
 
 from service_parser.application.ports import TasksRepository
-from service_parser.domain.entities import Cabinet, Group
 
 
 class ARQTasksRepository(TasksRepository):
@@ -29,15 +28,16 @@ class ARQTasksRepository(TasksRepository):
     async def send_notify_task(
         self,
         changes: dict[
-            date,
-            dict[
-                Literal["group", "cabinet"],
-                dict[Literal["new", "update", "remove"], set["Group | Cabinet"]],
-            ],
+            Literal["group", "cabinet"],
+            dict[Literal["new", "update", "remove"], set[str]],
         ],
+        schedule_to: Literal["today", "tomorrow"],
+        dates: date | tuple[date, date],
     ):
         await self.client.enqueue_job(
             "notify_users",
             changes=changes,
+            schedule_to=schedule_to,
+            dates=dates,
             _queue_name="notifications",
         )

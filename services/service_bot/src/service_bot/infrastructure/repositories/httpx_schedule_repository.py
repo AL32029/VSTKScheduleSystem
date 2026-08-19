@@ -33,6 +33,7 @@ class HTTPXScheduleRepository(ScheduleRepository):
         schedule_item: str,
         schedule_to: Literal["today", "tomorrow"],
         schedule_for: Literal["group", "cabinet"],
+        grouping_lessons: bool,
     ) -> "DaySchedule":
         """Получение расписания на конкретную дату"""
         request = f"/schedule/{schedule_for}"
@@ -55,6 +56,7 @@ class HTTPXScheduleRepository(ScheduleRepository):
                     params={
                         f"{schedule_for}_number": schedule_item,
                         "schedule_to": schedule_to,
+                        "grouping_lessons": grouping_lessons,
                     },
                 )
 

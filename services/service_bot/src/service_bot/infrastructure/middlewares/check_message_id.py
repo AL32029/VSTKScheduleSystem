@@ -22,7 +22,10 @@ class CheckMessagePanelMiddleware(BaseMiddleware):
     ):
         user: User = data["user"]
 
-        if user.message_panel_id != event.message.message_id:
+        if (
+            user.message_panel_id != event.message.message_id
+            and event.data != "delete_message"
+        ):
             logger.warning(
                 "The message is not a control panel; the keyboard is being removed",
             )

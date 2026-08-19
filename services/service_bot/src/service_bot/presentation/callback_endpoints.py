@@ -1,9 +1,10 @@
 import datetime
 import logging
-from typing import Literal, cast
+from typing import Literal
 from zoneinfo import ZoneInfo
 
 from aiogram import F, Router
+from aiogram.exceptions import AiogramError
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 from dishka import FromDishka
@@ -133,6 +134,8 @@ async def callback_user_settings(
         user.notifications_enabled = not user.notifications_enabled
     elif button == "profile_type":
         user.user_type = "teacher" if user.user_type == "student" else "student"
+    elif button == "grouping_lessons":
+        user.grouping_lessons = not user.grouping_lessons
 
     rendered_text = message_templater.render("user_settings", user=user)
     rendered_keyboard = keyboard_templater.user_settings(user)
@@ -146,6 +149,7 @@ async def callback_user_settings(
 @inject
 async def callback_open_schedule(
     callback: CallbackQuery,
+    user: "User",
     message_templater: FromDishka["TemplateMessageRenderer"],
     keyboard_templater: FromDishka["TemplateKeyboardRenderer"],
     use_case: FromDishka["GetDayScheduleUseCase"],
@@ -160,14 +164,9 @@ async def callback_open_schedule(
 
     for s_to in ("tomorrow", "today"):
         try:
-            schedule_to: Literal["today", "tomorrow"] = cast(
-                "Literal['today', 'tomorrow']",
-                s_to,
-            )
+            schedule_to: Literal["today", "tomorrow"] = s_to
             day_schedule = await use_case.execute(
-                schedule_item,
-                schedule_to,
-                schedule_for,
+                schedule_item, schedule_to, schedule_for, user.grouping_lessons
             )
             break
         except ScheduleDateNotFoundError as e:
@@ -302,6 +301,21 @@ async def callback_day_schedule(
         return None
 
     return None
+
+
+@router.callback_query(F.data == "delete_message")
+@inject
+async def delete_message_callback(callback: CallbackQuery):
+    """Callback обработчик удаления сообщения"""
+    logger.info("Deleting a message")
+    try:
+        await callback.message.delete()
+    except AiogramError as e:
+        logger.warning("Error when deleting a message: %s", str(e))
+        await callback.answer("⚠ Произошла техническая ошибка")
+        logger.info("Clearing the reply_markup message")
+        await callback.message.edit_reply_markup(reply_markup=None)
+        logger.info("reply_markup messages successfully cleared")
 
 
 @router.callback_query()

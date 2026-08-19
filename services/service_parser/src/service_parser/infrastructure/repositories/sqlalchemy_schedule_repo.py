@@ -4,7 +4,7 @@ from collections import defaultdict
 from collections.abc import Iterable
 from datetime import date
 from itertools import batched
-from typing import Literal, TypeVar, cast
+from typing import Literal, cast
 
 from schedule_db_models import LessonCabinetORM, LessonORM
 from sqlalchemy import and_, delete, inspect, or_, select
@@ -12,7 +12,12 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncScalarResult, AsyncSession
 
 from service_parser.application.ports import ScheduleRepository
-from service_parser.domain.entities import Cabinet, DaySchedule, Group, Lesson
+from service_parser.domain.entities import (
+    DaySchedule,
+    Group,
+    Lesson,
+    ScheduleItem,
+)
 from service_parser.infrastructure.domain_mappers import (
     group_orm_to_domain,
     lesson_domain_in_orm,
@@ -20,8 +25,6 @@ from service_parser.infrastructure.domain_mappers import (
 )
 
 logger = logging.getLogger(__name__)
-
-Entity = TypeVar("Entity")
 
 
 class SQLAlchemyScheduleRepository(ScheduleRepository):
@@ -31,11 +34,8 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
     async def save(
         self, schedules: Iterable["DaySchedule"], dates: date | tuple[date, date]
     ) -> dict[
-        date,
-        dict[
-            Literal["group", "cabinet"],
-            dict[Literal["new", "update", "remove"], set["Group | Cabinet"]],
-        ],
+        Literal["group", "cabinet"],
+        dict[Literal["new", "update", "remove"], set[str]],
     ]:
         schedules_list = list(schedules)
         logger.debug("Saving %d day schedules to database", len(schedules_list))
@@ -111,75 +111,69 @@ class SQLAlchemyScheduleRepository(ScheduleRepository):
     def _check_changes(
         self, lessons_schedule, lessons_database
     ) -> dict[
-        date,
-        dict[
-            Literal["group", "cabinet"],
-            dict[Literal["new", "update", "remove"], set["Group | Cabinet"]],
-        ],
+        Literal["group", "cabinet"],
+        dict[Literal["new", "update", "remove"], set[str]],
     ]:
-        group_new = defaultdict(lambda: defaultdict(list))
-        group_old = defaultdict(lambda: defaultdict(list))
-        cabinet_new = defaultdict(lambda: defaultdict(list))
-        cabinet_old = defaultdict(lambda: defaultdict(list))
+        group_new = defaultdict(set)
+        group_old = defaultdict(set)
+        cabinet_new = defaultdict(set)
+        cabinet_old = defaultdict(set)
 
         for _date, group, lesson in sorted(lessons_schedule, key=lambda x: x[1].index):
-            group_new[_date][group].append(lesson)
+            group_new[group].add((_date, lesson))
             if lesson.cabinets:
                 for cab in set(lesson.cabinets):
-                    cabinet_new[_date][cab].append(lesson)
+                    cabinet_new[cab].add((_date, lesson))
 
         for _date, group, lesson in sorted(lessons_database, key=lambda x: x[1].index):
-            group_old[_date][group].append(lesson)
+            group_old[group].add((_date, lesson))
             if lesson.cabinets:
                 for cab in set(lesson.cabinets):
-                    cabinet_old[_date][cab].append(lesson)
+                    cabinet_old[cab].add((_date, lesson))
 
         group_changes = self._compute_entity_changes(group_new, group_old)
         cabinet_changes = self._compute_entity_changes(cabinet_new, cabinet_old)
 
-        all_dates = sorted(set(group_changes.keys()) | set(cabinet_changes.keys()))
-        schedule_changes = {}
-        for _date in all_dates:
-            schedule_changes[_date] = {
-                "group": group_changes.get(
-                    _date, {"new": set(), "update": set(), "remove": set()}
-                ),
-                "cabinet": cabinet_changes.get(
-                    _date, {"new": set(), "update": set(), "remove": set()}
-                ),
-            }
+        schedule_changes: dict[
+            Literal["group", "cabinet"],
+            dict[Literal["new", "update", "remove"], set[str]],
+        ] = {
+            "group": group_changes,
+            "cabinet": cabinet_changes,
+        }
 
         return schedule_changes
 
     @staticmethod
     def _compute_entity_changes(
-        new_data: dict[date, dict[Entity, list]],
-        old_data: dict[date, dict[Entity, list]],
-    ) -> dict[date, dict[Literal["new", "update", "remove"], set[Entity]]]:
-        result = defaultdict(lambda: defaultdict(set))
+        new_data: dict["ScheduleItem", Iterable[tuple[date, "Lesson"]]],
+        old_data: dict["ScheduleItem", Iterable[tuple[date, "Lesson"]]],
+    ) -> dict[Literal["new", "update", "remove"], set[str]]:
+        result: dict[Literal["new", "update", "remove"], set[str]] = {
+            "new": set(),
+            "update": set(),
+            "remove": set(),
+        }
 
-        all_dates = sorted(set(new_data.keys()) | set(old_data.keys()))
+        entities_new = set(new_data.keys())
+        entities_old = set(old_data.keys())
 
-        for _date in all_dates:
-            entities_new = set(new_data.get(_date, {}).keys())
-            entities_old = set(old_data.get(_date, {}).keys())
+        new_entities = {x.index for x in entities_new - entities_old}
+        removed_entities = {x.index for x in entities_old - entities_new}
+        common_entities = entities_new & entities_old
 
-            new_entities = entities_new - entities_old
-            removed_entities = entities_old - entities_new
-            common_entities = entities_new & entities_old
+        updated_entities = set()
+        for entity in common_entities:
+            lessons_new = new_data[entity]
+            lessons_old = old_data[entity]
+            if lessons_new != lessons_old:
+                updated_entities.add(entity.index)
 
-            updated_entities = set()
-            for entity in common_entities:
-                lessons_new = new_data[_date][entity]
-                lessons_old = old_data[_date][entity]
-                if lessons_new != lessons_old:
-                    updated_entities.add(entity)
+        result["new"] = new_entities
+        result["update"] = updated_entities
+        result["remove"] = removed_entities
 
-            result[_date]["new"] = new_entities
-            result[_date]["update"] = updated_entities
-            result[_date]["remove"] = removed_entities
-
-        return dict(result)
+        return result
 
     async def _save_batch(
         self, schedules: Iterable["DaySchedule"], dates: date | tuple[date, date]
